@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  eslint: {
+    // ESLint runs in CI — skip during Docker build to avoid blocking on warnings
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
