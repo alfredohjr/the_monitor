@@ -1,6 +1,47 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+
+interface MetricConfig {
+  periodo: string;
+  valor_padrao?: string;
+  tipo?: string;
+  nome?: string;
+  codigo?: string;
+  id?: number;
+}
+
+interface GoalRecord {
+  id: number;
+  metric: number;
+  alvo: string;
+  periodo_referencia: string;
+  [key: string]: unknown;
+}
+
+interface LogRecord {
+  goal: number;
+  valor_logado: string;
+}
+
+interface SliceData {
+  isNew: boolean;
+  goalId: string | number;
+  periodRef: string;
+  alvo: number;
+  realizado: number;
+  isLockedRegion: boolean;
+  goalOriginal?: GoalRecord;
+  alvoOriginalValue?: number;
+}
+
+interface DraggableBarProps {
+  data: SliceData;
+  maxVal: number;
+  onChange: (val: number) => void;
+  prefix?: string;
+  isLocked?: boolean;
+}
 
 function getWeekPattern(d: Date) {
   const date = new Date(d.getTime());
@@ -11,12 +52,12 @@ function getWeekPattern(d: Date) {
   return `${date.getFullYear()}-W${week.toString().padStart(2, '0')}`;
 }
 
-function generateSlices(metricConfig: any, startDateStr: string, endDateStr: string) {
+function generateSlices(metricConfig: MetricConfig, startDateStr: string, endDateStr: string) {
   const slices: string[] = [];
   if (!startDateStr || !endDateStr || !metricConfig) return [];
   const [sy, sm, sd] = startDateStr.split("-").map(Number);
   const [ey, em, ed] = endDateStr.split("-").map(Number);
-  let curr = new Date(sy, sm - 1, sd, 0, 0, 0);
+  const curr = new Date(sy, sm - 1, sd, 0, 0, 0);
   const end = new Date(ey, em - 1, ed, 23, 59, 59);
   let safety = 0;
   while (curr <= end && safety < 365) {
@@ -48,13 +89,13 @@ function formatNumber(val: number) {
   return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }: any) => {
+const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }: DraggableBarProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState("");
   const barRef = useRef<HTMLDivElement>(null);
 
-  const handleMove = (clientY: number) => {
+  const handleMove = useCallback((clientY: number) => {
     if (isLocked) return;
     if (!barRef.current) return;
     const rect = barRef.current.getBoundingClientRect();
@@ -64,7 +105,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
     let newVal = (percentage / 100) * maxVal;
     newVal = Math.round(newVal * 2) / 2;
     onChange(newVal);
-  };
+  }, [isLocked, maxVal, onChange]);
 
   useEffect(() => {
     const handleMouseUpGlobal = () => setIsDragging(false);
@@ -77,7 +118,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
       window.removeEventListener('mouseup', handleMouseUpGlobal);
       window.removeEventListener('mousemove', handleMouseMoveGlobal);
     };
-  }, [isDragging, maxVal, isLocked]);
+  }, [isDragging, handleMove]);
 
   const handleStartEdit = () => {
     if (isLocked) return;
@@ -161,9 +202,9 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
 
 export default function SimulationDashboard() {
   const router = useRouter();
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [allGoals, setAllGoals] = useState<any[]>([]);
-  const [allLogs, setAllLogs] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<MetricConfig[]>([]);
+  const [allGoals, setAllGoals] = useState<GoalRecord[]>([]);
+  const [allLogs, setAllLogs] = useState<LogRecord[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -175,12 +216,12 @@ export default function SimulationDashboard() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [lockHistorical, setLockHistorical] = useState(true);
-  const [simData, setSimData] = useState<any[]>([]);
+  const [simData, setSimData] = useState<SliceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [token, setToken] = useState("");
 
-  const fetchData = async (t: string) => {
+  const fetchData = useCallback(async (t: string) => {
     try {
       const [mRes, gRes, lRes] = await Promise.all([
         fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${t}` } }),
@@ -193,19 +234,19 @@ export default function SimulationDashboard() {
       setMetrics(Array.isArray(m) ? m : m.results || []);
       setAllGoals(Array.isArray(g) ? g : g.results || []);
       setAllLogs(Array.isArray(l) ? l : l.results || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // silently fail — user will see empty state
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
     if (!t) return router.push("/login");
     setToken(t);
     fetchData(t);
-  }, [router]);
+  }, [router, fetchData]);
 
   useEffect(() => {
     if (!selectedMetric || !startDate || !endDate) { setSimData([]); return; }
@@ -220,7 +261,7 @@ export default function SimulationDashboard() {
     else if (mObj.periodo === 'weekly') currentRef = getWeekPattern(today);
 
     const refs = generateSlices(mObj, startDate, endDate);
-    const data = refs.map(ref => {
+    const data: SliceData[] = refs.map(ref => {
       const isLockedRegion = ref <= currentRef;
       const existingGoal = allGoals.find(g => String(g.metric) === selectedMetric && g.periodo_referencia === ref);
       if (existingGoal) {
@@ -228,7 +269,7 @@ export default function SimulationDashboard() {
         const sumRealizado = gLogs.reduce((acc, l) => acc + (parseFloat(l.valor_logado) || 0), 0);
         return { isNew: false, goalId: existingGoal.id, goalOriginal: existingGoal, periodRef: ref, alvo: parseFloat(existingGoal.alvo) || 0, realizado: sumRealizado, isLockedRegion };
       } else {
-        let fallbackPadrao = parseFloat(mObj.valor_padrao);
+        let fallbackPadrao = parseFloat(mObj.valor_padrao ?? '');
         if (isNaN(fallbackPadrao)) fallbackPadrao = 10;
         return { isNew: true, goalId: `mock_${ref}`, periodRef: ref, alvo: fallbackPadrao, alvoOriginalValue: fallbackPadrao, realizado: 0, isLockedRegion };
       }
@@ -236,12 +277,12 @@ export default function SimulationDashboard() {
     setSimData(data);
   }, [selectedMetric, startDate, endDate, allGoals, allLogs, metrics]);
 
-  const handleDragChange = (goalId: string, val: number) => {
+  const handleDragChange = (goalId: string | number, val: number) => {
     setSimData(prev => prev.map(d => d.goalId === goalId ? { ...d, alvo: val } : d));
   };
 
   const pendingPosts = simData.filter(d => d.isNew);
-  const pendingPuts = simData.filter(d => !d.isNew && d.alvo !== parseFloat(d.goalOriginal.alvo));
+  const pendingPuts = simData.filter(d => !d.isNew && d.alvo !== parseFloat(d.goalOriginal?.alvo ?? ''));
   const hasChanges = pendingPosts.length > 0 || pendingPuts.length > 0;
 
   const saveSimulation = async () => {
@@ -264,7 +305,7 @@ export default function SimulationDashboard() {
       await Promise.all([...postPromises, ...putPromises]);
       alert("Simulação injetada no Banco Físico.");
       await fetchData(token);
-    } catch (err) {
+    } catch {
       alert("Erro ao comitar a simulação.");
     } finally {
       setSaving(false);
@@ -273,7 +314,7 @@ export default function SimulationDashboard() {
 
   const maxVal = simData.length > 0 ? Math.max(10, ...simData.map(d => d.alvo), ...simData.map(d => d.realizado)) * 1.3 : 100;
   const sumBaseline = simData.reduce((acc, d) => {
-    const base = d.goalOriginal ? parseFloat(d.goalOriginal.alvo) : d.alvoOriginalValue;
+    const base = d.goalOriginal ? parseFloat(d.goalOriginal.alvo) : (d.alvoOriginalValue ?? 0);
     return acc + (isNaN(base) ? 0 : base);
   }, 0);
   const sumAdjusted = simData.reduce((acc, d) => acc + (isNaN(d.alvo) ? 0 : d.alvo), 0);
