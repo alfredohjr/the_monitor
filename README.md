@@ -42,3 +42,7 @@ npm test
 ## Autor
 
 - Alfredo Holz Junior
+
+## Histórico
+
+- 2026-06-23 — início do projeto
