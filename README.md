@@ -38,3 +38,7 @@ cd backend
 cd frontend
 npm test
 ```
+
+## Autor
+
+- Alfredo Holz Junior
