@@ -1,0 +1,79 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export default function MetricList() {
+  const [items, setItems] = useState<any[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : d.results || []));
+  }, [router]);
+
+  const handleDelete = async (id: number) => {
+    const token = localStorage.getItem("access_token");
+    if (!confirm("Tem certeza que deseja apagar? Isso removerá a visualização da métrica e metas associadas.")) return;
+    try {
+      await fetch(`http://localhost:8000/api/v1/metrics/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      setItems(items.filter(i => i.id !== id));
+    } catch {}
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen p-6 bg-[#0a0a0a] text-white">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
+      </div>
+      <div className="relative z-10 w-full max-w-5xl mx-auto glass p-8 sm:p-12 rounded-3xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-white/5 mt-16">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-10 gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Métricas Cadastradas</h1>
+            <p className="text-zinc-400">Suas unidades base do sistema.</p>
+          </div>
+          <Link href="/metrics/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 whitespace-nowrap truncate text-center">+ Nova Métrica</Link>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[800px]">
+            <thead>
+              <tr className="border-b border-zinc-700 text-zinc-400 text-sm">
+                <th className="pb-3 px-2">ID</th>
+                <th className="pb-3 px-2 w-32">Código</th>
+                <th className="pb-3 px-2 text-blue-300">Nome de Exibição</th>
+                <th className="pb-3 px-2">Descrição</th>
+                <th className="pb-3 px-2">Tipo</th>
+                <th className="pb-3 px-2">Rotina</th>
+                <th className="pb-3 px-2 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(i => (
+                <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
+                  <td className="py-4 px-2 text-zinc-500">#{i.id}</td>
+                  <td className="py-4 px-2 font-mono text-zinc-400">{i.codigo}</td>
+                  <td className="py-4 px-2 font-medium text-blue-300">{i.nome || '-'}</td>
+                  <td className="py-4 px-2 text-zinc-300">{i.descricao}</td>
+                  <td className="py-4 px-2 text-zinc-300">{i.tipo}</td>
+                  <td className="py-4 px-2 text-zinc-300">{i.periodo}</td>
+                  <td className="py-4 px-2 text-right">
+                    <Link href={`/metrics/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>
+                    <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Apagar</button>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr><td colSpan={7} className="py-8 text-center text-zinc-500 italic">Nenhuma métrica base cadastrada.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

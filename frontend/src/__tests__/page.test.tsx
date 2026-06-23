@@ -1,19 +1,25 @@
 import { render, screen } from '@testing-library/react';
-import Main from '../app/page';
+import Home from '../app/page';
 
-beforeEach(() => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({ json: () => Promise.resolve([]) } as Response)
+jest.mock('next/link', () => {
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <a href={href}>{children}</a>
   );
+  MockLink.displayName = 'MockLink';
+  return MockLink;
 });
 
-afterEach(() => {
-  jest.resetAllMocks();
-});
+describe('Home page', () => {
+  it('renders the main heading', () => {
+    render(<Home />);
+    expect(screen.getByText(/O Controle Total do Seu/i)).toBeInTheDocument();
+  });
 
-describe('Main page', () => {
-  it('renders the panel title', () => {
-    render(<Main />);
-    expect(screen.getByText('Painel 1')).toBeInTheDocument();
+  it('renders navigation links to the main sections', () => {
+    render(<Home />);
+    expect(screen.getByText(/1\. Dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/2\. Check-in/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\. Criar Desafio/i)).toBeInTheDocument();
+    expect(screen.getByText(/4\. Métrica Raiz/i)).toBeInTheDocument();
   });
 });
