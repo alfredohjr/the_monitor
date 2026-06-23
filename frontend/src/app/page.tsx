@@ -1,6 +1,6 @@
  'use client';
 
-import { useContext, createContext, useState, useEffect, SetStateAction } from "react";
+import { createContext, useState, useEffect } from "react";
 
 interface InterfaceData {
   id:number,
@@ -25,7 +25,6 @@ const ContextNews = createContext<InterfaceNews[]>([]);
 export default function Main() {
 
   const [cards, setCards] = useState<InterfaceData[]>([]);
-  const [news, setNews] = useState<InterfaceNews[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,7 +48,7 @@ export default function Main() {
 
       const resData = await res.json();
       const newsItems = await Promise.all(
-        resData.map(async (item:any) => {
+        resData.map(async (item: { id: number }) => {
           const res = await fetch(
             `http://localhost:3001/items/?id=${item.id}`
           );
@@ -73,7 +72,7 @@ export default function Main() {
   return (
     <div>
       <ContextData.Provider value={cards} >
-        <ContextNews.Provider value={news} >
+        <ContextNews.Provider value={[]} >
           <h1>Painel 1</h1>
           {cards.map(product => (
             <Card item={product} key={product.id} />
