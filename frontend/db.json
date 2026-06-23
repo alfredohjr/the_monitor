@@ -1,0 +1,17 @@
+{
+    "items" : [
+        {"id":1, "titulo":"Numero 1", "descricao":"Um exemplo legal", "valor":15.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":2, "titulo":"Numero 2", "descricao":"Um exemplo legal", "valor":191.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":3, "titulo":"Numero 3", "descricao":"Um exemplo legal", "valor":190.98, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":4, "titulo":"Numero 4", "descricao":"Um exemplo legal", "valor":190.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":5, "titulo":"Numero 5", "descricao":"Um exemplo legal", "valor":190.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":6, "titulo":"Numero 6", "descricao":"Um exemplo legal", "valor":190.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05},
+        {"id":7, "titulo":"Numero 7", "descricao":"Um exemplo legal", "valor":190.99, "tipo":"dinheiro", "target": 1, "color": "green", "disaster": 1000, "color_disaster":"red", "value_ok":0.05}
+    ],
+    "news" : [
+        {"id":1, "company":1},
+        {"id":2, "company":1},
+        {"id":3, "company":2},
+        {"id":4, "company":3}
+    ]
+}
