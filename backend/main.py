@@ -1,5 +1,6 @@
 from typing import Annotated
 import datetime
+import os
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from pydantic import BaseModel
@@ -19,10 +20,16 @@ def agora():
 def nulo():
     return datetime.datetime(2000,1,1)
 
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
-app = FastAPI(title="The Monitor + The Pointer")
+app = FastAPI(
+    title="The Monitor + The Pointer",
+    docs_url="/docs" if DEBUG else None,
+    redoc_url="/redoc" if DEBUG else None,
+)
 
 @app.on_event("startup")
 def on_startup():
