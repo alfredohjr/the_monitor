@@ -54,6 +54,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
@@ -150,6 +158,25 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access: str
     refresh: str
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+
+@app.post('/api/v1/register/', response_model=UserResponse, status_code=201)
+def register(body: RegisterRequest, session: SessionDep):
+    existing = session.exec(select(User).where(User.username == body.username)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username já cadastrado")
+    user = User(username=body.username, hashed_password=hash_password(body.password))
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
 
 @app.post('/api/v1/token/', response_model=TokenResponse)
 def get_token(body: LoginRequest, session: SessionDep):
