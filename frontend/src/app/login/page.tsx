@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-6 relative overflow-hidden bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-12 relative overflow-hidden bg-[#0a0a0a]">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[20%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
       </div>
