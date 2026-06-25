@@ -22,11 +22,14 @@ def nulo():
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
+APP_VERSION = "0.1.0"
+
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 app = FastAPI(
     title="The Monitor + The Pointer",
+    version=APP_VERSION,
     docs_url="/docs" if DEBUG else None,
     redoc_url="/redoc" if DEBUG else None,
 )
@@ -41,6 +44,10 @@ def on_startup():
 @app.get('/')
 async def root():
     return {"messsage":"Hello world"}
+
+@app.get('/version')
+async def version():
+    return {"version": APP_VERSION}
 
 @app.post('/items/')
 def create_item(item:Item, session:SessionDep) -> Item:

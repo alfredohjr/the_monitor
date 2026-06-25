@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
   return (
@@ -69,8 +70,9 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="absolute bottom-8 text-sm text-zinc-500 whitespace-nowrap z-10 text-center">
-        Desenvolvido para <span className="text-zinc-300">Alta Performance</span>.
+      <footer className="absolute bottom-8 text-sm text-zinc-500 whitespace-nowrap z-10 text-center flex flex-col items-center gap-1">
+        <span>Desenvolvido para <span className="text-zinc-300">Alta Performance</span>.</span>
+        <span className="text-xs text-zinc-600">v{APP_VERSION}</span>
       </footer>
     </div>
   );
