@@ -3,6 +3,7 @@ import datetime
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -24,6 +25,17 @@ DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 APP_VERSION = "0.1.0"
 
+# Origens permitidas para CORS. Configuravel via env CORS_ORIGINS
+# (lista separada por virgula); default cobre o front Next.js local.
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+]
+
 SessionDep = Annotated[Session, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
@@ -32,6 +44,14 @@ app = FastAPI(
     version=APP_VERSION,
     docs_url="/docs" if DEBUG else None,
     redoc_url="/redoc" if DEBUG else None,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.on_event("startup")
