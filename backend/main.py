@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, create_db_and_tables, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, create_db_and_tables, get_session
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -348,3 +348,29 @@ def delete_log(log_id: int, session: SessionDep, _: CurrentUser):
     log.deleted = True
     session.add(log)
     session.commit()
+
+
+# ---------- Organizations ----------
+
+class OrganizationCreate(BaseModel):
+    nome: str
+
+@app.get('/api/v1/organizations/')
+def list_organizations(session: SessionDep, user: CurrentUser) -> list[Organization]:
+    return session.exec(
+        select(Organization)
+        .join(Membership, Membership.organization_id == Organization.id)
+        .where(Membership.user_id == user.id, Organization.deleted == False)
+    ).all()
+
+@app.post('/api/v1/organizations/', status_code=201)
+def create_organization(body: OrganizationCreate, session: SessionDep, user: CurrentUser) -> Organization:
+    org = Organization(nome=body.nome)
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+
+    session.add(Membership(user_id=user.id, organization_id=org.id))
+    session.commit()
+    session.refresh(org)
+    return org
