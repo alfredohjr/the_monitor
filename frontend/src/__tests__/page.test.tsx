@@ -22,4 +22,9 @@ describe('Home page', () => {
     expect(screen.getByText(/3\. Criar Desafio/i)).toBeInTheDocument();
     expect(screen.getByText(/4\. Métrica Raiz/i)).toBeInTheDocument();
   });
+
+  it('displays the app version', () => {
+    render(<Home />);
+    expect(screen.getByText(/v0\.1\.0/i)).toBeInTheDocument();
+  });
 });
