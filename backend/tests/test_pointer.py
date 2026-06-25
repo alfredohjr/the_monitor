@@ -3,6 +3,7 @@ from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.exc import IntegrityError
 
 from main import app
 from models import get_session, User, Metric, Goal, LogEntry
@@ -258,3 +259,32 @@ def test_soft_delete_log_entry(client: TestClient, token: str, session: Session)
 
     session.refresh(log)
     assert log.deleted is True
+
+
+# ---------- User email (issue #17) ----------
+
+def test_user_email_persisted(session: Session):
+    user = User(username="comemail", hashed_password=hash_password("x"), email="user@example.com")
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    assert user.email == "user@example.com"
+
+
+def test_user_email_is_optional(session: Session):
+    user = User(username="sememail", hashed_password=hash_password("x"))
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    assert user.email is None
+
+
+def test_user_email_is_unique(session: Session):
+    session.add(User(username="a", hashed_password=hash_password("x"), email="dup@example.com"))
+    session.commit()
+
+    session.add(User(username="b", hashed_password=hash_password("x"), email="dup@example.com"))
+    with pytest.raises(IntegrityError):
+        session.commit()

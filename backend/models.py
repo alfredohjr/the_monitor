@@ -54,6 +54,7 @@ class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)
     hashed_password: str
+    email: Optional[str] = Field(default=None, unique=True, index=True)
 
 
 class Metric(SQLModel, table=True):
