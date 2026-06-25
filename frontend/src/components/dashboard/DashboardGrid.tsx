@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
 
 export default function DashboardGrid() {
   const router = useRouter();
@@ -136,10 +137,10 @@ export default function DashboardGrid() {
           {chartData.length > 0 ? (
             <div className="flex-1 w-full min-h-[0]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 30, bottom: 10, left: 0 }}>
+                <LineChart data={chartData} margin={{ top: 10, right: 30, bottom: 10, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="dataPoint" stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dy={10} />
-                  <YAxis stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dx={-10} width={40} />
+                  <YAxis stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dx={Y_AXIS_TICK_DX} width={Y_AXIS_WIDTH} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '12px' }}
                     itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
