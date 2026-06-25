@@ -57,6 +57,20 @@ class User(SQLModel, table=True):
     email: Optional[str] = Field(default=None, unique=True, index=True)
 
 
+class Organization(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    nome: str = Field(max_length=150)
+    deleted: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Membership(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    organization_id: int = Field(foreign_key="organization.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Metric(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     codigo: str = Field(unique=True, index=True, max_length=50)
