@@ -151,6 +151,35 @@ class TokenResponse(BaseModel):
     access: str
     refresh: str
 
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: str | None = None
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str | None = None
+
+@app.post('/api/v1/register/', response_model=UserResponse, status_code=201)
+def register(body: RegisterRequest, session: SessionDep):
+    existing = session.exec(select(User).where(User.username == body.username)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username já cadastrado")
+    if body.email:
+        email_taken = session.exec(select(User).where(User.email == body.email)).first()
+        if email_taken:
+            raise HTTPException(status_code=400, detail="Email já cadastrado")
+    user = User(
+        username=body.username,
+        hashed_password=hash_password(body.password),
+        email=body.email,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
 @app.post('/api/v1/token/', response_model=TokenResponse)
 def get_token(body: LoginRequest, session: SessionDep):
     user = session.exec(select(User).where(User.username == body.username)).first()
