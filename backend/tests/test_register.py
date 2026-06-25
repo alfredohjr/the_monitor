@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy.pool import StaticPool
 
 from main import app
@@ -50,3 +50,26 @@ def test_register_duplicate_username(client: TestClient, session: Session):
 def test_register_missing_fields(client: TestClient):
     response = client.post("/api/v1/register/", json={"username": "incompleto"})
     assert response.status_code == 422
+
+
+def test_register_with_email(client: TestClient, session: Session):
+    response = client.post(
+        "/api/v1/register/",
+        json={"username": "comemail", "password": "senha123", "email": "novo@example.com"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == "novo@example.com"
+
+    user = session.exec(select(User).where(User.username == "comemail")).first()
+    assert user.email == "novo@example.com"
+
+
+def test_register_duplicate_email(client: TestClient, session: Session):
+    session.add(User(username="dono", hashed_password=hash_password("abc"), email="dup@example.com"))
+    session.commit()
+    response = client.post(
+        "/api/v1/register/",
+        json={"username": "outro", "password": "senha123", "email": "dup@example.com"},
+    )
+    assert response.status_code == 400
