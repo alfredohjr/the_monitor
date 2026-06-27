@@ -14,6 +14,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 
 bearer = HTTPBearer()
 
@@ -41,6 +42,20 @@ def create_access_token(username: str) -> str:
 def create_refresh_token(username: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     return jwt.encode({"sub": username, "exp": expire, "type": "refresh"}, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_google_token(token: str) -> dict:
+    """Verifica um ID token do Google e retorna os claims (email, etc.).
+
+    Levanta exceção (ValueError) se o token for inválido. A verificação real
+    é isolada aqui para poder ser mockada nos testes.
+    """
+    from google.oauth2 import id_token as google_id_token
+    from google.auth.transport import requests as google_requests
+
+    return google_id_token.verify_oauth2_token(
+        token, google_requests.Request(), GOOGLE_CLIENT_ID or None
+    )
 
 
 def get_current_user(

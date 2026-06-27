@@ -8,10 +8,12 @@ from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, create_db_and_tables, get_session
+import secrets
+
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
-    get_current_user,
+    get_current_user, verify_google_token,
 )
 
 
@@ -185,6 +187,35 @@ def get_token(body: LoginRequest, session: SessionDep):
     user = session.exec(select(User).where(User.username == body.username)).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+    return TokenResponse(
+        access=create_access_token(user.username),
+        refresh=create_refresh_token(user.username),
+    )
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+@app.post('/api/v1/auth/google/', response_model=TokenResponse)
+def google_login(body: GoogleLoginRequest, session: SessionDep):
+    try:
+        claims = verify_google_token(body.credential)
+        email = claims.get("email")
+        if not email:
+            raise ValueError("token sem email")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Google inválido")
+
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        user = User(
+            username=email,
+            email=email,
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
     return TokenResponse(
         access=create_access_token(user.username),
         refresh=create_refresh_token(user.username),
