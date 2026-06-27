@@ -29,6 +29,7 @@ export default function LoginPage() {
       const tokens = await exchangeGoogleCredential(credential);
       localStorage.setItem("access_token", tokens.access);
       localStorage.setItem("refresh_token", tokens.refresh);
+      localStorage.setItem("username", tokens.username);
       router.push("/dashboard");
     } catch {
       setError("Não foi possível entrar com o Google");
