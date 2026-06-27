@@ -1,14 +1,59 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { exchangeGoogleCredential } from "@/lib/googleAuth";
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+interface GoogleAccounts {
+  accounts: {
+    id: {
+      initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
+      renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+    };
+  };
+}
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  const handleGoogleCredential = useCallback(async (credential: string) => {
+    setError("");
+    try {
+      const tokens = await exchangeGoogleCredential(credential);
+      localStorage.setItem("access_token", tokens.access);
+      localStorage.setItem("refresh_token", tokens.refresh);
+      router.push("/dashboard");
+    } catch {
+      setError("Não foi possível entrar com o Google");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.onload = () => {
+      const g = (window as unknown as { google?: GoogleAccounts }).google;
+      if (!g || !googleBtnRef.current) return;
+      g.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (resp) => handleGoogleCredential(resp.credential),
+      });
+      g.accounts.id.renderButton(googleBtnRef.current, { theme: "outline", size: "large", width: 320 });
+    };
+    document.body.appendChild(script);
+    return () => {
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+  }, [handleGoogleCredential]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -102,6 +147,20 @@ export default function LoginPage() {
             {loading ? "Entrando..." : "Entrar no Sistema"}
           </button>
         </form>
+
+        <div className="mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="h-px flex-1 bg-white/10" />
+            <span className="text-xs text-zinc-500 uppercase tracking-wider">ou</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+          <div ref={googleBtnRef} className="flex justify-center" />
+          {!GOOGLE_CLIENT_ID && (
+            <p className="text-center text-xs text-zinc-600 mt-2">
+              Login com Google indisponível (configure NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+            </p>
+          )}
+        </div>
 
         <p className="mt-6 text-center text-sm text-zinc-500">
           Não tem conta?{" "}
