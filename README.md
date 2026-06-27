@@ -39,6 +39,15 @@ cd frontend
 npm test
 ```
 
+## Licença
+
+Distribuído sob a [Business Source License 1.1](LICENSE) (BUSL-1.1).
+
+O código é aberto para leitura e uso, **exceto** oferecê-lo a terceiros como
+serviço hospedado/gerenciado concorrente. Em **2030-06-26** a licença converte
+automaticamente para Apache-2.0. Para licenciamento comercial, contate
+alfredojrgasper@gmail.com.
+
 ## Autor
 
 - Alfredo Holz Junior
