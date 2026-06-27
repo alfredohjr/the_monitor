@@ -25,6 +25,6 @@ describe('Home page', () => {
 
   it('displays the app version', () => {
     render(<Home />);
-    expect(screen.getByText(/v0\.1\.0/i)).toBeInTheDocument();
+    expect(screen.getByText(/v0\.2\.0/i)).toBeInTheDocument();
   });
 });
