@@ -7,9 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, create_db_and_tables, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, get_session
 import secrets
 
+from db_migrations import run_migrations
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -58,7 +59,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    create_db_and_tables()
+    run_migrations()
 
 
 # ---------- Original The Monitor endpoints ----------

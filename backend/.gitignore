@@ -1,0 +1,7 @@
+# Banco SQLite local (dev)
+database.db
+*.db
+
+# Caches
+__pycache__/
+.pytest_cache/

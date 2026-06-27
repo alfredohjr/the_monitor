@@ -7,3 +7,4 @@ httpx==0.28.1
 pytest-asyncio==0.24.0
 PyJWT==2.9.0
 google-auth==2.35.0
+alembic==1.13.2
