@@ -14,6 +14,7 @@ from .database import (
 from .monitor import Item, Historico, News
 from .accounts import User, Organization, Membership
 from .pointer import Metric, Goal, LogEntry
+from .notifications import Notification
 
 __all__ = [
     "DATABASE_URL",
@@ -29,4 +30,5 @@ __all__ = [
     "Metric",
     "Goal",
     "LogEntry",
+    "Notification",
 ]

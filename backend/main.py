@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, create_db_and_tables, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, create_db_and_tables, get_session
 import secrets
 
 from auth import (
@@ -405,3 +405,36 @@ def create_organization(body: OrganizationCreate, session: SessionDep, user: Cur
     session.commit()
     session.refresh(org)
     return org
+
+
+# ---------- Notifications ----------
+
+class NotificationCreate(BaseModel):
+    mensagem: str
+
+@app.get('/api/v1/notifications/')
+def list_notifications(session: SessionDep, user: CurrentUser) -> list[Notification]:
+    return session.exec(
+        select(Notification)
+        .where(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+    ).all()
+
+@app.post('/api/v1/notifications/', status_code=201)
+def create_notification(body: NotificationCreate, session: SessionDep, user: CurrentUser) -> Notification:
+    notification = Notification(user_id=user.id, mensagem=body.mensagem)
+    session.add(notification)
+    session.commit()
+    session.refresh(notification)
+    return notification
+
+@app.post('/api/v1/notifications/{notification_id}/read/')
+def mark_notification_read(notification_id: int, session: SessionDep, user: CurrentUser) -> Notification:
+    notification = session.get(Notification, notification_id)
+    if not notification or notification.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Notificação não encontrada")
+    notification.lida = True
+    session.add(notification)
+    session.commit()
+    session.refresh(notification)
+    return notification

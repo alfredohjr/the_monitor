@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export default function Navbar() {
 
         {username ? (
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-emerald-400 font-bold">Olá, {username}</span>
             <button onClick={handleLogout} className="text-zinc-400 hover:text-red-400 transition text-xs">Sair</button>
           </div>
