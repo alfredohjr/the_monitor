@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { replicateForward } from "@/lib/simulation";
 
 interface MetricConfig {
   periodo: string;
@@ -217,6 +218,7 @@ export default function SimulationDashboard() {
   });
   const [lockHistorical, setLockHistorical] = useState(true);
   const [simData, setSimData] = useState<SliceData[]>([]);
+  const [lastEditedId, setLastEditedId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [token, setToken] = useState("");
@@ -275,10 +277,24 @@ export default function SimulationDashboard() {
       }
     });
     setSimData(data);
+    setLastEditedId(null);
   }, [selectedMetric, startDate, endDate, allGoals, allLogs, metrics]);
 
   const handleDragChange = (goalId: string | number, val: number) => {
+    setLastEditedId(goalId);
     setSimData(prev => prev.map(d => d.goalId === goalId ? { ...d, alvo: val } : d));
+  };
+
+  const handleReplicate = () => {
+    if (lastEditedId === null) return;
+    const idx = simData.findIndex(d => d.goalId === lastEditedId);
+    if (idx < 0) return;
+    const newVals = replicateForward(
+      simData.map(d => ({ alvo: d.alvo, isLockedRegion: d.isLockedRegion })),
+      idx,
+      lockHistorical,
+    );
+    setSimData(prev => prev.map((d, i) => ({ ...d, alvo: newVals[i] })));
   };
 
   const pendingPosts = simData.filter(d => d.isNew);
@@ -368,9 +384,20 @@ export default function SimulationDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-white/5 w-full">
-            <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
-            <label htmlFor="lockHist" className="text-sm text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/5 w-full">
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
+              <label htmlFor="lockHist" className="text-sm text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
+            </div>
+            <button
+              type="button"
+              onClick={handleReplicate}
+              disabled={lastEditedId === null}
+              title="Replica o último valor editado para todas as barras à direita"
+              className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+            >
+              Replicar último valor →
+            </button>
           </div>
         </div>
 
