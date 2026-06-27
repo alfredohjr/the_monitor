@@ -1,4 +1,4 @@
-import Link from "next/link";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 const features = [
   {
@@ -24,7 +24,7 @@ const colorMap: Record<string, string> = {
   green: "bg-green-500/20 text-green-400 border-green-500/40",
 };
 
-export default function ProdutoPage() {
+export default function Home() {
   return (
     <div className="flex flex-col min-h-screen items-center p-6 sm:p-24 relative overflow-hidden bg-[#0a0a0a] text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -51,18 +51,18 @@ export default function ProdutoPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-20">
-          <Link
-            href="/login"
+          <a
+            href={`${APP_URL}/login`}
             className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-blue-600/30"
           >
             Começar agora
-          </Link>
-          <Link
-            href="/dashboard"
+          </a>
+          <a
+            href={`${APP_URL}/dashboard`}
             className="px-8 py-4 rounded-2xl glass border border-white/10 text-zinc-200 font-semibold text-lg hover:bg-white/[0.05] transition-all duration-300"
           >
             Ver o Dashboard
-          </Link>
+          </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl text-left">
@@ -87,12 +87,12 @@ export default function ProdutoPage() {
           <p className="text-zinc-400 mb-8 max-w-xl">
             Crie sua conta e comece a medir o que realmente move seus objetivos.
           </p>
-          <Link
-            href="/login"
+          <a
+            href={`${APP_URL}/login`}
             className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-blue-600/30"
           >
             Começar agora
-          </Link>
+          </a>
         </div>
       </main>
 
