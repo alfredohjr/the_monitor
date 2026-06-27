@@ -66,3 +66,20 @@ def test_google_login_invalid_token(client, monkeypatch):
     monkeypatch.setattr(main, "verify_google_token", boom, raising=False)
     resp = client.post("/api/v1/auth/google/", json={"credential": "ruim"})
     assert resp.status_code == 401
+
+
+def test_google_login_returns_username_for_new_user(client, session, monkeypatch):
+    monkeypatch.setattr(main, "verify_google_token", fake_verify("novo@gmail.com"), raising=False)
+    resp = client.post("/api/v1/auth/google/", json={"credential": "fake-token"})
+    assert resp.status_code == 200
+    assert resp.json()["username"] == "novo@gmail.com"
+
+
+def test_google_login_returns_username_for_existing_user(client, session, monkeypatch):
+    session.add(User(username="alfredo", email="a@gmail.com", hashed_password=hash_password("x")))
+    session.commit()
+
+    monkeypatch.setattr(main, "verify_google_token", fake_verify("a@gmail.com"), raising=False)
+    resp = client.post("/api/v1/auth/google/", json={"credential": "fake-token"})
+    assert resp.status_code == 200
+    assert resp.json()["username"] == "alfredo"

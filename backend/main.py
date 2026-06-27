@@ -195,7 +195,12 @@ def get_token(body: LoginRequest, session: SessionDep):
 class GoogleLoginRequest(BaseModel):
     credential: str
 
-@app.post('/api/v1/auth/google/', response_model=TokenResponse)
+class GoogleAuthResponse(BaseModel):
+    access: str
+    refresh: str
+    username: str
+
+@app.post('/api/v1/auth/google/', response_model=GoogleAuthResponse)
 def google_login(body: GoogleLoginRequest, session: SessionDep):
     try:
         claims = verify_google_token(body.credential)
@@ -216,9 +221,10 @@ def google_login(body: GoogleLoginRequest, session: SessionDep):
         session.commit()
         session.refresh(user)
 
-    return TokenResponse(
+    return GoogleAuthResponse(
         access=create_access_token(user.username),
         refresh=create_refresh_token(user.username),
+        username=user.username,
     )
 
 

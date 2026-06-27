@@ -5,24 +5,23 @@ import { useRouter, usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    const storedName = localStorage.getItem("username");
     const storedToken = localStorage.getItem("access_token");
-    if (storedToken && storedName) {
-      setUsername(storedName);
-    } else {
-      setUsername(null);
-    }
+    const storedName = localStorage.getItem("username");
+    setLoggedIn(!!storedToken);
+    setUsername(storedToken ? storedName : null);
   }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("username");
+    setLoggedIn(false);
     setUsername(null);
     router.push("/login");
   };
@@ -38,10 +37,10 @@ export default function Navbar() {
         <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>
         <div className="hidden sm:block h-4 w-[1px] bg-white/20 self-center mx-2"></div>
 
-        {username ? (
+        {loggedIn ? (
           <div className="flex items-center gap-4">
             <NotificationBell />
-            <span className="text-emerald-400 font-bold">Olá, {username}</span>
+            <span className="text-emerald-400 font-bold">Olá, {username || "usuário"}</span>
             <button onClick={handleLogout} className="text-zinc-400 hover:text-red-400 transition text-xs">Sair</button>
           </div>
         ) : (
