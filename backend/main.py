@@ -11,6 +11,7 @@ from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organiza
 import secrets
 
 from db_migrations import run_migrations
+from email_service import build_resumo, render_html, enviar_resumo_para_todos
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -60,6 +61,27 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     run_migrations()
+    _start_scheduler()
+
+
+def _start_scheduler():
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from models.database import engine
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        _job_enviar_resumos,
+        trigger="cron",
+        hour=int(os.getenv("EMAIL_HORA", "7")),
+        minute=0,
+        id="email_diario",
+    )
+    scheduler.start()
+
+
+def _job_enviar_resumos():
+    from models.database import engine
+    with Session(engine) as session:
+        enviar_resumo_para_todos(session)
 
 
 # ---------- Original The Monitor endpoints ----------
@@ -412,6 +434,16 @@ def create_organization(body: OrganizationCreate, session: SessionDep, user: Cur
     session.commit()
     session.refresh(org)
     return org
+
+
+# ---------- Email ----------
+
+from fastapi.responses import HTMLResponse
+
+@app.get('/api/v1/email/preview/', response_class=HTMLResponse)
+def email_preview(session: SessionDep, user: CurrentUser):
+    resumo = build_resumo(user, session)
+    return render_html(resumo)
 
 
 # ---------- Notifications ----------
