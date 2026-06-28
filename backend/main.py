@@ -12,6 +12,7 @@ import secrets
 
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos
+from seed import seed_exemplo
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -203,6 +204,7 @@ def register(body: RegisterRequest, session: SessionDep):
     session.add(user)
     session.commit()
     session.refresh(user)
+    seed_exemplo(user, session)
     return user
 
 @app.post('/api/v1/token/', response_model=TokenResponse)
