@@ -40,7 +40,9 @@ export default function DashboardGrid() {
         const [gData, lData, mData] = await Promise.all([gRes.json(), lRes.json(), mRes.json()]);
         setGoals(Array.isArray(gData) ? gData : gData.results || []);
         setLogs(Array.isArray(lData) ? lData : lData.results || []);
-        setMetrics(Array.isArray(mData) ? mData : mData.results || []);
+        const metricsArr = Array.isArray(mData) ? mData : mData.results || [];
+        setMetrics(metricsArr);
+        if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
       } catch (err) {
         console.error("Dashboard fetch error", err);
       } finally {
