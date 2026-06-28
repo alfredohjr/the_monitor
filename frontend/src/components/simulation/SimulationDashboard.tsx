@@ -233,7 +233,9 @@ export default function SimulationDashboard() {
       const m = await mRes.json();
       const g = await gRes.json();
       const l = await lRes.json();
-      setMetrics(Array.isArray(m) ? m : m.results || []);
+      const metricsArr = Array.isArray(m) ? m : m.results || [];
+      setMetrics(metricsArr);
+      if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
       setAllGoals(Array.isArray(g) ? g : g.results || []);
       setAllLogs(Array.isArray(l) ? l : l.results || []);
     } catch {
