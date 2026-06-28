@@ -48,6 +48,11 @@ describe('Home page — sem token', () => {
     render(<Home />);
     expect(screen.queryByText(/sistema em construção/i)).not.toBeInTheDocument();
   });
+
+  it('nao exibe texto "alta performance"', () => {
+    render(<Home />);
+    expect(screen.queryByText(/alta performance/i)).not.toBeInTheDocument();
+  });
 });
 
 describe('Home page — com token', () => {
