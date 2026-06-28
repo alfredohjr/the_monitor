@@ -21,14 +21,6 @@ export default function Home() {
       </div>
 
       <main className="relative z-10 w-full max-w-6xl flex flex-col items-center text-center mt-12">
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-medium text-blue-300 rounded-full glass animate-fade-in-up">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-          </span>
-          Sistema Em Construção 1.0
-        </div>
-
         <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
           O Controle Total do Seu <span className="text-gradient">Progresso</span>
         </h1>
