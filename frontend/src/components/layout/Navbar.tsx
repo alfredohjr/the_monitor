@@ -30,11 +30,15 @@ export default function Navbar() {
     <nav className="w-full flex justify-center pt-6 absolute top-0 z-50 px-4">
       <div className="glass px-6 py-3 rounded-full flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium border border-white/10 shadow-lg items-center">
         <Link href="/" className="text-zinc-300 hover:text-white transition">Início</Link>
-        <Link href="/dashboard" className="text-zinc-300 hover:text-white transition">Dashboard</Link>
-        <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition ml-2">Simulação</Link>
-        <Link href="/logs" className="text-zinc-300 hover:text-white transition">Lançamentos</Link>
-        <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>
-        <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>
+        {loggedIn && (
+          <>
+            <Link href="/dashboard" className="text-zinc-300 hover:text-white transition">Dashboard</Link>
+            <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition ml-2">Simulação</Link>
+            <Link href="/logs" className="text-zinc-300 hover:text-white transition">Lançamentos</Link>
+            <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>
+            <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>
+          </>
+        )}
         <div className="hidden sm:block h-4 w-[1px] bg-white/20 self-center mx-2"></div>
 
         {loggedIn ? (
