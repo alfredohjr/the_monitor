@@ -37,3 +37,22 @@ npm test
 Testes em `frontend/src/__tests__/`.
 
 ## Regra: nunca commita vermelho.
+
+## Regra: auth guard em toda página protegida
+
+Toda página/componente que exige login **deve**:
+
+1. Verificar `localStorage.getItem("access_token")` no `useEffect`
+2. Redirecionar para `/login` se não houver token
+3. Ter teste em `frontend/src/__tests__/auth-guard.test.tsx`
+
+Padrão mínimo obrigatório no componente:
+```tsx
+useEffect(() => {
+  const token = localStorage.getItem("access_token");
+  if (!token) return router.push("/login");
+  // ... busca de dados
+}, [router]);
+```
+
+Ao criar uma nova página protegida, adicionar o componente nos dois `describe` de `auth-guard.test.tsx`.
