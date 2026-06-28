@@ -1,7 +1,18 @@
+"use client";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (localStorage.getItem("access_token")) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-6 sm:p-24 relative overflow-hidden bg-[#0a0a0a] text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">

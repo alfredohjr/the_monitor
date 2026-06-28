@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import Home from '../app/page';
 
+const mockPush = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 jest.mock('next/link', () => {
   const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>
@@ -9,7 +15,12 @@ jest.mock('next/link', () => {
   return MockLink;
 });
 
-describe('Home page', () => {
+afterEach(() => {
+  localStorage.clear();
+  mockPush.mockClear();
+});
+
+describe('Home page — sem token', () => {
   it('renders the main heading', () => {
     render(<Home />);
     expect(screen.getByText(/O Controle Total do Seu/i)).toBeInTheDocument();
@@ -26,5 +37,18 @@ describe('Home page', () => {
   it('displays the app version', () => {
     render(<Home />);
     expect(screen.getByText(/v0\.2\.0/i)).toBeInTheDocument();
+  });
+
+  it('nao redireciona quando nao ha token', () => {
+    render(<Home />);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+describe('Home page — com token', () => {
+  it('redireciona para /dashboard quando access_token existe', () => {
+    localStorage.setItem('access_token', 'fake-token');
+    render(<Home />);
+    expect(mockPush).toHaveBeenCalledWith('/dashboard');
   });
 });
