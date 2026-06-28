@@ -43,6 +43,11 @@ describe('Home page — sem token', () => {
     render(<Home />);
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it('nao exibe texto "sistema em construção"', () => {
+    render(<Home />);
+    expect(screen.queryByText(/sistema em construção/i)).not.toBeInTheDocument();
+  });
 });
 
 describe('Home page — com token', () => {
