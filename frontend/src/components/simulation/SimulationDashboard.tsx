@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
@@ -254,9 +254,12 @@ export default function SimulationDashboard() {
 
   const { metrics: subscribedMetrics } = useSubscribedMetrics(token);
 
-  const metrics = subscribedMetrics.length > 0
-    ? rawMetrics.filter(m => subscribedMetrics.some(sm => sm.id === (m as any).id))
-    : rawMetrics;
+  const metrics = useMemo(() => {
+    if (subscribedMetrics.length > 0) {
+      return rawMetrics.filter(m => subscribedMetrics.some(sm => sm.id === (m as any).id));
+    }
+    return rawMetrics;
+  }, [rawMetrics, subscribedMetrics]);
 
   useEffect(() => {
     if (metrics.length > 0 && !selectedMetric) {
