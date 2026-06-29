@@ -36,7 +36,7 @@ export default function RegisterPage() {
         throw new Error(data.detail ?? "Erro ao criar conta");
       }
 
-      router.push("/login");
+      router.push("/onboarding");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Não foi possível criar a conta");
     } finally {

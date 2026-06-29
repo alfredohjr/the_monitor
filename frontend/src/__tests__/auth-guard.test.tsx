@@ -11,6 +11,7 @@ import LogForm from '@/components/logs/LogForm';
 import MetricList from '@/components/metrics/MetricList';
 import MetricForm from '@/components/metrics/MetricForm';
 import SimulationDashboard from '@/components/simulation/SimulationDashboard';
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 
 const mockPush = jest.fn();
 
@@ -55,6 +56,7 @@ describe('Auth guard — redireciona para /login sem token', () => {
   it('MetricList', () => expectRedirectToLogin(<MetricList />));
   it('MetricForm (nova métrica)', () => expectRedirectToLogin(<MetricForm />));
   it('SimulationDashboard', () => expectRedirectToLogin(<SimulationDashboard />));
+  it('OnboardingFlow', () => expectRedirectToLogin(<OnboardingFlow />));
 });
 
 describe('Auth guard — nao redireciona com token', () => {
@@ -70,4 +72,5 @@ describe('Auth guard — nao redireciona com token', () => {
   it('MetricList', () => { render(<MetricList />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('MetricForm', () => { render(<MetricForm />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('SimulationDashboard', () => { render(<SimulationDashboard />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
+  it('OnboardingFlow', () => { render(<OnboardingFlow />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
 });
