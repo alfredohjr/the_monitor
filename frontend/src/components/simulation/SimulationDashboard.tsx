@@ -338,7 +338,7 @@ export default function SimulationDashboard() {
   const sumAdjusted = simData.reduce((acc, d) => acc + (isNaN(d.alvo) ? 0 : d.alvo), 0);
   const percentage = sumBaseline > 0 ? ((sumAdjusted / sumBaseline) * 100).toFixed(1) : "0.0";
   const selectedMetricObj = metrics.find(m => String(m.id) === selectedMetric);
-  const prefix = selectedMetricObj?.tipo === 'decimal' ? "R$ " : "";
+  const prefix = (selectedMetricObj?.tipo === 'decimal' || selectedMetricObj?.tipo === 'currency') ? "R$ " : "";
 
   return (
     <div className="flex flex-col min-h-screen p-6 sm:p-24 relative bg-[#0a0a0a] text-white overflow-hidden">

@@ -83,7 +83,9 @@ export default function MetricForm({ id }: { id?: string }) {
               <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
                 <option value="number">Número Inteiro</option>
                 <option value="decimal">Número Decimal</option>
-                <option value="string">String</option>
+                <option value="currency">Monetário (R$)</option>
+                <option value="percent">Percentual (%)</option>
+                <option value="string">Texto</option>
                 <option value="boolean">Booleano</option>
               </select>
             </div>

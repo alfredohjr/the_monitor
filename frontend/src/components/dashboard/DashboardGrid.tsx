@@ -84,7 +84,7 @@ export default function DashboardGrid() {
   }, {} as Record<string, any>);
 
   const chartData = Object.values(chartDataRaw).sort((a: any, b: any) => new Date(a.dataPoint).getTime() - new Date(b.dataPoint).getTime());
-  const isSelectedMetricNumeric = selectedMetric !== "all" && metrics.find(m => String(m.id) === selectedMetric)?.tipo.match(/number|decimal/);
+  const isSelectedMetricNumeric = selectedMetric !== "all" && metrics.find(m => String(m.id) === selectedMetric)?.tipo.match(/number|decimal|currency|percent/);
   const dataKeyToPlot = isSelectedMetricNumeric ? "somaValores" : "quantidade";
 
   if (loading || !token) {
