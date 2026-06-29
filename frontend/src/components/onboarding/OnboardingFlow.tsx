@@ -2,23 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-function periodoAtual(periodo: string): string {
-  const today = new Date();
-  const iso = today.toISOString().split("T")[0];
-  if (periodo === "daily")   return iso;
-  if (periodo === "monthly") return iso.substring(0, 7);
-  if (periodo === "yearly")  return String(today.getFullYear());
-  if (periodo === "weekly") {
-    const d = new Date(today.getTime());
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-    const w1 = new Date(d.getFullYear(), 0, 4);
-    const week = 1 + Math.round(((d.getTime() - w1.getTime()) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
-    return `${d.getFullYear()}-W${week.toString().padStart(2, "0")}`;
-  }
-  return iso;
-}
-
 export default function OnboardingFlow() {
   const router = useRouter();
   const [metrics, setMetrics] = useState<any[]>([]);
@@ -44,12 +27,10 @@ export default function OnboardingFlow() {
   const handleComecar = async () => {
     setLoading(true);
     for (const id of selected) {
-      const m = metrics.find(x => x.id === id);
-      if (!m) continue;
-      await fetch("http://localhost:8000/api/v1/goals/", {
+      await fetch("http://localhost:8000/api/v1/subscriptions/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ metric: id, alvo: m.valor_padrao ?? "0", periodo_referencia: periodoAtual(m.periodo) }),
+        body: JSON.stringify({ metric_id: id }),
       });
     }
     router.push("/dashboard");
