@@ -42,7 +42,9 @@ export default function DashboardGrid() {
         setLogs(Array.isArray(lData) ? lData : lData.results || []);
         const metricsArr = Array.isArray(mData) ? mData : mData.results || [];
         setMetrics(metricsArr);
-        if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
+        const defaultMetric = metricsArr.find((m: any) => m.is_default);
+        if (defaultMetric) setSelectedMetric(String(defaultMetric.id));
+        else if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
       } catch (err) {
         console.error("Dashboard fetch error", err);
       } finally {

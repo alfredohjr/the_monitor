@@ -235,7 +235,9 @@ export default function SimulationDashboard() {
       const l = await lRes.json();
       const metricsArr = Array.isArray(m) ? m : m.results || [];
       setMetrics(metricsArr);
-      if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
+      const defaultMetric = metricsArr.find((mt: any) => mt.is_default);
+      if (defaultMetric) setSelectedMetric(String(defaultMetric.id));
+      else if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
       setAllGoals(Array.isArray(g) ? g : g.results || []);
       setAllLogs(Array.isArray(l) ? l : l.results || []);
     } catch {
