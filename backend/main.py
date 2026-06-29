@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, get_session
 import secrets
 
 from db_migrations import run_migrations
@@ -483,3 +483,45 @@ def mark_notification_read(notification_id: int, session: SessionDep, user: Curr
     session.commit()
     session.refresh(notification)
     return notification
+
+
+# ---------- Subscriptions ----------
+
+class SubscriptionCreate(BaseModel):
+    metric_id: int
+
+class SubscriptionResponse(BaseModel):
+    id: int
+    user_id: int
+    metric_id: int
+
+@app.get('/api/v1/subscriptions/')
+def list_subscriptions(session: SessionDep, user: CurrentUser) -> list[SubscriptionResponse]:
+    subs = session.exec(select(UserMetricSubscription).where(UserMetricSubscription.user_id == user.id)).all()
+    return [SubscriptionResponse(id=s.id, user_id=s.user_id, metric_id=s.metric_id) for s in subs]
+
+@app.post('/api/v1/subscriptions/', status_code=201)
+def create_subscription(body: SubscriptionCreate, session: SessionDep, user: CurrentUser) -> SubscriptionResponse:
+    metric = session.get(Metric, body.metric_id)
+    if not metric:
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    existing = session.exec(
+        select(UserMetricSubscription)
+        .where(UserMetricSubscription.user_id == user.id)
+        .where(UserMetricSubscription.metric_id == body.metric_id)
+    ).first()
+    if existing:
+        return SubscriptionResponse(id=existing.id, user_id=existing.user_id, metric_id=existing.metric_id)
+    sub = UserMetricSubscription(user_id=user.id, metric_id=body.metric_id)
+    session.add(sub)
+    session.commit()
+    session.refresh(sub)
+    return SubscriptionResponse(id=sub.id, user_id=sub.user_id, metric_id=sub.metric_id)
+
+@app.delete('/api/v1/subscriptions/{sub_id}/', status_code=204)
+def delete_subscription(sub_id: int, session: SessionDep, user: CurrentUser):
+    sub = session.get(UserMetricSubscription, sub_id)
+    if not sub or sub.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Subscrição não encontrada")
+    session.delete(sub)
+    session.commit()
