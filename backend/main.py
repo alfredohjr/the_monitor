@@ -262,6 +262,7 @@ class MetricCreate(BaseModel):
     valor_padrao: str | None = None
     tipo: str = "number"
     periodo: str = "daily"
+    is_default: bool = False
 
 class MetricUpdate(MetricCreate):
     pass
