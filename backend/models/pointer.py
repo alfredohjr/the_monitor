@@ -12,6 +12,7 @@ class Metric(SQLModel, table=True):
     valor_padrao: Optional[str] = Field(default=None)
     tipo: str = Field(default="number", max_length=20)
     periodo: str = Field(default="daily", max_length=20)
+    is_default: bool = Field(default=False)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
