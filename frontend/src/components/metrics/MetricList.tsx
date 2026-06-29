@@ -49,6 +49,7 @@ export default function MetricList() {
                 <th className="pb-3 px-2">Descrição</th>
                 <th className="pb-3 px-2">Tipo</th>
                 <th className="pb-3 px-2">Rotina</th>
+                <th className="pb-3 px-2 text-center">Padrão</th>
                 <th className="pb-3 px-2 text-right">Ação</th>
               </tr>
             </thead>
@@ -61,6 +62,9 @@ export default function MetricList() {
                   <td className="py-4 px-2 text-zinc-300">{i.descricao}</td>
                   <td className="py-4 px-2 text-zinc-300">{i.tipo}</td>
                   <td className="py-4 px-2 text-zinc-300">{i.periodo}</td>
+                  <td className="py-4 px-2 text-center">
+                    {i.is_default && <span data-testid="badge-padrao" className="px-2 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-300">Padrão</span>}
+                  </td>
                   <td className="py-4 px-2 text-right">
                     <Link href={`/metrics/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>
                     <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Apagar</button>
@@ -68,7 +72,7 @@ export default function MetricList() {
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-zinc-500 italic">Nenhuma métrica base cadastrada.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-zinc-500 italic">Nenhuma métrica base cadastrada.</td></tr>
               )}
             </tbody>
           </table>
