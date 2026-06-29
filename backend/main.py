@@ -12,7 +12,7 @@ import secrets
 
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos
-from seed import seed_exemplo
+from seed import seed_exemplo, seed_metricas_padrao
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -62,6 +62,9 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     run_migrations()
+    from models.database import engine
+    with Session(engine) as session:
+        seed_metricas_padrao(session)
     _start_scheduler()
 
 
