@@ -45,6 +45,46 @@ describe('MetricList — campo is_default', () => {
     await screen.findByText('Vendas');
     expect(screen.queryByTestId('badge-padrao')).not.toBeInTheDocument();
   });
+
+  it('oculta botões Editar e Apagar para métrica is_default=true', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => [{ id: 1, codigo: 'PAD', nome: 'Padrão', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
+    });
+    render(<MetricList />);
+    await screen.findByTestId('badge-padrao');
+    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Apagar')).not.toBeInTheDocument();
+  });
+
+  it('exibe botões Editar e Apagar para métrica is_default=false', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => [{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }],
+    });
+    render(<MetricList />);
+    await screen.findByText('Minha');
+    expect(screen.getByText('Editar')).toBeInTheDocument();
+    expect(screen.getByText('Apagar')).toBeInTheDocument();
+  });
+
+  it('exibe seção "Métricas do Sistema" quando há métricas is_default=true', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => [{ id: 1, codigo: 'PAD', nome: 'Padrão', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
+    });
+    render(<MetricList />);
+    expect(await screen.findByText(/métricas do sistema/i)).toBeInTheDocument();
+  });
+
+  it('exibe seção "Minhas Métricas" quando há métricas is_default=false', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => [{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }],
+    });
+    render(<MetricList />);
+    expect(await screen.findByText(/minhas métricas/i)).toBeInTheDocument();
+  });
 });
 
 describe('MetricForm — campo is_default', () => {
