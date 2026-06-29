@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { formatValor } from "@/lib/formatValor";
 
 export default function LogList() {
   const [items, setItems] = useState<any[]>([]);
@@ -63,7 +64,7 @@ export default function LogList() {
                   <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 text-zinc-400 tabular-nums">{i.data}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{metricName} {metricRef}</td>
-                    <td className="py-4 px-2 text-blue-300 font-bold text-lg">{i.valor_logado}</td>
+                    <td className="py-4 px-2 text-blue-300 font-bold text-lg">{formatValor(i.valor_logado, m?.tipo ?? 'number')}</td>
                     <td className="py-4 px-2 text-right">
                       <Link href={`/logs/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>
                       <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Desfazer</button>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { placeholderValor } from "@/lib/formatValor";
 
 export default function LogForm({ id }: { id?: string }) {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function LogForm({ id }: { id?: string }) {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-300">Quanto atingiu?</label>
-            <input type="text" name="valor_logado" value={logData.valor_logado} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-blue-500" placeholder="Ex: 5.5, TRUE, 500" />
+            <input type="text" name="valor_logado" value={logData.valor_logado} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-blue-500" placeholder={placeholderValor(metrics.find(m => m.id === goals.find((g: any) => String(g.id) === String(logData.goal))?.metric)?.tipo ?? 'number')} />
           </div>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-green-600 font-bold py-4 rounded-xl hover:bg-green-500 transition">
             {loading ? 'Salvando...' : (id ? 'Corrigir Passado' : 'Carimbar Ponto Diário!')}
