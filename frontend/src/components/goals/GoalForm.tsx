@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { placeholderValor } from "@/lib/formatValor";
 
 function getWeekPattern(d: Date) {
   const date = new Date(d.getTime());
@@ -120,8 +121,8 @@ export default function GoalForm({ id }: { id?: string }) {
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Alvo Requisitado</label>
-            <input type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl" />
+            <label htmlFor="alvo" className="text-sm font-medium text-zinc-300">Alvo Requisitado</label>
+            <input id="alvo" aria-label="alvo" type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl" placeholder={placeholderValor(selectedMetricObj?.tipo ?? 'number')} />
           </div>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-blue-600 font-bold py-4 rounded-xl hover:bg-blue-500 transition">
             {loading ? 'Computando...' : (id ? 'Atualizar Desafio' : 'Gravar Desafio')}
