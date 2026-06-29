@@ -4,15 +4,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
+import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 export default function DashboardGrid() {
   const router = useRouter();
   const [goals, setGoals] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rawLoading, setRawLoading] = useState(true);
   const [token, setToken] = useState("");
   const [selectedMetric, setSelectedMetric] = useState("all");
+
+  const { metrics, loading: metricsLoading } = useSubscribedMetrics(token);
+  const loading = rawLoading || metricsLoading;
+
+  useEffect(() => {
+    if (metrics.length > 0 && selectedMetric === "all") {
+      const defaultMetric = metrics.find((m: any) => m.is_default);
+      if (defaultMetric) setSelectedMetric(String(defaultMetric.id));
+      else if (metrics.length === 1) setSelectedMetric(String(metrics[0].id));
+    }
+  }, [metrics, selectedMetric]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
@@ -25,30 +36,24 @@ export default function DashboardGrid() {
     const fetchData = async () => {
       try {
         const headers = { "Authorization": `Bearer ${storedToken}` };
-        const [gRes, lRes, mRes] = await Promise.all([
+        const [gRes, lRes] = await Promise.all([
           fetch("http://localhost:8000/api/v1/goals/", { headers }),
           fetch("http://localhost:8000/api/v1/logs/", { headers }),
-          fetch("http://localhost:8000/api/v1/metrics/", { headers })
         ]);
 
-        if (gRes.status === 401 || lRes.status === 401 || mRes.status === 401) {
+        if (gRes.status === 401 || lRes.status === 401) {
           localStorage.removeItem("access_token");
           router.push("/login");
           return;
         }
 
-        const [gData, lData, mData] = await Promise.all([gRes.json(), lRes.json(), mRes.json()]);
+        const [gData, lData] = await Promise.all([gRes.json(), lRes.json()]);
         setGoals(Array.isArray(gData) ? gData : gData.results || []);
         setLogs(Array.isArray(lData) ? lData : lData.results || []);
-        const metricsArr = Array.isArray(mData) ? mData : mData.results || [];
-        setMetrics(metricsArr);
-        const defaultMetric = metricsArr.find((m: any) => m.is_default);
-        if (defaultMetric) setSelectedMetric(String(defaultMetric.id));
-        else if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
       } catch (err) {
         console.error("Dashboard fetch error", err);
       } finally {
-        setLoading(false);
+        setRawLoading(false);
       }
     };
 

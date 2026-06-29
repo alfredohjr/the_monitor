@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
+import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 interface MetricConfig {
   periodo: string;
@@ -203,7 +204,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
 
 export default function SimulationDashboard() {
   const router = useRouter();
-  const [metrics, setMetrics] = useState<MetricConfig[]>([]);
+  const [rawMetrics, setRawMetrics] = useState<MetricConfig[]>([]);
   const [allGoals, setAllGoals] = useState<GoalRecord[]>([]);
   const [allLogs, setAllLogs] = useState<LogRecord[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<string>("");
@@ -234,10 +235,7 @@ export default function SimulationDashboard() {
       const g = await gRes.json();
       const l = await lRes.json();
       const metricsArr = Array.isArray(m) ? m : m.results || [];
-      setMetrics(metricsArr);
-      const defaultMetric = metricsArr.find((mt: any) => mt.is_default);
-      if (defaultMetric) setSelectedMetric(String(defaultMetric.id));
-      else if (metricsArr.length === 1) setSelectedMetric(String(metricsArr[0].id));
+      setRawMetrics(metricsArr);
       setAllGoals(Array.isArray(g) ? g : g.results || []);
       setAllLogs(Array.isArray(l) ? l : l.results || []);
     } catch {
@@ -253,6 +251,20 @@ export default function SimulationDashboard() {
     setToken(t);
     fetchData(t);
   }, [router, fetchData]);
+
+  const { metrics: subscribedMetrics } = useSubscribedMetrics(token);
+
+  const metrics = subscribedMetrics.length > 0
+    ? rawMetrics.filter(m => subscribedMetrics.some(sm => sm.id === (m as any).id))
+    : rawMetrics;
+
+  useEffect(() => {
+    if (metrics.length > 0 && !selectedMetric) {
+      const defaultMetric = metrics.find((mt: any) => mt.is_default);
+      if (defaultMetric) setSelectedMetric(String((defaultMetric as any).id));
+      else if (metrics.length === 1) setSelectedMetric(String((metrics[0] as any).id));
+    }
+  }, [metrics, selectedMetric]);
 
   useEffect(() => {
     if (!selectedMetric || !startDate || !endDate) { setSimData([]); return; }

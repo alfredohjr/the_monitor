@@ -58,7 +58,8 @@ describe('MetricForm — tipos disponíveis', () => {
 describe('DashboardGrid — tipos numéricos reconhecidos', () => {
   function mockWithMetricTipo(tipo: string) {
     (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
-      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => [{ id: 1, codigo: 'M', nome: 'Métrica', tipo, periodo: 'daily' }] });
+      if (url.includes('/subscriptions/')) return Promise.resolve({ ok: true, status: 200, json: async () => [] });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => [{ id: 1, codigo: 'M', nome: 'Métrica', tipo, periodo: 'daily', is_default: false }] });
       return Promise.resolve({ ok: true, status: 200, json: async () => [] });
     });
   }
@@ -66,14 +67,12 @@ describe('DashboardGrid — tipos numéricos reconhecidos', () => {
   it('trata currency como numérico (título do gráfico muda para "Evolução Cumulativa")', async () => {
     mockWithMetricTipo('currency');
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
-    expect(screen.getByText(/Evolução Cumulativa/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Evolução Cumulativa/i)).toBeInTheDocument());
   });
 
   it('trata percent como numérico (título do gráfico muda para "Evolução Cumulativa")', async () => {
     mockWithMetricTipo('percent');
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
-    expect(screen.getByText(/Evolução Cumulativa/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Evolução Cumulativa/i)).toBeInTheDocument());
   });
 });

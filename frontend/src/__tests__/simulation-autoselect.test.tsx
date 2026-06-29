@@ -15,9 +15,10 @@ jest.mock('next/link', () => {
   return MockLink;
 });
 
-function mockFetch(metrics: object[]) {
+function mockFetch(metrics: object[], subscriptions: object[] = []) {
   (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
-    if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => metrics });
+    if (url.includes('/subscriptions/')) return Promise.resolve({ ok: true, status: 200, json: async () => subscriptions });
+    if (url.includes('/metrics/'))       return Promise.resolve({ ok: true, status: 200, json: async () => metrics });
     return Promise.resolve({ ok: true, status: 200, json: async () => [] });
   });
 }
@@ -40,11 +41,10 @@ describe('Simulação — auto-seleção de métrica', () => {
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 
-  it('pré-seleciona automaticamente quando há apenas 1 métrica', async () => {
-    mockFetch([{ id: 7, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily' }]);
+  it('pré-seleciona automaticamente quando há apenas 1 métrica própria', async () => {
+    mockFetch([{ id: 7, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
     render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument());
-    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('7');
+    await waitFor(() => expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('7'));
   });
 
   it('mantém vazio quando há mais de 1 métrica', async () => {
