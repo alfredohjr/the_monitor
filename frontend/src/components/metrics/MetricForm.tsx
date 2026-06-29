@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function MetricForm({ id }: { id?: string }) {
   const router = useRouter();
-  const [formData, setFormData] = useState({ codigo: "", nome: "", descricao: "", valor_padrao: "", tipo: "number", periodo: "daily" });
+  const [formData, setFormData] = useState({ codigo: "", nome: "", descricao: "", valor_padrao: "", tipo: "number", periodo: "daily", is_default: false });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [token, setToken] = useState("");
@@ -18,13 +18,16 @@ export default function MetricForm({ id }: { id?: string }) {
     if (id && id !== 'new') {
       fetch(`http://localhost:8000/api/v1/metrics/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
         .then(r => r.json()).then(d => {
-          setFormData({ codigo: d.codigo, nome: d.nome || "", descricao: d.descricao, valor_padrao: d.valor_padrao || "", tipo: d.tipo, periodo: d.periodo });
+          setFormData({ codigo: d.codigo, nome: d.nome || "", descricao: d.descricao, valor_padrao: d.valor_padrao || "", tipo: d.tipo, periodo: d.periodo, is_default: d.is_default ?? false });
         }).catch(() => setMessage({ text: "Não foi possível carregar métrica.", type: "error" }));
     }
   }, [id, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    setFormData(prev => ({ ...prev, [name]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function MetricForm({ id }: { id?: string }) {
       const response = await fetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(formData) });
       if (!response.ok) throw new Error(id ? "Erro ao atualizar." : "Erro ao criar. Código pode já existir.");
       setMessage({ text: id ? "Métrica atualizada!" : "Métrica criada com sucesso!", type: "success" });
-      if (!id) setFormData({ codigo: "", nome: "", descricao: "", valor_padrao: "", tipo: "number", periodo: "daily" });
+      if (!id) setFormData({ codigo: "", nome: "", descricao: "", valor_padrao: "", tipo: "number", periodo: "daily", is_default: false });
     } catch (err: unknown) {
       setMessage({ text: err instanceof Error ? err.message : "Erro desconhecido", type: "error" });
     } finally { setLoading(false); }
@@ -94,6 +97,10 @@ export default function MetricForm({ id }: { id?: string }) {
               </select>
             </div>
           </div>
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input type="checkbox" name="is_default" checked={formData.is_default} onChange={handleChange} aria-label="Métrica padrão" className="w-4 h-4 accent-blue-500" />
+            <span className="text-sm font-medium text-zinc-300">Definir como métrica padrão</span>
+          </label>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-blue-600 font-bold py-4 rounded-xl hover:bg-blue-500 transition">
             {loading ? 'Salvando...' : (id ? 'Atualizar Métrica' : 'Salvar Nova Métrica')}
           </button>
