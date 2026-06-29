@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime, date
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
 class Metric(SQLModel, table=True):
@@ -32,4 +32,13 @@ class LogEntry(SQLModel, table=True):
     data: date
     valor_logado: str = Field(max_length=255)
     deleted: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class UserMetricSubscription(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("user_id", "metric_id"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    metric_id: int = Field(foreign_key="metric.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)

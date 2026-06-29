@@ -13,7 +13,7 @@ from .database import (
 )
 from .monitor import Item, Historico, News
 from .accounts import User, Organization, Membership
-from .pointer import Metric, Goal, LogEntry
+from .pointer import Metric, Goal, LogEntry, UserMetricSubscription
 from .notifications import Notification
 
 __all__ = [
@@ -30,5 +30,6 @@ __all__ = [
     "Metric",
     "Goal",
     "LogEntry",
+    "UserMetricSubscription",
     "Notification",
 ]
