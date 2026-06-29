@@ -41,13 +41,18 @@ export default function GoalForm({ id }: { id?: string }) {
       const metric = metrics.find(m => String(m.id) === String(goalData.metric));
       setSelectedMetricObj(metric);
 
-      if (!id && metric && !goalData.periodo_referencia) {
+      if (!id && metric) {
         const today = new Date();
         const daily = today.toISOString().split("T")[0];
-        if (metric.periodo === "daily") setGoalData(p => ({ ...p, periodo_referencia: daily }));
-        else if (metric.periodo === "monthly") setGoalData(p => ({ ...p, periodo_referencia: daily.substring(0, 7) }));
-        else if (metric.periodo === "yearly") setGoalData(p => ({ ...p, periodo_referencia: today.getFullYear().toString() }));
-        else if (metric.periodo === "weekly") setGoalData(p => ({ ...p, periodo_referencia: getWeekPattern(today) }));
+        if (!goalData.periodo_referencia) {
+          if (metric.periodo === "daily") setGoalData(p => ({ ...p, periodo_referencia: daily }));
+          else if (metric.periodo === "monthly") setGoalData(p => ({ ...p, periodo_referencia: daily.substring(0, 7) }));
+          else if (metric.periodo === "yearly") setGoalData(p => ({ ...p, periodo_referencia: today.getFullYear().toString() }));
+          else if (metric.periodo === "weekly") setGoalData(p => ({ ...p, periodo_referencia: getWeekPattern(today) }));
+        }
+        if (!goalData.alvo && metric.valor_padrao != null) {
+          setGoalData(p => ({ ...p, alvo: metric.valor_padrao }));
+        }
       }
     } else {
       setSelectedMetricObj(null);

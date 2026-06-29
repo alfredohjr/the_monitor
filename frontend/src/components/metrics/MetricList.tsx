@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { formatValor } from "@/lib/formatValor";
 
 export default function MetricList() {
   const [items, setItems] = useState<any[]>([]);
@@ -40,6 +41,7 @@ export default function MetricList() {
             <th className="pb-3 px-2">Descrição</th>
             <th className="pb-3 px-2">Tipo</th>
             <th className="pb-3 px-2">Rotina</th>
+            <th className="pb-3 px-2">Valor Padrão</th>
             <th className="pb-3 px-2 text-center">Padrão</th>
             {!somenteLeitura && <th className="pb-3 px-2 text-right">Ação</th>}
           </tr>
@@ -53,6 +55,9 @@ export default function MetricList() {
               <td className="py-4 px-2 text-zinc-300">{i.descricao}</td>
               <td className="py-4 px-2 text-zinc-300">{i.tipo}</td>
               <td className="py-4 px-2 text-zinc-300">{i.periodo}</td>
+              <td className="py-4 px-2 text-zinc-400" data-testid={`valor-padrao-${i.id}`}>
+                {i.valor_padrao != null ? formatValor(i.valor_padrao, i.tipo) : '—'}
+              </td>
               <td className="py-4 px-2 text-center">
                 {i.is_default && <span data-testid="badge-padrao" className="px-2 py-1 text-xs font-bold rounded-full bg-blue-500/20 text-blue-300">Padrão</span>}
               </td>
@@ -65,7 +70,7 @@ export default function MetricList() {
             </tr>
           ))}
           {lista.length === 0 && (
-            <tr><td colSpan={somenteLeitura ? 7 : 8} className="py-6 text-center text-zinc-500 italic">Nenhuma métrica nesta seção.</td></tr>
+            <tr><td colSpan={somenteLeitura ? 8 : 9} className="py-6 text-center text-zinc-500 italic">Nenhuma métrica nesta seção.</td></tr>
           )}
         </tbody>
       </table>
