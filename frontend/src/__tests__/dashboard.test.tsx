@@ -59,13 +59,31 @@ describe('Dashboard — auto-seleção de métrica', () => {
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('42');
   });
 
-  it('mantém "Todas as Métricas" quando há mais de 1 métrica', async () => {
+  it('mantém "Todas as Métricas" quando há mais de 1 métrica sem is_default', async () => {
     mockFetch([
-      { id: 1, codigo: 'A', nome: 'Alpha', tipo: 'number', periodo: 'daily' },
-      { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily' },
+      { id: 1, codigo: 'A', nome: 'Alpha', tipo: 'number', periodo: 'daily', is_default: false },
+      { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily', is_default: false },
     ]);
     render(<DashboardGrid />);
     await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('all');
+  });
+
+  it('pré-seleciona a métrica com is_default=true mesmo havendo várias', async () => {
+    mockFetch([
+      { id: 1, codigo: 'A', nome: 'Alpha', tipo: 'number', periodo: 'daily', is_default: false },
+      { id: 2, codigo: 'B', nome: 'Beta',  tipo: 'number', periodo: 'daily', is_default: true },
+      { id: 3, codigo: 'C', nome: 'Gamma', tipo: 'number', periodo: 'daily', is_default: false },
+    ]);
+    render(<DashboardGrid />);
+    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('2');
+  });
+
+  it('quando há is_default=true e apenas 1 métrica, pré-seleciona a única', async () => {
+    mockFetch([{ id: 7, codigo: 'X', nome: 'Xis', tipo: 'currency', periodo: 'daily', is_default: true }]);
+    render(<DashboardGrid />);
+    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('7');
   });
 });
