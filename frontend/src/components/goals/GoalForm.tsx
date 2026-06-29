@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { placeholderValor } from "@/lib/formatValor";
+import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 function getWeekPattern(d: Date) {
   const date = new Date(d.getTime());
@@ -16,19 +17,17 @@ function getWeekPattern(d: Date) {
 export default function GoalForm({ id }: { id?: string }) {
   const router = useRouter();
   const [goalData, setGoalData] = useState({ metric: "", alvo: "", periodo_referencia: "" });
-  const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [token, setToken] = useState("");
   const [selectedMetricObj, setSelectedMetricObj] = useState<any>(null);
 
+  const { metrics } = useSubscribedMetrics(token);
+
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
     if (!storedToken) return router.push("/login");
     setToken(storedToken);
-
-    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${storedToken}` } })
-      .then(r => r.json()).then(d => setMetrics(Array.isArray(d) ? d : d.results || []));
 
     if (id) {
       fetch(`http://localhost:8000/api/v1/goals/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
