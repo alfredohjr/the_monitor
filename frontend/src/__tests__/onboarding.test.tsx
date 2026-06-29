@@ -79,7 +79,7 @@ describe('OnboardingFlow — renderização', () => {
 });
 
 describe('OnboardingFlow — interação', () => {
-  it('Pular redireciona para /dashboard sem criar goals', async () => {
+  it('Pular redireciona para /dashboard sem criar subscrições', async () => {
     mockFetch();
     render(<OnboardingFlow />);
     await screen.findByText(/pular/i);
@@ -90,7 +90,7 @@ describe('OnboardingFlow — interação', () => {
     expect(postCalls.length).toBe(0);
   });
 
-  it('Começar com métricas selecionadas cria goals e redireciona para /dashboard', async () => {
+  it('Começar com métricas selecionadas chama /subscriptions/ e redireciona', async () => {
     mockFetch();
     render(<OnboardingFlow />);
     await screen.findByText('Receita do Dia');
@@ -101,9 +101,13 @@ describe('OnboardingFlow — interação', () => {
     const fetchMock = (global as { fetch: jest.Mock }).fetch;
     const postCalls = fetchMock.mock.calls.filter((c: any[]) => c[1]?.method === 'POST');
     expect(postCalls.length).toBe(1);
+    expect(postCalls[0][0]).toContain('/subscriptions/');
+    const body = JSON.parse(postCalls[0][1].body);
+    expect(body).toHaveProperty('metric_id');
+    expect(body).not.toHaveProperty('alvo');
   });
 
-  it('Começar sem nenhuma seleção redireciona para /dashboard sem criar goals', async () => {
+  it('Começar sem nenhuma seleção redireciona sem criar subscrições', async () => {
     mockFetch();
     render(<OnboardingFlow />);
     await screen.findByText('Receita do Dia');
