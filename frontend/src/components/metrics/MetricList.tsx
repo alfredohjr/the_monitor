@@ -88,7 +88,10 @@ export default function MetricList() {
             <h1 className="text-3xl font-extrabold tracking-tight">Métricas</h1>
             <p className="text-zinc-400">Suas unidades base do sistema.</p>
           </div>
-          <Link href="/metrics/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 whitespace-nowrap truncate text-center">+ Nova Métrica</Link>
+          <div className="flex gap-3">
+            <Link href="/catalog" className="px-6 py-3 border border-white/10 rounded-xl font-bold hover:bg-white/5 whitespace-nowrap text-center text-zinc-300">Catálogo do Sistema</Link>
+            <Link href="/metrics/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 whitespace-nowrap truncate text-center">+ Nova Métrica</Link>
+          </div>
         </div>
 
         {padrao.length > 0 && (
