@@ -77,20 +77,6 @@ export default function DashboardGrid() {
   });
 
   const filteredGoals = selectedMetric === "all" ? goals : goals.filter(g => String(g.metric) === selectedMetric);
-  const activeGoalsCount = filteredGoals.length;
-
-  const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.created_at || b.data).getTime() - new Date(a.created_at || a.data).getTime());
-  const lastLog = sortedLogs[0];
-  let lastLogText = "Nenhum";
-  if (lastLog) {
-    const goal = goals.find(g => g.id === lastLog.goal);
-    if (goal) {
-      const metric = metrics.find(m => m.id === goal.metric);
-      lastLogText = metric ? `${metric.nome || metric.codigo} (v: ${lastLog.valor_logado})` : `Meta #${lastLog.goal}`;
-    }
-  }
-
-  const rateProxy = filteredGoals.length > 0 ? Math.min(100, Math.round((filteredLogs.length / (filteredGoals.length * 2)) * 100)) : 0;
 
   const selectedMetricObj = metrics.find(m => String(m.id) === selectedMetric);
   const isSelectedMetricNumeric = selectedMetric !== "all" && selectedMetricObj?.tipo.match(/number|decimal|currency|percent/);
@@ -159,29 +145,13 @@ export default function DashboardGrid() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-5xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4 mt-8">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Painel de Evolução</h1>
-            <p className="text-zinc-400">Acompanhe seus dados reais, volume de lançamentos e cadência de progresso.</p>
-          </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none w-40 sm:w-auto">
-              <option value="all">Todas as Métricas</option>
-              {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>)}
-            </select>
-            <div className="flex items-center gap-2">
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
-              <span className="text-zinc-500">–</span>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
-            </div>
-            <Link href="/logs/new" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-medium transition text-sm text-center">
-              + Check-in Hoje
-            </Link>
-          </div>
+        <div className="mb-10 mt-8">
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Painel de Evolução</h1>
+          <p className="text-zinc-400">Acompanhe seus dados reais, volume de lançamentos e cadência de progresso.</p>
         </div>
 
         {hasMeta && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up">
               <h3 className="text-zinc-400 text-sm font-medium mb-1">Meta do Período</h3>
               <p data-testid="kpi-meta-total" className="text-4xl font-bold text-amber-400">{formatValor(String(metaTotal), kpiTipo)}</p>
@@ -197,19 +167,21 @@ export default function DashboardGrid() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
-            <h3 className="text-zinc-400 text-sm font-medium mb-1">Metas Ativas</h3>
-            <p className="text-4xl font-bold">{activeGoalsCount}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap border-t border-white/10 mt-8 pt-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none w-40 sm:w-auto">
+              <option value="all">Todas as Métricas</option>
+              {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>)}
+            </select>
+            <div className="flex items-center gap-2">
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+              <span className="text-zinc-500">–</span>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+            </div>
           </div>
-          <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-            <h3 className="text-zinc-400 text-sm font-medium mb-1">Taxa de Esforço (Estimada)</h3>
-            <p className={`text-4xl font-bold ${rateProxy > 50 ? 'text-green-400' : 'text-orange-400'}`}>{rateProxy}%</p>
-          </div>
-          <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            <h3 className="text-zinc-400 text-sm font-medium mb-1">Último Registo Feito</h3>
-            <p className="text-lg font-bold mt-2 truncate text-blue-300">{lastLogText}</p>
-          </div>
+          <Link href="/logs/new" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-medium transition text-sm text-center">
+            + Check-in Hoje
+          </Link>
         </div>
 
         <div className="mt-8 p-6 sm:p-8 rounded-3xl glass border border-white/5 h-[400px] flex flex-col animate-fade-in-up" style={{ animationDelay: '300ms' }}>
