@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import DashboardGrid from '@/components/dashboard/DashboardGrid';
 
 const mockPush = jest.fn();
@@ -47,11 +47,19 @@ const metricaDiaria = { id: 42, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number'
 const metricaMensal = { id: 50, codigo: 'FAT', nome: 'Faturamento', tipo: 'currency', periodo: 'monthly', is_default: false };
 
 beforeEach(() => {
+  // Fixa o relógio em julho/2026 para que o range padrão do dashboard (mês
+  // atual) cubra os dados de teste, independente do relógio da CI. Mantém os
+  // timers reais para o waitFor continuar funcionando.
+  jest.useFakeTimers({
+    doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'nextTick', 'performance'],
+  });
+  jest.setSystemTime(new Date('2026-07-15T12:00:00'));
   localStorage.setItem('access_token', 'fake-token');
   mockPush.mockClear();
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   localStorage.clear();
   delete (global as { fetch?: unknown }).fetch;
 });
@@ -111,7 +119,12 @@ describe('Dashboard — gráfico composto (barra = meta, linha = realizado)', ()
       [{ id: 1, metric: 50, alvo: '200', periodo_referencia: '2026-08', created_at: '2026-07-01T00:00:00' }],
       [{ id: 1, goal: 1, data: '2026-07-10', valor_logado: '90' }]
     );
-    render(<DashboardGrid />);
+    const { container } = render(<DashboardGrid />);
+    await waitFor(() => expect(screen.getByTestId('composed-chart')).toBeInTheDocument());
+    // Amplia o range para cobrir julho e agosto.
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    fireEvent.change(dateInputs[0], { target: { value: '2026-07-01' } });
+    fireEvent.change(dateInputs[1], { target: { value: '2026-08-31' } });
     await waitFor(() => expect(screen.getByTestId('bar-meta')).toBeInTheDocument());
 
     const data = chartData();
