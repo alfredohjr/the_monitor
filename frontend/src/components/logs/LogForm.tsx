@@ -69,7 +69,7 @@ export default function LogForm({ id }: { id?: string }) {
                 const m = metrics.find(x => x.id === g.metric);
                 const metricName = m ? (m.nome || m.codigo) : `ID #${g.metric}`;
                 const ref = g.periodo_referencia ? ` [${g.periodo_referencia}]` : '';
-                return <option key={g.id} value={g.id}>{metricName}{ref} (Alvo: {g.alvo})</option>;
+                return <option key={g.id} value={g.id}>{metricName}{ref}</option>;
               })}
             </select>
           </div>
