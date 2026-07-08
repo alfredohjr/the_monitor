@@ -1,0 +1,32 @@
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import NotificationBell from '@/components/layout/NotificationBell';
+
+let currentNotifs: object[] = [];
+
+beforeEach(() => {
+  localStorage.setItem('access_token', 'fake-token');
+  currentNotifs = [];
+  (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+    if (url.includes('/notifications/')) return Promise.resolve({ ok: true, status: 200, json: async () => currentNotifs });
+    return Promise.resolve({ ok: true, status: 200, json: async () => [] });
+  });
+});
+
+afterEach(() => {
+  localStorage.clear();
+  delete (global as { fetch?: unknown }).fetch;
+});
+
+describe('NotificationBell — recarrega ao abrir', () => {
+  it('busca notificações novas ao abrir o sino (não fica preso ao fetch inicial)', async () => {
+    render(<NotificationBell />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+
+    // Uma notificação nova chega no backend depois da carga inicial.
+    currentNotifs = [{ id: 1, mensagem: '🎯 Meta atingida: Vendas', lida: false, created_at: '2026-07-08T00:00:00' }];
+
+    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+
+    await waitFor(() => expect(screen.getByText(/meta atingida/i)).toBeInTheDocument());
+  });
+});
