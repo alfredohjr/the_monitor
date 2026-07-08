@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
 import { bucketKey } from "@/lib/periodo";
+import { formatValor } from "@/lib/formatValor";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 export default function DashboardGrid() {
@@ -14,6 +15,15 @@ export default function DashboardGrid() {
   const [rawLoading, setRawLoading] = useState(true);
   const [token, setToken] = useState("");
   const [selectedMetric, setSelectedMetric] = useState("all");
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  });
 
   const { metrics, loading: metricsLoading } = useSubscribedMetrics(token);
   const loading = rawLoading || metricsLoading;
@@ -87,10 +97,16 @@ export default function DashboardGrid() {
   const periodo = selectedMetricObj?.periodo || "daily";
   const dataKeyToPlot = isSelectedMetricNumeric ? "realizado" : "quantidade";
 
+  // Recorte pelo range de datas selecionado (comparação lexicográfica de datas
+  // ISO = cronológica). Os lançamentos são filtrados pela data do check-in.
+  const rangeLogs = filteredLogs.filter(l => l.data >= startDate && l.data <= endDate);
+  const startBucket = bucketKey(startDate, periodo);
+  const endBucket = bucketKey(endDate, periodo);
+
   // Realizado por bucket de período: para métrica numérica agrupamos os
   // lançamentos pelo período da métrica (dia/semana/mês/ano); nos demais casos
   // mantemos a granularidade diária (frequência de check-ins).
-  const realizadoByBucket = filteredLogs.reduce((acc, log) => {
+  const realizadoByBucket = rangeLogs.reduce((acc, log) => {
     const key = isSelectedMetricNumeric ? bucketKey(log.data, periodo) : log.data;
     if (!acc[key]) acc[key] = { dataPoint: key, quantidade: 0, realizado: 0 };
     acc[key].quantidade += 1;
@@ -99,13 +115,15 @@ export default function DashboardGrid() {
     return acc;
   }, {} as Record<string, any>);
 
-  // Meta por bucket: alvo (numérico) de cada goal, indexado pelo período de
-  // referência — que o GoalForm grava no mesmo formato que `bucketKey` produz.
+  // Meta por bucket: alvo (numérico) de cada goal cujo período de referência
+  // cai dentro do range — o GoalForm grava no mesmo formato que `bucketKey`.
   const metaByBucket: Record<string, number> = {};
   if (isSelectedMetricNumeric) {
     filteredGoals.forEach(g => {
       const alvo = parseFloat(g.alvo);
-      if (!isNaN(alvo) && g.periodo_referencia) metaByBucket[g.periodo_referencia] = alvo;
+      if (!isNaN(alvo) && g.periodo_referencia && g.periodo_referencia >= startBucket && g.periodo_referencia <= endBucket) {
+        metaByBucket[g.periodo_referencia] = alvo;
+      }
     });
   }
   const hasMeta = Object.keys(metaByBucket).length > 0;
@@ -120,6 +138,12 @@ export default function DashboardGrid() {
       if (hasMeta && key in metaByBucket) point.meta = metaByBucket[key];
       return point;
     });
+
+  // KPIs do range: total de meta, total realizado e % atingida.
+  const metaTotal = chartData.reduce((s: number, p: any) => s + (typeof p.meta === "number" ? p.meta : 0), 0);
+  const realizadoTotal = chartData.reduce((s: number, p: any) => s + (typeof p.realizado === "number" ? p.realizado : 0), 0);
+  const pctRealizada = metaTotal > 0 ? Math.round((realizadoTotal / metaTotal) * 100) : 0;
+  const kpiTipo = selectedMetricObj?.tipo || "number";
 
   if (loading || !token) {
     return (
@@ -145,11 +169,33 @@ export default function DashboardGrid() {
               <option value="all">Todas as Métricas</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>)}
             </select>
+            <div className="flex items-center gap-2">
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+              <span className="text-zinc-500">–</span>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+            </div>
             <Link href="/logs/new" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-medium transition text-sm text-center">
               + Check-in Hoje
             </Link>
           </div>
         </div>
+
+        {hasMeta && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up">
+              <h3 className="text-zinc-400 text-sm font-medium mb-1">Meta do Período</h3>
+              <p data-testid="kpi-meta-total" className="text-4xl font-bold text-amber-400">{formatValor(String(metaTotal), kpiTipo)}</p>
+            </div>
+            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+              <h3 className="text-zinc-400 text-sm font-medium mb-1">Realizado</h3>
+              <p data-testid="kpi-realizado-total" className="text-4xl font-bold text-blue-400">{formatValor(String(realizadoTotal), kpiTipo)}</p>
+            </div>
+            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+              <h3 className="text-zinc-400 text-sm font-medium mb-1">% Realizada</h3>
+              <p data-testid="kpi-percentual" className={`text-4xl font-bold ${pctRealizada >= 100 ? 'text-emerald-400' : pctRealizada >= 50 ? 'text-blue-300' : 'text-orange-400'}`}>{pctRealizada}%</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
