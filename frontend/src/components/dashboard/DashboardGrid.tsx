@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
+import { bucketKey } from "@/lib/periodo";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 export default function DashboardGrid() {
@@ -81,30 +82,44 @@ export default function DashboardGrid() {
 
   const rateProxy = filteredGoals.length > 0 ? Math.min(100, Math.round((filteredLogs.length / (filteredGoals.length * 2)) * 100)) : 0;
 
-  const chartDataRaw = filteredLogs.reduce((acc, log) => {
-    const d = log.data;
-    if (!acc[d]) acc[d] = { dataPoint: d, quantidade: 0, somaValores: 0 };
-    acc[d].quantidade += 1;
+  const selectedMetricObj = metrics.find(m => String(m.id) === selectedMetric);
+  const isSelectedMetricNumeric = selectedMetric !== "all" && selectedMetricObj?.tipo.match(/number|decimal|currency|percent/);
+  const periodo = selectedMetricObj?.periodo || "daily";
+  const dataKeyToPlot = isSelectedMetricNumeric ? "realizado" : "quantidade";
+
+  // Realizado por bucket de período: para métrica numérica agrupamos os
+  // lançamentos pelo período da métrica (dia/semana/mês/ano); nos demais casos
+  // mantemos a granularidade diária (frequência de check-ins).
+  const realizadoByBucket = filteredLogs.reduce((acc, log) => {
+    const key = isSelectedMetricNumeric ? bucketKey(log.data, periodo) : log.data;
+    if (!acc[key]) acc[key] = { dataPoint: key, quantidade: 0, realizado: 0 };
+    acc[key].quantidade += 1;
     const val = parseFloat(log.valor_logado);
-    if (!isNaN(val)) acc[d].somaValores += val;
+    if (!isNaN(val)) acc[key].realizado += val;
     return acc;
   }, {} as Record<string, any>);
 
-  const isSelectedMetricNumeric = selectedMetric !== "all" && metrics.find(m => String(m.id) === selectedMetric)?.tipo.match(/number|decimal|currency|percent/);
-  const dataKeyToPlot = isSelectedMetricNumeric ? "somaValores" : "quantidade";
-
-  // Valor da meta: alvo da meta mais recente da métrica selecionada, se numérico.
-  let metaValue: number | null = null;
+  // Meta por bucket: alvo (numérico) de cada goal, indexado pelo período de
+  // referência — que o GoalForm grava no mesmo formato que `bucketKey` produz.
+  const metaByBucket: Record<string, number> = {};
   if (isSelectedMetricNumeric) {
-    const latestGoal = [...filteredGoals]
-      .filter(g => !isNaN(parseFloat(g.alvo)))
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-    if (latestGoal) metaValue = parseFloat(latestGoal.alvo);
+    filteredGoals.forEach(g => {
+      const alvo = parseFloat(g.alvo);
+      if (!isNaN(alvo) && g.periodo_referencia) metaByBucket[g.periodo_referencia] = alvo;
+    });
   }
+  const hasMeta = Object.keys(metaByBucket).length > 0;
 
-  const chartData = Object.values(chartDataRaw)
-    .sort((a: any, b: any) => new Date(a.dataPoint).getTime() - new Date(b.dataPoint).getTime())
-    .map((point: any) => (metaValue !== null ? { ...point, meta: metaValue } : point));
+  const chartData = Array.from(new Set([...Object.keys(realizadoByBucket), ...Object.keys(metaByBucket)]))
+    .sort((a, b) => a.localeCompare(b))
+    .map(key => {
+      // Bucket só com meta (ainda sem lançamento): realizado nulo abre um vão
+      // na linha em vez de mergulhar para zero.
+      const base = realizadoByBucket[key] || { dataPoint: key, quantidade: 0, realizado: null };
+      const point: any = { ...base };
+      if (hasMeta && key in metaByBucket) point.meta = metaByBucket[key];
+      return point;
+    });
 
   if (loading || !token) {
     return (
@@ -153,12 +168,14 @@ export default function DashboardGrid() {
 
         <div className="mt-8 p-6 sm:p-8 rounded-3xl glass border border-white/5 h-[400px] flex flex-col animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           <h3 className="text-xl font-bold mb-6">
-            {selectedMetric === "all" ? "Frequência de Check-ins (Histórico Geral)" : "Evolução Cumulativa dos Valores"}
+            {selectedMetric === "all"
+              ? "Frequência de Check-ins (Histórico Geral)"
+              : hasMeta ? "Realizado vs. Meta por Período" : "Evolução dos Valores"}
           </h3>
           {chartData.length > 0 ? (
             <div className="flex-1 w-full min-h-[0]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 30, bottom: 10, left: 8 }}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 30, bottom: 10, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="dataPoint" stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dy={10} />
                   <YAxis stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dx={Y_AXIS_TICK_DX} width={Y_AXIS_WIDTH} />
@@ -166,31 +183,29 @@ export default function DashboardGrid() {
                     contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '12px' }}
                     itemStyle={{ fontWeight: 'bold' }}
                     formatter={(value: any, name: any) => [value, `${name}:`]}
-                    labelFormatter={(label) => `Data: ${label}`}
+                    labelFormatter={(label) => `Período: ${label}`}
                   />
-                  {metaValue !== null && <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: '14px' }} />}
+                  {hasMeta && <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: '14px' }} />}
+                  {hasMeta && (
+                    <Bar
+                      dataKey="meta"
+                      name="Meta"
+                      fill="#d97706"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={56}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey={dataKeyToPlot}
                     name={selectedMetric === "all" ? "Registos" : "Realizado"}
                     stroke="#3b82f6"
                     strokeWidth={4}
+                    connectNulls={false}
                     dot={{ r: 5, fill: '#0a0a0a', stroke: '#3b82f6', strokeWidth: 2 }}
                     activeDot={{ r: 8, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
                   />
-                  {metaValue !== null && (
-                    <Line
-                      type="monotone"
-                      dataKey="meta"
-                      name="Meta"
-                      stroke="#d97706"
-                      strokeWidth={2}
-                      strokeDasharray="6 6"
-                      dot={false}
-                      activeDot={false}
-                    />
-                  )}
-                </LineChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           ) : (

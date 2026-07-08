@@ -18,8 +18,10 @@ jest.mock('next/link', () => {
 });
 
 jest.mock('recharts', () => ({
-  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ComposedChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Bar: () => null,
   Line: () => null,
+  Legend: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
