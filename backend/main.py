@@ -376,13 +376,44 @@ class LogUpdate(LogCreate):
 def list_logs(session: SessionDep, _: CurrentUser) -> list[LogEntry]:
     return session.exec(select(LogEntry).where(LogEntry.deleted == False)).all()
 
+def _to_float(valor) -> float | None:
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+def _notify_if_goal_reached(new_log: LogEntry, session: Session, user: User) -> None:
+    """Cria notificação in-app quando a soma dos lançamentos da meta cruza o
+    alvo (dispara uma única vez, no lançamento que atinge/ultrapassa o alvo)."""
+    goal = session.get(Goal, new_log.goal)
+    if not goal or goal.deleted:
+        return
+    alvo = _to_float(goal.alvo)
+    if alvo is None or alvo <= 0:
+        return
+    logs = session.exec(
+        select(LogEntry).where(LogEntry.goal == new_log.goal, LogEntry.deleted == False)
+    ).all()
+    total = sum(v for v in (_to_float(l.valor_logado) for l in logs) if v is not None)
+    novo = _to_float(new_log.valor_logado) or 0.0
+    total_antes = total - novo
+    if total_antes < alvo <= total:
+        metric = session.get(Metric, goal.metric)
+        nome = (metric.nome or metric.codigo) if metric else f"Meta #{goal.id}"
+        mensagem = f"🎯 Meta atingida: {nome} ({total:g}/{alvo:g})"
+        session.add(Notification(user_id=user.id, mensagem=mensagem))
+        session.commit()
+
+
 @app.post('/api/v1/logs/', status_code=201)
-def create_log(body: LogCreate, session: SessionDep, _: CurrentUser) -> LogEntry:
+def create_log(body: LogCreate, session: SessionDep, user: CurrentUser) -> LogEntry:
     from datetime import date as date_type
     log = LogEntry(goal=body.goal, data=date_type.fromisoformat(body.data), valor_logado=body.valor_logado)
     session.add(log)
     session.commit()
     session.refresh(log)
+    _notify_if_goal_reached(log, session, user)
     return log
 
 @app.get('/api/v1/logs/{log_id}/')
