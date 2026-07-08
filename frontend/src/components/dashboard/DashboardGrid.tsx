@@ -80,9 +80,13 @@ export default function DashboardGrid() {
     };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", onVisibility);
+    // Polling enquanto o dashboard está aberto: garante dados atualizados
+    // mesmo sem navegação nem troca de aba (ex.: lançamento em outra aba).
+    const interval = setInterval(refresh, 20000);
     return () => {
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisibility);
+      clearInterval(interval);
     };
   }, [router, fetchData]);
 
