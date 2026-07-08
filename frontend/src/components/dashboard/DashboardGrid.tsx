@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
@@ -90,9 +90,21 @@ export default function DashboardGrid() {
     return acc;
   }, {} as Record<string, any>);
 
-  const chartData = Object.values(chartDataRaw).sort((a: any, b: any) => new Date(a.dataPoint).getTime() - new Date(b.dataPoint).getTime());
   const isSelectedMetricNumeric = selectedMetric !== "all" && metrics.find(m => String(m.id) === selectedMetric)?.tipo.match(/number|decimal|currency|percent/);
   const dataKeyToPlot = isSelectedMetricNumeric ? "somaValores" : "quantidade";
+
+  // Valor da meta: alvo da meta mais recente da métrica selecionada, se numérico.
+  let metaValue: number | null = null;
+  if (isSelectedMetricNumeric) {
+    const latestGoal = [...filteredGoals]
+      .filter(g => !isNaN(parseFloat(g.alvo)))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+    if (latestGoal) metaValue = parseFloat(latestGoal.alvo);
+  }
+
+  const chartData = Object.values(chartDataRaw)
+    .sort((a: any, b: any) => new Date(a.dataPoint).getTime() - new Date(b.dataPoint).getTime())
+    .map((point: any) => (metaValue !== null ? { ...point, meta: metaValue } : point));
 
   if (loading || !token) {
     return (
@@ -152,18 +164,32 @@ export default function DashboardGrid() {
                   <YAxis stroke="#888" tick={{ fill: '#888' }} axisLine={false} tickLine={false} dx={Y_AXIS_TICK_DX} width={Y_AXIS_WIDTH} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '12px' }}
-                    itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
-                    formatter={(value: any) => [value, selectedMetric === "all" ? "Registos:" : "Realizado:"]}
+                    itemStyle={{ fontWeight: 'bold' }}
+                    formatter={(value: any, name: any) => [value, `${name}:`]}
                     labelFormatter={(label) => `Data: ${label}`}
                   />
+                  {metaValue !== null && <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: '14px' }} />}
                   <Line
                     type="monotone"
                     dataKey={dataKeyToPlot}
+                    name={selectedMetric === "all" ? "Registos" : "Realizado"}
                     stroke="#3b82f6"
                     strokeWidth={4}
                     dot={{ r: 5, fill: '#0a0a0a', stroke: '#3b82f6', strokeWidth: 2 }}
                     activeDot={{ r: 8, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
                   />
+                  {metaValue !== null && (
+                    <Line
+                      type="monotone"
+                      dataKey="meta"
+                      name="Meta"
+                      stroke="#d97706"
+                      strokeWidth={2}
+                      strokeDasharray="6 6"
+                      dot={false}
+                      activeDot={false}
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
