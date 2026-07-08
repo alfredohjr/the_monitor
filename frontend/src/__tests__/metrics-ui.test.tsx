@@ -26,38 +26,29 @@ afterEach(() => {
   delete (global as { fetch?: unknown }).fetch;
 });
 
-describe('MetricList — campo is_default', () => {
-  it('exibe badge "Padrão" para métrica com is_default=true', async () => {
+describe('MetricList — métricas do sistema ocultas', () => {
+  it('não renderiza métrica do sistema (is_default=true)', async () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
       ok: true, status: 200,
-      json: async () => [{ id: 1, codigo: 'V', nome: 'Vendas', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
+      json: async () => [{ id: 1, codigo: 'PAD', nome: 'MetricaSistema', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
     });
     render(<MetricList />);
-    expect(await screen.findByTestId('badge-padrao')).toBeInTheDocument();
-  });
-
-  it('nao exibe badge "Padrão" para métrica com is_default=false', async () => {
-    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
-      ok: true, status: 200,
-      json: async () => [{ id: 1, codigo: 'V', nome: 'Vendas', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }],
-    });
-    render(<MetricList />);
-    await screen.findByText('Vendas');
+    await screen.findByText(/minhas métricas/i);
+    expect(screen.queryByText('MetricaSistema')).not.toBeInTheDocument();
     expect(screen.queryByTestId('badge-padrao')).not.toBeInTheDocument();
   });
 
-  it('oculta botões Editar e Apagar para métrica is_default=true', async () => {
+  it('não exibe a seção "Métricas do Sistema" mesmo havendo is_default=true', async () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
       ok: true, status: 200,
       json: async () => [{ id: 1, codigo: 'PAD', nome: 'Padrão', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
     });
     render(<MetricList />);
-    await screen.findByTestId('badge-padrao');
-    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
-    expect(screen.queryByText('Apagar')).not.toBeInTheDocument();
+    await screen.findByText(/minhas métricas/i);
+    expect(screen.queryByText(/métricas do sistema/i)).not.toBeInTheDocument();
   });
 
-  it('exibe botões Editar e Apagar para métrica is_default=false', async () => {
+  it('renderiza métrica própria (is_default=false) com botões Editar e Apagar', async () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
       ok: true, status: 200,
       json: async () => [{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }],
@@ -68,16 +59,7 @@ describe('MetricList — campo is_default', () => {
     expect(screen.getByText('Apagar')).toBeInTheDocument();
   });
 
-  it('exibe seção "Métricas do Sistema" quando há métricas is_default=true', async () => {
-    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
-      ok: true, status: 200,
-      json: async () => [{ id: 1, codigo: 'PAD', nome: 'Padrão', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }],
-    });
-    render(<MetricList />);
-    expect(await screen.findByText(/métricas do sistema/i)).toBeInTheDocument();
-  });
-
-  it('exibe seção "Minhas Métricas" quando há métricas is_default=false', async () => {
+  it('exibe a seção "Minhas Métricas"', async () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
       ok: true, status: 200,
       json: async () => [{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }],
