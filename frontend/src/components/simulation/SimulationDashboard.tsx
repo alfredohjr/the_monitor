@@ -210,12 +210,12 @@ export default function SimulationDashboard() {
   const [selectedMetric, setSelectedMetric] = useState<string>("");
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   });
   const [endDate, setEndDate] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   });
   const [lockHistorical, setLockHistorical] = useState(true);
   const [simData, setSimData] = useState<SliceData[]>([]);
@@ -403,20 +403,9 @@ export default function SimulationDashboard() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/5 w-full">
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
-              <label htmlFor="lockHist" className="text-sm text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
-            </div>
-            <button
-              type="button"
-              onClick={handleReplicate}
-              disabled={lastEditedId === null}
-              title="Replica o último valor editado para todas as barras à direita"
-              className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
-            >
-              Replicar último valor →
-            </button>
+          <div className="flex items-center gap-3 pt-4 border-t border-white/5 w-full">
+            <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
+            <label htmlFor="lockHist" className="text-sm text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
           </div>
         </div>
 
@@ -436,6 +425,20 @@ export default function SimulationDashboard() {
                 {formatNumber(Number(percentage))}%
               </span>
             </div>
+          </div>
+        )}
+
+        {selectedMetric && simData.length > 0 && (
+          <div className="flex justify-end mb-3 w-full">
+            <button
+              type="button"
+              onClick={handleReplicate}
+              disabled={lastEditedId === null}
+              title="Replica o último valor editado para todas as barras à direita"
+              className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+            >
+              Replicar último valor →
+            </button>
           </div>
         )}
 
