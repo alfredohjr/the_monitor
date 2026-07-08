@@ -109,3 +109,18 @@ describe('LogForm — placeholder por tipo', () => {
     expect(input).toBeInTheDocument();
   });
 });
+
+describe('LogForm — select de meta sem valor alvo', () => {
+  it('não exibe o alvo nas opções do select', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/goals/'))   return Promise.resolve({ ok: true, status: 200, json: async () => [{ id: 10, metric: 20, alvo: '150', periodo_referencia: '2026-07' }] });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => [{ id: 20, codigo: 'M', nome: 'Vendas', tipo: 'number' }] });
+      return Promise.resolve({ ok: true, status: 200, json: async () => [] });
+    });
+    render(<LogForm />);
+    const option = await screen.findByRole('option', { name: /Vendas/ });
+    expect(option).toBeInTheDocument();
+    expect(option.textContent).not.toMatch(/Alvo/i);
+    expect(option.textContent).not.toContain('150');
+  });
+});
