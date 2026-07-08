@@ -26,6 +26,13 @@ export default function NotificationBell() {
     if (t) load(t);
   }, [load]);
 
+  const handleToggle = () => {
+    // Ao abrir, recarrega para pegar notificações criadas depois da montagem
+    // (ex.: meta atingida em outra tela) sem precisar recarregar a página.
+    if (!open && token) load(token);
+    setOpen((o) => !o);
+  };
+
   const handleRead = async (id: number) => {
     if (!token) return;
     try {
@@ -43,7 +50,7 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
         className="relative text-zinc-300 hover:text-white transition"
         aria-label="Notificações"
         title="Notificações"

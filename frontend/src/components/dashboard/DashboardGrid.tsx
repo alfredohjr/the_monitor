@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -36,6 +36,30 @@ export default function DashboardGrid() {
     }
   }, [metrics, selectedMetric]);
 
+  const fetchData = useCallback(async (storedToken: string) => {
+    try {
+      const headers = { "Authorization": `Bearer ${storedToken}` };
+      const [gRes, lRes] = await Promise.all([
+        fetch("http://localhost:8000/api/v1/goals/", { headers }),
+        fetch("http://localhost:8000/api/v1/logs/", { headers }),
+      ]);
+
+      if (gRes.status === 401 || lRes.status === 401) {
+        localStorage.removeItem("access_token");
+        router.push("/login");
+        return;
+      }
+
+      const [gData, lData] = await Promise.all([gRes.json(), lRes.json()]);
+      setGoals(Array.isArray(gData) ? gData : gData.results || []);
+      setLogs(Array.isArray(lData) ? lData : lData.results || []);
+    } catch (err) {
+      console.error("Dashboard fetch error", err);
+    } finally {
+      setRawLoading(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
     if (!storedToken) {
@@ -43,33 +67,24 @@ export default function DashboardGrid() {
       return;
     }
     setToken(storedToken);
+    fetchData(storedToken);
 
-    const fetchData = async () => {
-      try {
-        const headers = { "Authorization": `Bearer ${storedToken}` };
-        const [gRes, lRes] = await Promise.all([
-          fetch("http://localhost:8000/api/v1/goals/", { headers }),
-          fetch("http://localhost:8000/api/v1/logs/", { headers }),
-        ]);
-
-        if (gRes.status === 401 || lRes.status === 401) {
-          localStorage.removeItem("access_token");
-          router.push("/login");
-          return;
-        }
-
-        const [gData, lData] = await Promise.all([gRes.json(), lRes.json()]);
-        setGoals(Array.isArray(gData) ? gData : gData.results || []);
-        setLogs(Array.isArray(lData) ? lData : lData.results || []);
-      } catch (err) {
-        console.error("Dashboard fetch error", err);
-      } finally {
-        setRawLoading(false);
-      }
+    // Reatualiza ao voltar o foco/visibilidade para a aba, refletindo
+    // lançamentos feitos em outra tela sem precisar recarregar a página.
+    const refresh = () => {
+      const t = localStorage.getItem("access_token");
+      if (t) fetchData(t);
     };
-
-    fetchData();
-  }, [router]);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [router, fetchData]);
 
   const filteredLogs = selectedMetric === "all" ? logs : logs.filter(l => {
     const goal = goals.find(g => g.id === l.goal);
