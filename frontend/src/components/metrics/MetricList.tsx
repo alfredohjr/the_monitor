@@ -27,7 +27,6 @@ export default function MetricList() {
     } catch {}
   };
 
-  const padrao = items.filter(i => i.is_default);
   const proprias = items.filter(i => !i.is_default);
 
   const renderTabela = (lista: any[], somenteLeitura: boolean) => (
@@ -93,13 +92,6 @@ export default function MetricList() {
             <Link href="/metrics/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 whitespace-nowrap truncate text-center">+ Nova Métrica</Link>
           </div>
         </div>
-
-        {padrao.length > 0 && (
-          <div className="glass p-8 rounded-3xl border border-white/5">
-            <h2 className="text-lg font-bold text-zinc-300 mb-6">Métricas do Sistema</h2>
-            {renderTabela(padrao, true)}
-          </div>
-        )}
 
         <div className="glass p-8 rounded-3xl border border-white/5">
           <h2 className="text-lg font-bold text-zinc-300 mb-6">Minhas Métricas</h2>
