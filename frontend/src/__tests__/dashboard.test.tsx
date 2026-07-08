@@ -93,3 +93,23 @@ describe('Dashboard — auto-seleção de métrica', () => {
     await waitFor(() => expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('7'));
   });
 });
+
+describe('Dashboard — layout: KPIs antigos removidos e filtros reposicionados', () => {
+  it('não renderiza os KPIs antigos (Metas Ativas, Taxa de Esforço, Último Registo)', async () => {
+    mockFetch([{ id: 42, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
+    render(<DashboardGrid />);
+    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    expect(screen.queryByText(/metas ativas/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/taxa de esforço/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/último regist/i)).not.toBeInTheDocument();
+  });
+
+  it('mantém o filtro de métrica, o filtro de data e o atalho de check-in', async () => {
+    mockFetch([{ id: 42, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
+    const { container } = render(<DashboardGrid />);
+    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(container.querySelectorAll('input[type="date"]').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/check-in hoje/i)).toBeInTheDocument();
+  });
+});
