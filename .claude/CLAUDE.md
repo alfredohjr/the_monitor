@@ -36,6 +36,22 @@ npm test
 ```
 Testes em `frontend/src/__tests__/`.
 
+## Regra: priorizar testes a nível de dados (backend)
+
+Bugs de **lógica de dados** (agregação, filtro, cálculo, transformação) devem ser
+validados **no backend com pytest**, reproduzindo o cenário real — de preferência
+via API (TestClient) ou montando os dados como vêm do banco. Quanto mais perto do
+dado o teste está, mais bugs pegamos antes de chegar ao usuário.
+
+Diretriz para daqui pra frente:
+- Se a lógica é agregação/transformação de dados, **coloque-a (ou espelhe-a) no backend**
+  como função pura + endpoint, e escreva o teste `pytest` que **reproduz o bug** antes de corrigir.
+- Escreva **mais** testes desse nível ao longo do tempo; o teste de componente (front) passa a
+  verificar só que a tela **consome** o que o backend entrega.
+- Exemplo de referência: `backend/progress.py` + `backend/tests/test_progress.py` (realizado x meta
+  por período) e o endpoint `/api/v1/metrics/{id}/progress`.
+- DB local para inspeção (somente leitura): `localhost:5433`, db `monitor_db`, user `monitor`.
+
 ## Regra: nunca commita vermelho.
 
 ## Regra: auth guard em toda página protegida
