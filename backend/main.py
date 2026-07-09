@@ -503,12 +503,22 @@ def list_organizations(session: SessionDep, user: CurrentUser) -> list[Organizat
 
 @app.post('/api/v1/organizations/', status_code=201)
 def create_organization(body: OrganizationCreate, session: SessionDep, user: CurrentUser) -> Organization:
-    org = Organization(nome=body.nome)
+    nome = body.nome.strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Nome da organização é obrigatório")
+    duplicada = session.exec(
+        select(Organization).where(Organization.nome == nome, Organization.deleted == False)
+    ).first()
+    if duplicada:
+        raise HTTPException(status_code=400, detail="Nome de organização já está em uso")
+
+    org = Organization(nome=nome)
     session.add(org)
     session.commit()
     session.refresh(org)
 
-    session.add(Membership(user_id=user.id, organization_id=org.id))
+    # Quem cria a organização vira admin dela.
+    session.add(Membership(user_id=user.id, organization_id=org.id, role="admin"))
     session.commit()
     session.refresh(org)
     return org

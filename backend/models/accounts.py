@@ -22,4 +22,7 @@ class Membership(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     organization_id: int = Field(foreign_key="organization.id", index=True)
+    # Papel do usuário nesta organização. String (não enum) para permitir novos
+    # níveis no futuro sem migração de tipo. "user" = menor privilégio.
+    role: str = Field(default="user", max_length=30)
     created_at: datetime = Field(default_factory=datetime.utcnow)
