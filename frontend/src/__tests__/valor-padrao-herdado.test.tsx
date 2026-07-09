@@ -78,8 +78,9 @@ describe('LogForm — placeholder com valor_padrao da métrica', () => {
 
     render(<LogForm />);
     await screen.findByText(/Receita/i);
-    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '10', name: 'goal' } });
-    const input = await screen.findByPlaceholderText(/500|R\$/i);
+    // Seleciona a métrica (currency) no select de cima — o placeholder herda o tipo dela.
+    fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '20' } });
+    const input = await screen.findByPlaceholderText(/R\$/i);
     expect(input).toBeInTheDocument();
   });
 });
