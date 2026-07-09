@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -36,7 +37,12 @@ export default function RegisterPage() {
         throw new Error(data.detail ?? "Erro ao criar conta");
       }
 
-      router.push("/onboarding");
+      if (form.email) {
+        // Cadastro com e-mail exige confirmação antes do primeiro login.
+        setSuccess("Conta criada! Enviamos um link de confirmação para o seu e-mail. Verifique antes de entrar.");
+      } else {
+        router.push("/login");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Não foi possível criar a conta");
     } finally {
@@ -62,6 +68,12 @@ export default function RegisterPage() {
         {error && (
           <div className="mb-6 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center">
+            {success}
           </div>
         )}
 
