@@ -589,6 +589,87 @@ def create_organization(body: OrganizationCreate, session: SessionDep, user: Cur
     return org
 
 
+# ---------- Admin: gestão de usuários da organização ----------
+
+def require_org_admin(session: Session, user: User, org_id: int) -> Organization:
+    """Garante que `user` é admin da organização `org_id`. Levanta 404/403."""
+    org = session.get(Organization, org_id)
+    if not org or org.deleted:
+        raise HTTPException(status_code=404, detail="Organização não encontrada")
+    membership = session.exec(
+        select(Membership).where(
+            Membership.user_id == user.id,
+            Membership.organization_id == org_id,
+        )
+    ).first()
+    if not membership or membership.role != "admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito ao admin da organização")
+    return org
+
+
+class OrgUserCreate(BaseModel):
+    username: str
+    password: str
+    email: str | None = None
+
+
+@app.get('/api/v1/organizations/{org_id}/users/')
+def list_org_users(org_id: int, session: SessionDep, user: CurrentUser):
+    require_org_admin(session, user, org_id)
+    memberships = session.exec(select(Membership).where(Membership.organization_id == org_id)).all()
+    out = []
+    for m in memberships:
+        u = session.get(User, m.user_id)
+        if u:
+            out.append({"id": u.id, "username": u.username, "email": u.email, "role": m.role})
+    return out
+
+
+@app.post('/api/v1/organizations/{org_id}/users/', status_code=201)
+def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user: CurrentUser):
+    require_org_admin(session, user, org_id)
+
+    if session.exec(select(User).where(User.username == body.username)).first():
+        raise HTTPException(status_code=400, detail="Username já cadastrado")
+    if body.email and session.exec(select(User).where(User.email == body.email)).first():
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+    # Criado pelo admin: já verificado (não passa por auto-cadastro) e papel 'user'.
+    novo = User(
+        username=body.username,
+        hashed_password=hash_password(body.password),
+        email=body.email,
+        email_verified=True,
+    )
+    session.add(novo)
+    session.commit()
+    session.refresh(novo)
+
+    session.add(Membership(user_id=novo.id, organization_id=org_id, role="user"))
+    session.commit()
+    return {"id": novo.id, "username": novo.username, "email": novo.email, "role": "user"}
+
+
+@app.delete('/api/v1/organizations/{org_id}/users/{user_id}/')
+def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: CurrentUser):
+    require_org_admin(session, user, org_id)
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="Você não pode remover a si mesmo")
+
+    membership = session.exec(
+        select(Membership).where(
+            Membership.user_id == user_id,
+            Membership.organization_id == org_id,
+        )
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=404, detail="Usuário não pertence a esta organização")
+
+    session.delete(membership)
+    session.commit()
+    return {"removed": True}
+
+
 # ---------- Email ----------
 
 from fastapi.responses import HTMLResponse
