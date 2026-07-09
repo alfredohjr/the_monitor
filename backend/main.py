@@ -13,6 +13,7 @@ import secrets
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos
 from seed import seed_exemplo, seed_metricas_padrao
+from progress import compute_progress
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -309,6 +310,46 @@ def delete_metric(metric_id: int, session: SessionDep, _: CurrentUser):
     metric.deleted = True
     session.add(metric)
     session.commit()
+
+
+class ProgressPointResp(BaseModel):
+    periodo: str
+    realizado: float | None
+    meta: float | None
+
+class ProgressResp(BaseModel):
+    tipo: str
+    periodo: str
+    pontos: list[ProgressPointResp]
+    meta_total: float
+    realizado_total: float
+    pct: int
+
+@app.get('/api/v1/metrics/{metric_id}/progress', response_model=ProgressResp)
+def metric_progress(metric_id: int, start: str, end: str, session: SessionDep, _: CurrentUser) -> ProgressResp:
+    metric = session.get(Metric, metric_id)
+    if not metric or metric.deleted:
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    try:
+        start_d = datetime.date.fromisoformat(start)
+        end_d = datetime.date.fromisoformat(end)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+    goals = session.exec(select(Goal).where(Goal.metric == metric_id, Goal.deleted == False)).all()
+    goal_ids = {g.id for g in goals}
+    logs = [
+        l for l in session.exec(select(LogEntry).where(LogEntry.deleted == False)).all()
+        if l.goal in goal_ids
+    ]
+    prog = compute_progress(metric, goals, logs, start_d, end_d)
+    return ProgressResp(
+        tipo=prog.tipo,
+        periodo=prog.periodo,
+        pontos=[ProgressPointResp(periodo=p.periodo, realizado=p.realizado, meta=p.meta) for p in prog.pontos],
+        meta_total=prog.meta_total,
+        realizado_total=prog.realizado_total,
+        pct=prog.pct,
+    )
 
 
 # ---------- Goals ----------

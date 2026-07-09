@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
-import { bucketKey } from "@/lib/periodo";
 import { formatValor } from "@/lib/formatValor";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
@@ -24,6 +23,8 @@ export default function DashboardGrid() {
     const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   });
+  const [progress, setProgress] = useState<any>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const { metrics, loading: metricsLoading } = useSubscribedMetrics(token);
   const loading = rawLoading || metricsLoading;
@@ -74,6 +75,7 @@ export default function DashboardGrid() {
     const refresh = () => {
       const t = localStorage.getItem("access_token");
       if (t) fetchData(t);
+      setRefreshTick(x => x + 1);
     };
     const onVisibility = () => {
       if (document.visibilityState === "visible") refresh();
@@ -90,65 +92,65 @@ export default function DashboardGrid() {
     };
   }, [router, fetchData]);
 
-  const filteredLogs = selectedMetric === "all" ? logs : logs.filter(l => {
-    const goal = goals.find(g => g.id === l.goal);
-    return goal && String(goal.metric) === selectedMetric;
-  });
-
-  const filteredGoals = selectedMetric === "all" ? goals : goals.filter(g => String(g.metric) === selectedMetric);
-
   const selectedMetricObj = metrics.find(m => String(m.id) === selectedMetric);
-  const isSelectedMetricNumeric = selectedMetric !== "all" && selectedMetricObj?.tipo.match(/number|decimal|currency|percent/);
-  const periodo = selectedMetricObj?.periodo || "daily";
-  const dataKeyToPlot = isSelectedMetricNumeric ? "realizado" : "quantidade";
+  const isSelectedMetricNumeric = selectedMetric !== "all" && !!selectedMetricObj?.tipo.match(/number|decimal|currency|percent/);
 
-  // Recorte pelo range de datas selecionado (comparação lexicográfica de datas
-  // ISO = cronológica). Os lançamentos são filtrados pela data do check-in.
-  const rangeLogs = filteredLogs.filter(l => l.data >= startDate && l.data <= endDate);
-  const startBucket = bucketKey(startDate, periodo);
-  const endBucket = bucketKey(endDate, periodo);
+  // Para métrica numérica específica, o realizado x meta vem do backend
+  // (/metrics/{id}/progress), que agrega o realizado pelo PERÍODO DA META
+  // (goal.periodo_referencia), não pela data do check-in — fonte única da
+  // verdade, validada por testes a nível de dados.
+  useEffect(() => {
+    if (!token || !isSelectedMetricNumeric || !startDate || !endDate) {
+      setProgress(null);
+      return;
+    }
+    let cancelado = false;
+    fetch(`http://localhost:8000/api/v1/metrics/${selectedMetric}/progress?start=${startDate}&end=${endDate}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => { if (!cancelado) setProgress(data); })
+      .catch(() => { if (!cancelado) setProgress(null); });
+    return () => { cancelado = true; };
+  }, [token, selectedMetric, isSelectedMetricNumeric, startDate, endDate, refreshTick]);
 
-  // Realizado por bucket de período: para métrica numérica agrupamos os
-  // lançamentos pelo período da métrica (dia/semana/mês/ano); nos demais casos
-  // mantemos a granularidade diária (frequência de check-ins).
-  const realizadoByBucket = rangeLogs.reduce((acc, log) => {
-    const key = isSelectedMetricNumeric ? bucketKey(log.data, periodo) : log.data;
-    if (!acc[key]) acc[key] = { dataPoint: key, quantidade: 0, realizado: 0 };
-    acc[key].quantidade += 1;
-    const val = parseFloat(log.valor_logado);
-    if (!isNaN(val)) acc[key].realizado += val;
-    return acc;
-  }, {} as Record<string, any>);
-
-  // Meta por bucket: alvo (numérico) de cada goal cujo período de referência
-  // cai dentro do range — o GoalForm grava no mesmo formato que `bucketKey`.
-  const metaByBucket: Record<string, number> = {};
-  if (isSelectedMetricNumeric) {
-    filteredGoals.forEach(g => {
-      const alvo = parseFloat(g.alvo);
-      if (!isNaN(alvo) && g.periodo_referencia && g.periodo_referencia >= startBucket && g.periodo_referencia <= endBucket) {
-        metaByBucket[g.periodo_referencia] = alvo;
-      }
-    });
-  }
-  const hasMeta = Object.keys(metaByBucket).length > 0;
-
-  const chartData = Array.from(new Set([...Object.keys(realizadoByBucket), ...Object.keys(metaByBucket)]))
-    .sort((a, b) => a.localeCompare(b))
-    .map(key => {
-      // Bucket só com meta (ainda sem lançamento): realizado nulo abre um vão
-      // na linha em vez de mergulhar para zero.
-      const base = realizadoByBucket[key] || { dataPoint: key, quantidade: 0, realizado: null };
-      const point: any = { ...base };
-      if (hasMeta && key in metaByBucket) point.meta = metaByBucket[key];
-      return point;
-    });
-
-  // KPIs do range: total de meta, total realizado e % atingida.
-  const metaTotal = chartData.reduce((s: number, p: any) => s + (typeof p.meta === "number" ? p.meta : 0), 0);
-  const realizadoTotal = chartData.reduce((s: number, p: any) => s + (typeof p.realizado === "number" ? p.realizado : 0), 0);
-  const pctRealizada = metaTotal > 0 ? Math.round((realizadoTotal / metaTotal) * 100) : 0;
+  const usingProgress = isSelectedMetricNumeric && progress != null && Array.isArray(progress.pontos);
+  const dataKeyToPlot = usingProgress ? "realizado" : "quantidade";
   const kpiTipo = selectedMetricObj?.tipo || "number";
+
+  let chartData: any[];
+  let hasMeta: boolean;
+  let metaTotal = 0;
+  let realizadoTotal = 0;
+  let pctRealizada = 0;
+
+  if (usingProgress) {
+    chartData = progress.pontos.map((p: any) => ({
+      dataPoint: p.periodo,
+      realizado: p.realizado,
+      ...(p.meta != null ? { meta: p.meta } : {}),
+    }));
+    hasMeta = progress.pontos.some((p: any) => p.meta != null);
+    metaTotal = progress.meta_total;
+    realizadoTotal = progress.realizado_total;
+    pctRealizada = progress.pct;
+  } else {
+    // Visão "Todas as Métricas" ou métrica não numérica: frequência de
+    // check-ins por dia (contagem), filtrada por métrica e pelo range de datas.
+    const filteredLogs = selectedMetric === "all" ? logs : logs.filter(l => {
+      const goal = goals.find(g => g.id === l.goal);
+      return goal && String(goal.metric) === selectedMetric;
+    });
+    const rangeLogs = filteredLogs.filter(l => l.data >= startDate && l.data <= endDate);
+    const freq = rangeLogs.reduce((acc, log) => {
+      const key = log.data;
+      if (!acc[key]) acc[key] = { dataPoint: key, quantidade: 0 };
+      acc[key].quantidade += 1;
+      return acc;
+    }, {} as Record<string, any>);
+    chartData = Object.values(freq).sort((a: any, b: any) => a.dataPoint.localeCompare(b.dataPoint));
+    hasMeta = false;
+  }
 
   if (loading || !token) {
     return (
