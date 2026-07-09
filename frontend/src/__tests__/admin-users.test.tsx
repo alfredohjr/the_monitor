@@ -1,0 +1,110 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import AdminUsers from '@/components/admin/AdminUsers';
+import Navbar from '@/components/layout/Navbar';
+
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+  usePathname: () => '/',
+}));
+jest.mock('next/link', () => {
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (<a href={href}>{children}</a>);
+  MockLink.displayName = 'MockLink';
+  return MockLink;
+});
+
+beforeEach(() => { localStorage.setItem('access_token', 'tok'); localStorage.setItem('username', 'admin'); mockPush.mockClear(); });
+afterEach(() => { localStorage.clear(); delete (global as { fetch?: unknown }).fetch; });
+
+function mockApi({ me, users, onPost, onDelete }: any) {
+  (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+    if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => me });
+    if (url.match(/\/users\/\d+\/$/) && opts?.method === 'DELETE') return (onDelete ?? jest.fn())(url) ?? Promise.resolve({ ok: true, json: async () => ({}) });
+    if (url.includes('/users/') && opts?.method === 'POST') return (onPost ?? jest.fn(() => Promise.resolve({ ok: true, json: async () => ({}) })))(url, opts);
+    if (url.includes('/users/')) return Promise.resolve({ ok: true, json: async () => users });
+    return Promise.resolve({ ok: true, json: async () => [] });
+  });
+}
+
+const adminMe = { id: 1, username: 'admin', role: 'admin', organizations: [{ id: 7, nome: 'Acme', role: 'admin' }] };
+
+describe('AdminUsers', () => {
+  it('redireciona para /login sem token', () => {
+    localStorage.clear();
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    render(<AdminUsers />);
+    expect(mockPush).toHaveBeenCalledWith('/login');
+  });
+
+  it('lista os usuários da organização do admin', async () => {
+    mockApi({ me: adminMe, users: [
+      { id: 1, username: 'admin', email: 'a@x.com', role: 'admin' },
+      { id: 2, username: 'colab', email: null, role: 'user' },
+    ]});
+    render(<AdminUsers />);
+    expect(await screen.findByText('colab')).toBeInTheDocument();
+    expect(screen.getByText('Acme')).toBeInTheDocument();
+  });
+
+  it('cria um usuário via POST', async () => {
+    const onPost = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+    mockApi({ me: adminMe, users: [], onPost });
+    render(<AdminUsers />);
+    await screen.findByText('Adicionar');
+    fireEvent.change(screen.getByPlaceholderText('Usuário'), { target: { value: 'novo', name: 'username' } });
+    fireEvent.change(screen.getByPlaceholderText('Senha'), { target: { value: 'senha123', name: 'password' } });
+    fireEvent.click(screen.getByText('Adicionar'));
+    await waitFor(() => expect(onPost).toHaveBeenCalled());
+    const body = JSON.parse((onPost.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.username).toBe('novo');
+    expect(onPost.mock.calls[0][0]).toContain('/organizations/7/users/');
+  });
+
+  it('remove um usuário via DELETE (exceto a si mesmo)', async () => {
+    const onDelete = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+    mockApi({ me: adminMe, users: [
+      { id: 1, username: 'admin', email: null, role: 'admin' },
+      { id: 2, username: 'colab', email: null, role: 'user' },
+    ], onDelete });
+    render(<AdminUsers />);
+    await screen.findByText('colab');
+    // admin (id 1 = ele mesmo) não tem botão remover
+    expect(screen.getAllByText('Remover')).toHaveLength(1);
+    fireEvent.click(screen.getByText('Remover'));
+    await waitFor(() => expect(onDelete).toHaveBeenCalled());
+    expect(onDelete.mock.calls[0][0]).toContain('/organizations/7/users/2/');
+  });
+
+  it('mostra acesso restrito para não-admin', async () => {
+    mockApi({ me: { id: 5, username: 'user', role: 'user', organizations: [] }, users: [] });
+    render(<AdminUsers />);
+    expect(await screen.findByText(/acesso restrito/i)).toBeInTheDocument();
+  });
+});
+
+function mockMe(role: string) {
+  // /me/ retorna o papel; demais endpoints (ex.: notificações) retornam lista.
+  (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) =>
+    url.includes('/me/')
+      ? Promise.resolve({ ok: true, json: async () => ({ role, organizations: [] }) })
+      : Promise.resolve({ ok: true, json: async () => [] })
+  );
+}
+
+describe('Navbar — RBAC por papel', () => {
+  it('esconde Dashboard/Metas/Métricas para papel user, mantém Lançamentos', async () => {
+    mockMe('user');
+    render(<Navbar />);
+    await waitFor(() => expect(screen.queryByText('Dashboard')).not.toBeInTheDocument());
+    expect(screen.getByText('Lançamentos')).toBeInTheDocument();
+    expect(screen.queryByText('Metas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Métricas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+  });
+
+  it('mostra o link Admin para papel admin', async () => {
+    mockMe('admin');
+    render(<Navbar />);
+    expect(await screen.findByText('Admin')).toBeInTheDocument();
+  });
+});

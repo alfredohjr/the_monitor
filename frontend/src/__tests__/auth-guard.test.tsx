@@ -13,6 +13,7 @@ import MetricForm from '@/components/metrics/MetricForm';
 import SimulationDashboard from '@/components/simulation/SimulationDashboard';
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
 import CatalogPage from '@/components/catalog/CatalogPage';
+import AdminUsers from '@/components/admin/AdminUsers';
 
 const mockPush = jest.fn();
 
@@ -59,6 +60,7 @@ describe('Auth guard — redireciona para /login sem token', () => {
   it('SimulationDashboard', () => expectRedirectToLogin(<SimulationDashboard />));
   it('OnboardingFlow', () => expectRedirectToLogin(<OnboardingFlow />));
   it('CatalogPage', () => expectRedirectToLogin(<CatalogPage />));
+  it('AdminUsers', () => expectRedirectToLogin(<AdminUsers />));
 });
 
 describe('Auth guard — nao redireciona com token', () => {
@@ -76,4 +78,5 @@ describe('Auth guard — nao redireciona com token', () => {
   it('SimulationDashboard', () => { render(<SimulationDashboard />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('OnboardingFlow', () => { render(<OnboardingFlow />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('CatalogPage', () => { render(<CatalogPage />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
+  it('AdminUsers', () => { render(<AdminUsers />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
 });

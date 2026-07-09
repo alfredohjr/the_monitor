@@ -7,6 +7,8 @@ import NotificationBell from "./NotificationBell";
 export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  // null = papel ainda desconhecido (otimista: mostra tudo até /me resolver).
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -15,7 +17,16 @@ export default function Navbar() {
     const storedName = localStorage.getItem("username");
     setLoggedIn(!!storedToken);
     setUsername(storedToken ? storedName : null);
+    if (!storedToken) { setRole(null); return; }
+    fetch("http://localhost:8000/api/v1/me/", { headers: { Authorization: `Bearer ${storedToken}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setRole(d?.role ?? null))
+      .catch(() => setRole(null));
   }, [pathname]);
+
+  // Usuário de papel "user" só faz lançamento; some com as telas de gestão.
+  const isUser = role === "user";
+  const isAdmin = role === "admin";
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -32,11 +43,12 @@ export default function Navbar() {
         <Link href="/" className="text-zinc-300 hover:text-white transition">Início</Link>
         {loggedIn && (
           <>
-            <Link href="/dashboard" className="text-zinc-300 hover:text-white transition">Dashboard</Link>
-            <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition ml-2">Simulação</Link>
+            {!isUser && <Link href="/dashboard" className="text-zinc-300 hover:text-white transition">Dashboard</Link>}
+            {!isUser && <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition ml-2">Simulação</Link>}
             <Link href="/logs" className="text-zinc-300 hover:text-white transition">Lançamentos</Link>
-            <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>
-            <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>
+            {!isUser && <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>}
+            {!isUser && <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>}
+            {isAdmin && <Link href="/admin" className="text-amber-300 hover:text-amber-200 transition">Admin</Link>}
           </>
         )}
         <div className="hidden sm:block h-4 w-[1px] bg-white/20 self-center mx-2"></div>
