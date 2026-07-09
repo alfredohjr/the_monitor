@@ -26,6 +26,15 @@ export default function NotificationBell() {
     if (t) load(t);
   }, [load]);
 
+  // Polling: reatualiza as notificações a cada 60s para o sino refletir
+  // automaticamente novas notificações (ex.: meta atingida) — o badge de
+  // não-lidas aparece sozinho, sem precisar abrir ou recarregar a página.
+  useEffect(() => {
+    if (!token) return;
+    const id = setInterval(() => load(token), 60000);
+    return () => clearInterval(id);
+  }, [token, load]);
+
   const handleToggle = () => {
     // Ao abrir, recarrega para pegar notificações criadas depois da montagem
     // (ex.: meta atingida em outra tela) sem precisar recarregar a página.
