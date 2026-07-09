@@ -7,11 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, EmailVerificationToken, get_session
 import secrets
 
 from db_migrations import run_migrations
-from email_service import build_resumo, render_html, enviar_resumo_para_todos
+from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email
 from seed import seed_exemplo, seed_metricas_padrao
 from progress import compute_progress
 from auth import (
@@ -200,15 +200,28 @@ def register(body: RegisterRequest, session: SessionDep):
         email_taken = session.exec(select(User).where(User.email == body.email)).first()
         if email_taken:
             raise HTTPException(status_code=400, detail="Email já cadastrado")
+    # Cadastro por senha começa não-verificado; com e-mail, dispara o link de confirmação.
     user = User(
         username=body.username,
         hashed_password=hash_password(body.password),
         email=body.email,
+        email_verified=False,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
     seed_exemplo(user, session)
+
+    if body.email:
+        token = EmailVerificationToken(
+            user_id=user.id,
+            token=secrets.token_urlsafe(32),
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+        )
+        session.add(token)
+        session.commit()
+        send_verification_email(body.email, token.token)
+
     return user
 
 @app.post('/api/v1/token/', response_model=TokenResponse)
@@ -216,10 +229,34 @@ def get_token(body: LoginRequest, session: SessionDep):
     user = session.exec(select(User).where(User.username == body.username)).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+    if user.email and not user.email_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="E-mail não verificado. Confira sua caixa de entrada.")
     return TokenResponse(
         access=create_access_token(user.username),
         refresh=create_refresh_token(user.username),
     )
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+@app.post('/api/v1/verify-email/')
+def verify_email(body: VerifyEmailRequest, session: SessionDep):
+    tok = session.exec(select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)).first()
+    if not tok or tok.used_at is not None:
+        raise HTTPException(status_code=400, detail="Token inválido")
+    if tok.expires_at < datetime.datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token expirado")
+
+    user = session.get(User, tok.user_id)
+    if not user:
+        raise HTTPException(status_code=400, detail="Token inválido")
+
+    user.email_verified = True
+    tok.used_at = datetime.datetime.utcnow()
+    session.add(user)
+    session.add(tok)
+    session.commit()
+    return {"verified": True, "username": user.username}
 
 class GoogleLoginRequest(BaseModel):
     credential: str
@@ -241,10 +278,12 @@ def google_login(body: GoogleLoginRequest, session: SessionDep):
 
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
+        # Login pelo Google já vem com e-mail verificado pelo provedor.
         user = User(
             username=email,
             email=email,
             hashed_password=hash_password(secrets.token_urlsafe(32)),
+            email_verified=True,
         )
         session.add(user)
         session.commit()
@@ -255,6 +294,32 @@ def google_login(body: GoogleLoginRequest, session: SessionDep):
         refresh=create_refresh_token(user.username),
         username=user.username,
     )
+
+
+# ---------- Perfil / RBAC ----------
+
+def highest_role(session: Session, user_id: int) -> str:
+    """Maior privilégio do usuário entre suas organizações. 'admin' > 'user'."""
+    roles = session.exec(select(Membership.role).where(Membership.user_id == user_id)).all()
+    return "admin" if any(r == "admin" for r in roles) else "user"
+
+
+@app.get('/api/v1/me/')
+def me(session: SessionDep, user: CurrentUser):
+    memberships = session.exec(select(Membership).where(Membership.user_id == user.id)).all()
+    orgs = []
+    for m in memberships:
+        org = session.get(Organization, m.organization_id)
+        if org and not org.deleted:
+            orgs.append({"id": org.id, "nome": org.nome, "role": m.role})
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "email_verified": user.email_verified,
+        "role": highest_role(session, user.id),
+        "organizations": orgs,
+    }
 
 
 # ---------- Metrics ----------
