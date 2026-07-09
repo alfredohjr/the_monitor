@@ -9,6 +9,16 @@ class User(SQLModel, table=True):
     username: str = Field(unique=True, index=True)
     hashed_password: str
     email: Optional[str] = Field(default=None, unique=True, index=True)
+    email_verified: bool = Field(default=False)
+
+
+class EmailVerificationToken(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token: str = Field(unique=True, index=True, max_length=64)
+    expires_at: datetime
+    used_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Organization(SQLModel, table=True):

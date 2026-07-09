@@ -97,6 +97,24 @@ def send_email(to_email: str, subject: str, html: str) -> None:
     logger.info("Email para %s | assunto: %s | (envio não configurado)", to_email, subject)
 
 
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+
+def send_verification_email(to_email: str, token: str) -> None:
+    """Envia o link de verificação de e-mail (stub loga o link).
+
+    O link aponta para o frontend, que consome o token via POST /verify-email/.
+    Enquanto não há provedor configurado, o link fica visível nos logs do servidor.
+    """
+    link = f"{FRONTEND_URL}/verificar-email?token={token}"
+    html = (
+        f'<p>Confirme seu e-mail clicando no link abaixo (válido por 24h):</p>'
+        f'<p><a href="{link}">{link}</a></p>'
+    )
+    logger.info("Verificação de e-mail para %s | link: %s", to_email, link)
+    send_email(to_email, "Confirme seu e-mail — The Monitor", html)
+
+
 def enviar_resumo_para_todos(session: Session) -> None:
     users = session.exec(select(User).where(User.email != None)).all()
     hoje = date.today()
