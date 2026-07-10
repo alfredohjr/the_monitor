@@ -57,6 +57,25 @@ def test_seed_vincula_usuario_a_org(session):
     assert membership is not None
 
 
+def test_seed_dono_da_org_vira_admin(session):
+    # Quem tem a org criada no cadastro é o dono dela e deve ser admin,
+    # não entrar como 'user' (somente leitura).
+    user = make_user(session)
+    seed_exemplo(user, session)
+    membership = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
+    assert membership is not None
+    assert membership.role == "admin"
+
+
+def test_registro_deixa_dono_como_admin(client: TestClient, session: Session):
+    # Reproduz o bug de campo: todo usuário entrava como 'user' (somente leitura).
+    client.post("/api/v1/register/", json={"username": "ana", "password": "secret123"})
+    user = session.exec(select(User).where(User.username == "ana")).first()
+    membership = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
+    assert membership is not None
+    assert membership.role == "admin"
+
+
 def test_seed_cria_metric_exemplo(session):
     user = make_user(session)
     seed_exemplo(user, session)
