@@ -26,7 +26,13 @@ describe('Register page', () => {
     expect(email.type).toBe('email');
   });
 
-  it('sends the email in the registration payload', async () => {
+  it('renders organization and access-code fields', () => {
+    const { container } = render(<RegisterPage />);
+    expect(container.querySelector('input[name="organizacao"]')).toBeInTheDocument();
+    expect(container.querySelector('input[name="codigo"]')).toBeInTheDocument();
+  });
+
+  it('sends email, organization and access code in the registration payload', async () => {
     const fetchMock = jest
       .fn()
       .mockResolvedValue({ ok: true, json: async () => ({}) } as Response);
@@ -36,6 +42,8 @@ describe('Register page', () => {
 
     fireEvent.change(container.querySelector('input[name="username"]')!, { target: { value: 'alfredo' } });
     fireEvent.change(container.querySelector('input[name="email"]')!, { target: { value: 'a@example.com' } });
+    fireEvent.change(container.querySelector('input[name="organizacao"]')!, { target: { value: 'Acme' } });
+    fireEvent.change(container.querySelector('input[name="codigo"]')!, { target: { value: 'chave-acme' } });
     fireEvent.change(container.querySelector('input[name="password"]')!, { target: { value: 'senha123' } });
     fireEvent.change(container.querySelector('input[name="confirm"]')!, { target: { value: 'senha123' } });
 
@@ -44,5 +52,7 @@ describe('Register page', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect(body.email).toBe('a@example.com');
+    expect(body.organizacao).toBe('Acme');
+    expect(body.codigo_organizacao).toBe('chave-acme');
   });
 });

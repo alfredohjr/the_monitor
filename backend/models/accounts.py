@@ -24,6 +24,10 @@ class EmailVerificationToken(SQLModel, table=True):
 class Organization(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     nome: str = Field(max_length=150)
+    # Código de acesso definido por quem cria a org no cadastro. Novos membros
+    # precisam informá-lo para entrar (como 'user'). None = org sem código (não
+    # aceita entrada por auto-cadastro).
+    codigo_acesso: Optional[str] = Field(default=None, max_length=100)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

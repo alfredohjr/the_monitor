@@ -185,6 +185,8 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
     email: str | None = None
+    organizacao: str
+    codigo_organizacao: str
 
 class UserResponse(BaseModel):
     id: int
@@ -200,6 +202,28 @@ def register(body: RegisterRequest, session: SessionDep):
         email_taken = session.exec(select(User).where(User.email == body.email)).first()
         if email_taken:
             raise HTTPException(status_code=400, detail="Email já cadastrado")
+
+    nome_org = body.organizacao.strip()
+    codigo = body.codigo_organizacao.strip()
+    if not nome_org:
+        raise HTTPException(status_code=400, detail="Organização é obrigatória")
+    if not codigo:
+        raise HTTPException(status_code=400, detail="Código da organização é obrigatório")
+
+    # Resolve a org ANTES de criar o usuário: numa org existente com código
+    # errado, o cadastro é recusado sem deixar usuário órfão.
+    org = session.exec(
+        select(Organization).where(Organization.nome == nome_org, Organization.deleted == False)
+    ).first()
+    if org is None:
+        # Org nova: quem cadastra define o código e vira admin dela.
+        role = "admin"
+    else:
+        # Org existente: só entra com o código correto, como usuário comum.
+        if not org.codigo_acesso or not secrets.compare_digest(org.codigo_acesso, codigo):
+            raise HTTPException(status_code=400, detail="Código da organização inválido")
+        role = "user"
+
     # Cadastro por senha começa não-verificado; com e-mail, dispara o link de confirmação.
     user = User(
         username=body.username,
@@ -210,6 +234,16 @@ def register(body: RegisterRequest, session: SessionDep):
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    if org is None:
+        org = Organization(nome=nome_org, codigo_acesso=codigo)
+        session.add(org)
+        session.commit()
+        session.refresh(org)
+
+    session.add(Membership(user_id=user.id, organization_id=org.id, role=role))
+    session.commit()
+
     seed_exemplo(user, session)
 
     if body.email:

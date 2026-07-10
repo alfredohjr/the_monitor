@@ -54,6 +54,8 @@ describe('Register — confirmação por e-mail', () => {
     const { container } = render(<RegisterPage />);
     fireEvent.change(container.querySelector('input[name="username"]')!, { target: { value: 'ana' } });
     fireEvent.change(container.querySelector('input[name="email"]')!, { target: { value: 'ana@x.com' } });
+    fireEvent.change(container.querySelector('input[name="organizacao"]')!, { target: { value: 'Acme' } });
+    fireEvent.change(container.querySelector('input[name="codigo"]')!, { target: { value: 'chave-acme' } });
     fireEvent.change(container.querySelector('input[name="password"]')!, { target: { value: 'senha123' } });
     fireEvent.change(container.querySelector('input[name="confirm"]')!, { target: { value: 'senha123' } });
     fireEvent.click(screen.getByRole('button', { name: /Criar Conta/i }));

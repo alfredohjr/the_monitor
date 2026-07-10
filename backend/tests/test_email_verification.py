@@ -41,7 +41,7 @@ def token_for(session, username):
 def test_register_with_email_creates_unverified_user_and_token(client, session):
     resp = client.post(
         "/api/v1/register/",
-        json={"username": "ana", "password": "senha123", "email": "ana@example.com"},
+        json={"username": "ana", "password": "senha123", "email": "ana@example.com", "organizacao": "Ana Org", "codigo_organizacao": "k"},
     )
     assert resp.status_code == 201
 
@@ -58,7 +58,7 @@ def test_register_with_email_creates_unverified_user_and_token(client, session):
 def test_login_blocked_until_email_verified(client, session):
     client.post(
         "/api/v1/register/",
-        json={"username": "bia", "password": "senha123", "email": "bia@example.com"},
+        json={"username": "bia", "password": "senha123", "email": "bia@example.com", "organizacao": "Bia Org", "codigo_organizacao": "k"},
     )
     resp = client.post("/api/v1/token/", json={"username": "bia", "password": "senha123"})
     assert resp.status_code == 403
@@ -68,7 +68,7 @@ def test_login_blocked_until_email_verified(client, session):
 def test_verify_email_then_login_works(client, session):
     client.post(
         "/api/v1/register/",
-        json={"username": "caio", "password": "senha123", "email": "caio@example.com"},
+        json={"username": "caio", "password": "senha123", "email": "caio@example.com", "organizacao": "Caio Org", "codigo_organizacao": "k"},
     )
     tok = token_for(session, "caio")
 
@@ -86,7 +86,7 @@ def test_verify_email_then_login_works(client, session):
 def test_verify_email_expired_token(client, session):
     client.post(
         "/api/v1/register/",
-        json={"username": "dora", "password": "senha123", "email": "dora@example.com"},
+        json={"username": "dora", "password": "senha123", "email": "dora@example.com", "organizacao": "Dora Org", "codigo_organizacao": "k"},
     )
     tok = token_for(session, "dora")
     tok.expires_at = datetime.utcnow() - timedelta(hours=1)
@@ -105,7 +105,7 @@ def test_verify_email_unknown_token(client):
 def test_verify_email_token_cannot_be_reused(client, session):
     client.post(
         "/api/v1/register/",
-        json={"username": "edu", "password": "senha123", "email": "edu@example.com"},
+        json={"username": "edu", "password": "senha123", "email": "edu@example.com", "organizacao": "Edu Org", "codigo_organizacao": "k"},
     )
     tok = token_for(session, "edu")
     assert client.post("/api/v1/verify-email/", json={"token": tok.token}).status_code == 200
@@ -115,7 +115,7 @@ def test_verify_email_token_cannot_be_reused(client, session):
 
 def test_user_without_email_can_login(client, session):
     # cadastro sem e-mail não exige verificação
-    client.post("/api/v1/register/", json={"username": "sem", "password": "senha123"})
+    client.post("/api/v1/register/", json={"username": "sem", "password": "senha123", "organizacao": "Sem Org", "codigo_organizacao": "k"})
     login = client.post("/api/v1/token/", json={"username": "sem", "password": "senha123"})
     assert login.status_code == 200
 

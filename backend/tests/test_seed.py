@@ -40,41 +40,11 @@ def make_user(session: Session, username: str = "ana") -> User:
     return user
 
 
-# --- seed_exemplo ---
-
-def test_seed_cria_org_no_primeiro_registro(session):
-    user = make_user(session)
-    seed_exemplo(user, session)
-    org = session.exec(select(Organization)).first()
-    assert org is not None
-    assert org.nome != ""
+def reg_payload(username, organizacao="Acme", codigo="chave-acme"):
+    return {"username": username, "password": "secret123", "organizacao": organizacao, "codigo_organizacao": codigo}
 
 
-def test_seed_vincula_usuario_a_org(session):
-    user = make_user(session)
-    seed_exemplo(user, session)
-    membership = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
-    assert membership is not None
-
-
-def test_seed_dono_da_org_vira_admin(session):
-    # Quem tem a org criada no cadastro é o dono dela e deve ser admin,
-    # não entrar como 'user' (somente leitura).
-    user = make_user(session)
-    seed_exemplo(user, session)
-    membership = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
-    assert membership is not None
-    assert membership.role == "admin"
-
-
-def test_registro_deixa_dono_como_admin(client: TestClient, session: Session):
-    # Reproduz o bug de campo: todo usuário entrava como 'user' (somente leitura).
-    client.post("/api/v1/register/", json={"username": "ana", "password": "secret123"})
-    user = session.exec(select(User).where(User.username == "ana")).first()
-    membership = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
-    assert membership is not None
-    assert membership.role == "admin"
-
+# --- seed_exemplo: apenas métrica/meta de exemplo (org é responsabilidade do cadastro) ---
 
 def test_seed_cria_metric_exemplo(session):
     user = make_user(session)
@@ -92,14 +62,20 @@ def test_seed_cria_goal_exemplo(session):
     assert goal.deleted is False
 
 
+def test_seed_nao_cria_org_nem_membership(session):
+    # A org agora vem do formulário de cadastro, não do seed.
+    user = make_user(session)
+    seed_exemplo(user, session)
+    assert session.exec(select(Organization)).first() is None
+    assert session.exec(select(Membership)).first() is None
+
+
 def test_seed_nao_repete_se_ja_existem_metricas(session):
     user = make_user(session)
     seed_exemplo(user, session)
     seed_exemplo(user, session)  # segunda chamada não deve duplicar
     metrics = session.exec(select(Metric)).all()
-    orgs = session.exec(select(Organization)).all()
     assert len(metrics) == 1
-    assert len(orgs) == 1
 
 
 def test_seed_nao_repete_para_segundo_usuario(session):
@@ -114,14 +90,14 @@ def test_seed_nao_repete_para_segundo_usuario(session):
 # --- integração via endpoint de registro ---
 
 def test_registro_cria_dados_de_exemplo(client: TestClient, session: Session):
-    client.post("/api/v1/register/", json={"username": "ana", "password": "secret123"})
+    client.post("/api/v1/register/", json=reg_payload("ana"))
     assert session.exec(select(Organization)).first() is not None
     assert session.exec(select(Metric)).first() is not None
     assert session.exec(select(Goal)).first() is not None
 
 
-def test_segundo_registro_nao_duplica_dados(client: TestClient, session: Session):
-    client.post("/api/v1/register/", json={"username": "ana", "password": "secret123"})
-    client.post("/api/v1/register/", json={"username": "bob", "password": "secret123"})
+def test_segundo_registro_na_mesma_org_nao_duplica_org(client: TestClient, session: Session):
+    client.post("/api/v1/register/", json=reg_payload("ana", organizacao="Acme", codigo="k"))
+    client.post("/api/v1/register/", json=reg_payload("bob", organizacao="Acme", codigo="k"))
     assert len(session.exec(select(Metric)).all()) == 1
     assert len(session.exec(select(Organization)).all()) == 1

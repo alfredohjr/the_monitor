@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ username: "", email: "", organizacao: "", codigo: "", password: "", confirm: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,13 @@ export default function RegisterPage() {
       const response = await fetch("http://localhost:8000/api/v1/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: form.username, email: form.email, password: form.password }),
+        body: JSON.stringify({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+          organizacao: form.organizacao,
+          codigo_organizacao: form.codigo,
+        }),
       });
 
       if (!response.ok) {
@@ -104,6 +110,39 @@ export default function RegisterPage() {
               onChange={handleChange}
               className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
               placeholder="voce@exemplo.com"
+            />
+          </div>
+
+          <div className="space-y-2 group">
+            <label className="block text-sm font-medium text-zinc-300 transition-colors group-focus-within:text-blue-400">
+              Organização
+            </label>
+            <input
+              type="text"
+              name="organizacao"
+              value={form.organizacao}
+              onChange={handleChange}
+              required
+              className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+              placeholder="Ex: Minha Empresa"
+            />
+            <p className="text-xs text-zinc-500">
+              Se a organização ainda não existe, você a cria e vira o admin. Se já existe, informe o código de acesso para entrar.
+            </p>
+          </div>
+
+          <div className="space-y-2 group">
+            <label className="block text-sm font-medium text-zinc-300 transition-colors group-focus-within:text-blue-400">
+              Código da organização
+            </label>
+            <input
+              type="text"
+              name="codigo"
+              value={form.codigo}
+              onChange={handleChange}
+              required
+              className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+              placeholder="Defina (org nova) ou informe (org existente)"
             />
           </div>
 

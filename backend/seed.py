@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from models import Goal, Membership, Metric, Organization, User
+from models import Goal, Metric, User
 
 _METRICAS_PADRAO = [
     dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                tipo="currency", periodo="daily",   valor_padrao="0"),
@@ -24,16 +24,11 @@ def seed_metricas_padrao(session: Session) -> None:
 
 
 def seed_exemplo(user: User, session: Session) -> None:
+    # Cria apenas a métrica/meta de exemplo (uma vez). A organização e o vínculo
+    # do usuário são criados no cadastro (endpoint /register/), a partir do que
+    # ele preenche no formulário.
     if session.exec(select(Metric)).first():
         return
-
-    org = Organization(nome="Minha Organização")
-    session.add(org)
-    session.commit()
-    session.refresh(org)
-
-    # Quem tem a org criada no cadastro é o dono dela: entra como admin.
-    session.add(Membership(user_id=user.id, organization_id=org.id, role="admin"))
 
     metric = Metric(
         codigo="EXEMPLO_META",
