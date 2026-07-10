@@ -32,7 +32,8 @@ def seed_exemplo(user: User, session: Session) -> None:
     session.commit()
     session.refresh(org)
 
-    session.add(Membership(user_id=user.id, organization_id=org.id))
+    # Quem tem a org criada no cadastro é o dono dela: entra como admin.
+    session.add(Membership(user_id=user.id, organization_id=org.id, role="admin"))
 
     metric = Metric(
         codigo="EXEMPLO_META",
