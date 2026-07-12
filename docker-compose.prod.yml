@@ -1,0 +1,55 @@
+# Deploy de produção: roda as imagens publicadas no GHCR (não builda) e mantém
+# a instância atualizada dentro de UMA linha minor via a tag móvel.
+#
+# A tag ':0.3' abaixo é o ÚNICO ponto que decide qual série você acompanha.
+# Quando quiser migrar de linha, troque para ':0.4' — é um ato deliberado.
+# Nunca use 'latest'. Requer .env com POSTGRES_USER/PASSWORD/DB.
+#
+# Uso: docker compose -f docker-compose.prod.yml up -d
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/alfredohjr/the_monitor-backend:0.3
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/alfredohjr/the_monitor-frontend:0.3
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Puxa e reinicia os containers quando a tag móvel (ex.: :0.3) recebe um novo
+  # patch. Não cruza para 0.4 sozinho — a tag 0.3 para de andar quando sai a 0.4.0.
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 300
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
