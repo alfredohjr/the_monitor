@@ -10,7 +10,7 @@ from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models import get_session, User, Metric, Goal, LogEntry
+from models import get_session, User, Metric, Goal, LogEntry, Membership
 from auth import hash_password, create_access_token
 
 
@@ -62,6 +62,12 @@ def criar_metrica(client, user, org_id, codigo):
         json={"codigo": codigo, "descricao": "x"},
         headers=auth(user, org_id),
     )
+
+
+def add_membro(session, user, org_id, role="user"):
+    """Vincula um usuário a uma org com o papel dado (default: 'user' comum)."""
+    session.add(Membership(user_id=user.id, organization_id=org_id, role=role))
+    session.commit()
 
 
 # ---------- Métricas ----------
@@ -179,6 +185,72 @@ def test_nao_lanca_em_goal_de_outra_org(client, session):
     # bob tenta lançar na meta da org da alice
     r = client.post("/api/v1/logs/", json={"goal": gid, "data": "2026-07-11", "valor_logado": "3"}, headers=auth(bob, orgB))
     assert r.status_code == 404
+
+
+def test_usuario_comum_lanca_na_org_marcada(client, session):
+    """Membro NÃO-admin (papel 'user') lança e o registro pega a organização
+    marcada na interface (header X-Org-Id), não outra."""
+    admin, org = make_admin_org(client, session, "chefe")
+    mid = criar_metrica(client, admin, org, "M1").json()["id"]
+    gid = client.post("/api/v1/goals/", json={"metric": mid, "alvo": "10"}, headers=auth(admin, org)).json()["id"]
+
+    colab = make_user(session, "colab")
+    add_membro(session, colab, org, role="user")
+
+    r = client.post(
+        "/api/v1/logs/",
+        json={"goal": gid, "data": "2026-07-12", "valor_logado": "4"},
+        headers=auth(colab, org),
+    )
+    assert r.status_code == 201
+    assert session.get(LogEntry, r.json()["id"]).organization_id == org
+
+
+def test_usuario_comum_multi_org_lanca_na_org_do_header(client, session):
+    """Membro comum de DUAS orgs: o lançamento cai na org marcada no header, e
+    não dá para lançar numa meta de org diferente da marcada."""
+    admin1, org1 = make_admin_org(client, session, "a1")
+    admin2, org2 = make_admin_org(client, session, "a2")
+    m1 = criar_metrica(client, admin1, org1, "M1").json()["id"]
+    g1 = client.post("/api/v1/goals/", json={"metric": m1, "alvo": "10"}, headers=auth(admin1, org1)).json()["id"]
+
+    colab = make_user(session, "colab")
+    add_membro(session, colab, org1, role="user")
+    add_membro(session, colab, org2, role="user")
+
+    # marca org1 → cai em org1
+    ok = client.post(
+        "/api/v1/logs/",
+        json={"goal": g1, "data": "2026-07-12", "valor_logado": "2"},
+        headers=auth(colab, org1),
+    )
+    assert ok.status_code == 201
+    assert session.get(LogEntry, ok.json()["id"]).organization_id == org1
+
+    # marca org2 mas a meta é da org1 → recusado
+    ruim = client.post(
+        "/api/v1/logs/",
+        json={"goal": g1, "data": "2026-07-12", "valor_logado": "2"},
+        headers=auth(colab, org2),
+    )
+    assert ruim.status_code == 404
+
+
+def test_lancamento_sem_organizacao_e_recusado(client, session):
+    """Usuário SEM nenhuma organização não consegue lançar: o backend recusa
+    (400), não aceita registro órfão."""
+    admin, org = make_admin_org(client, session, "chefe")
+    mid = criar_metrica(client, admin, org, "M1").json()["id"]
+    gid = client.post("/api/v1/goals/", json={"metric": mid, "alvo": "10"}, headers=auth(admin, org)).json()["id"]
+
+    solto = make_user(session, "solto")  # nenhum membership
+    r = client.post(
+        "/api/v1/logs/",
+        json={"goal": gid, "data": "2026-07-12", "valor_logado": "3"},
+        headers=auth(solto),  # sem X-Org-Id e sem org → sem org ativa
+    )
+    assert r.status_code == 400
+    assert session.exec(select(LogEntry)).all() == []  # nada foi gravado
 
 
 # ---------- Progress ----------
