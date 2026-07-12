@@ -36,7 +36,7 @@ describe('Home page — sem token', () => {
 
   it('displays the app version', () => {
     render(<Home />);
-    expect(screen.getByText(/v0\.3\.0/i)).toBeInTheDocument();
+    expect(screen.getByText(/v0\.4\.0-dev/i)).toBeInTheDocument();
   });
 
   it('nao redireciona quando nao ha token', () => {
