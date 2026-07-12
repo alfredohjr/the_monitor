@@ -15,6 +15,7 @@ node_modules/
 .env*.local
 dist/
 out/
+*.tsbuildinfo
 
 # OS
 .DS_Store
