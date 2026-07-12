@@ -12,6 +12,7 @@ const ESTRATEGIAS = [
   { value: "rampa_crescente", label: "Rampa crescente" },
   { value: "rampa_decrescente", label: "Rampa decrescente" },
   { value: "peso_semana", label: "Dias úteis (zera fim de semana)" },
+  { value: "sazonal_mes", label: "Sazonal (pesa o fim do mês)" },
 ];
 
 export default function ImportGoals() {

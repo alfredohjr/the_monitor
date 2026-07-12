@@ -10,10 +10,22 @@ from datetime import date
 # semana zera. Usado pela estratégia "peso_semana" quando nada é informado.
 DEFAULT_PESOS_SEMANA = {0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 0, 6: 0}
 
-ESTRATEGIAS = ("linear", "rampa_crescente", "rampa_decrescente", "peso_semana")
+ESTRATEGIAS = (
+    "linear",
+    "rampa_crescente",
+    "rampa_decrescente",
+    "peso_semana",
+    "sazonal_mes",     # pesa mais o fim do mês (peso = dia do mês), reseta por mês
+    "pesos_custom",    # pesos informados pelo usuário, repetidos ciclicamente
+)
 
 
-def _pesos(estrategia: str, datas: list[date], pesos_semana: dict[int, float] | None) -> list[float]:
+def _pesos(
+    estrategia: str,
+    datas: list[date],
+    pesos_semana: dict[int, float] | None,
+    pesos_custom: list[float] | None,
+) -> list[float]:
     n = len(datas)
     if estrategia == "linear":
         return [1.0] * n
@@ -23,12 +35,14 @@ def _pesos(estrategia: str, datas: list[date], pesos_semana: dict[int, float] | 
         return [float(n - i) for i in range(n)]
     if estrategia == "peso_semana":
         tabela = pesos_semana or DEFAULT_PESOS_SEMANA
-        pesos = [float(tabela.get(d.weekday(), 0)) for d in datas]
-        # Todos zerados (ex.: intervalo só de fim de semana) -> cai para linear
-        # para não dividir por zero nem devolver tudo zero.
-        if sum(pesos) == 0:
-            return [1.0] * n
-        return pesos
+        return [float(tabela.get(d.weekday(), 0)) for d in datas]
+    if estrategia == "sazonal_mes":
+        # Peso = dia do mês (1..31): fim de mês pesa mais e reseta a cada mês.
+        return [float(d.day) for d in datas]
+    if estrategia == "pesos_custom":
+        if not pesos_custom:
+            raise ValueError("pesos_custom exige a lista de pesos")
+        return [float(pesos_custom[i % len(pesos_custom)]) for i in range(n)]
     raise ValueError(f"Estratégia desconhecida: {estrategia}")
 
 
@@ -37,6 +51,7 @@ def distribuir_alvo(
     datas: list[date],
     estrategia: str = "linear",
     pesos_semana: dict[int, float] | None = None,
+    pesos_custom: list[float] | None = None,
     casas: int = 2,
 ) -> list[float]:
     """Distribui `total` entre `datas` segundo `estrategia`.
@@ -49,7 +64,12 @@ def distribuir_alvo(
     if estrategia not in ESTRATEGIAS:
         raise ValueError(f"Estratégia desconhecida: {estrategia}")
 
-    pesos = _pesos(estrategia, datas, pesos_semana)
+    pesos = _pesos(estrategia, datas, pesos_semana, pesos_custom)
+    # Todos os pesos zerados (ex.: intervalo só de fim de semana) -> cai para
+    # distribuição linear, para não dividir por zero nem devolver tudo zero.
+    if sum(pesos) == 0:
+        pesos = [1.0] * len(datas)
+
     w = sum(pesos)
     valores = [round(total * p / w, casas) for p in pesos]
 

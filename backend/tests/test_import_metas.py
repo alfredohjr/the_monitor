@@ -83,3 +83,26 @@ def test_estrategia_invalida_erro():
 def test_sem_dias_erro():
     with pytest.raises(ValueError):
         distribuir_alvo(100, [], "linear")
+
+
+# ---------- sazonal (peso por dia do mês) ----------
+
+def test_sazonal_mes_pesa_fim_do_mes_e_reseta():
+    # 30/07, 31/07, 01/08 -> pesos por dia-do-mês [30,31,1], W=62; total=62
+    ds = [date(2026, 7, 30), date(2026, 7, 31), date(2026, 8, 1)]
+    vals = distribuir_alvo(62, ds, "sazonal_mes")
+    assert vals == [30, 31, 1]      # 01/08 reseta para baixo
+    assert sum(vals) == 62
+
+
+# ---------- pesos custom (cíclico) ----------
+
+def test_pesos_custom_ciclico():
+    vals = distribuir_alvo(80, datas("2026-08-03", 4), "pesos_custom", pesos_custom=[1, 3])
+    assert vals == [10, 30, 10, 30]  # ciclo [1,3,1,3], W=8
+    assert sum(vals) == 80
+
+
+def test_pesos_custom_sem_pesos_erro():
+    with pytest.raises(ValueError):
+        distribuir_alvo(80, datas("2026-08-03", 4), "pesos_custom")
