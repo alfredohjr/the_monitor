@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -30,8 +31,8 @@ export default function CatalogPage() {
     setToken(t);
     const headers = { Authorization: `Bearer ${t}` };
     Promise.all([
-      fetch("http://localhost:8000/api/v1/metrics/", { headers }).then(r => r.json()),
-      fetch("http://localhost:8000/api/v1/subscriptions/", { headers }).then(r => r.json()),
+      apiFetch("http://localhost:8000/api/v1/metrics/", { headers }).then(r => r.json()),
+      apiFetch("http://localhost:8000/api/v1/subscriptions/", { headers }).then(r => r.json()),
     ]).then(([mData, sData]) => {
       const all: Metric[] = Array.isArray(mData) ? mData : mData.results || [];
       setMetrics(all.filter(m => m.is_default));
@@ -42,7 +43,7 @@ export default function CatalogPage() {
   const subscribedIds = new Set(subscriptions.map(s => s.metric_id));
 
   const handleAssinar = async (metricId: number) => {
-    const res = await fetch("http://localhost:8000/api/v1/subscriptions/", {
+    const res = await apiFetch("http://localhost:8000/api/v1/subscriptions/", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ metric_id: metricId }),
@@ -56,7 +57,7 @@ export default function CatalogPage() {
   const handleCancelar = async (metricId: number) => {
     const sub = subscriptions.find(s => s.metric_id === metricId);
     if (!sub) return;
-    const res = await fetch(`http://localhost:8000/api/v1/subscriptions/${sub.id}/`, {
+    const res = await apiFetch(`http://localhost:8000/api/v1/subscriptions/${sub.id}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

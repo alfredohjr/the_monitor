@@ -18,7 +18,7 @@ export default function AdminUsers() {
   const [meId, setMeId] = useState<number | null>(null);
   const [notAdmin, setNotAdmin] = useState(false);
   const [users, setUsers] = useState<OrgUser[]>([]);
-  const [form, setForm] = useState({ username: "", password: "", email: "" });
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -49,9 +49,6 @@ export default function AdminUsers() {
       .then(d => setUsers(Array.isArray(d) ? d : []));
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -59,15 +56,15 @@ export default function AdminUsers() {
     const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ email }),
     });
     if (!resp.ok) {
       const d = await resp.json().catch(() => ({}));
-      setError(d.detail ?? "Não foi possível criar o usuário");
+      setError(d.detail ?? "Não foi possível adicionar o usuário");
       return;
     }
-    setForm({ username: "", password: "", email: "" });
-    setMessage("Usuário criado.");
+    setEmail("");
+    setMessage("Usuário adicionado. Ele entra pelo login com Google usando esse e-mail.");
     if (orgId) loadUsers(orgId, token);
   };
 
@@ -102,15 +99,16 @@ export default function AdminUsers() {
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {message && <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">{message}</div>}
 
-        <form onSubmit={handleCreate} className="grid sm:grid-cols-4 gap-3 mb-8">
-          <input name="username" value={form.username} onChange={handleChange} required placeholder="Usuário"
+        <form onSubmit={handleCreate} className="grid sm:grid-cols-[1fr_auto] gap-3 mb-2">
+          <input name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
+            placeholder="E-mail do novo membro"
             className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
-          <input name="password" type="password" value={form.password} onChange={handleChange} required placeholder="Senha"
-            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
-          <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="E-mail (opcional)"
-            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
-          <button type="submit" className="bg-blue-600 font-bold py-3 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
+          <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
         </form>
+        <p className="text-zinc-500 text-xs mb-8">
+          Se o e-mail já tiver conta, ele é vinculado a esta organização. Se não, criamos a conta e a pessoa
+          entra pelo <strong>login com Google</strong> usando o mesmo e-mail.
+        </p>
 
         <table className="w-full text-sm">
           <thead>

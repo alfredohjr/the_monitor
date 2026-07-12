@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.exc import IntegrityError
 
 from main import app
-from models import get_session, User, Metric, Goal, LogEntry
+from models import get_session, User, Metric, Goal, LogEntry, Organization, Membership
 from auth import hash_password
 
 
@@ -33,10 +33,23 @@ def client_fixture(session: Session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(name="org_id")
+def org_id_fixture(session: Session):
+    org = Organization(nome="Org Tester")
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org.id
+
+
 @pytest.fixture(name="token")
-def token_fixture(session: Session, client: TestClient):
+def token_fixture(session: Session, client: TestClient, org_id: int):
     user = User(username="tester", hashed_password=hash_password("secret"))
     session.add(user)
+    session.commit()
+    session.refresh(user)
+    # Dados são escopados por org: o tester precisa ser membro de uma.
+    session.add(Membership(user_id=user.id, organization_id=org_id, role="admin"))
     session.commit()
 
     resp = client.post("/api/v1/token/", json={"username": "tester", "password": "secret"})
@@ -87,8 +100,8 @@ def test_create_metric(client: TestClient, token: str):
     assert data["deleted"] is False
 
 
-def test_list_metrics(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="LEITURA", nome="Leitura", descricao="Pgs", tipo="number", periodo="daily")
+def test_list_metrics(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="LEITURA", nome="Leitura", descricao="Pgs", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
 
@@ -97,8 +110,8 @@ def test_list_metrics(client: TestClient, token: str, session: Session):
     assert len(resp.json()) == 1
 
 
-def test_get_metric(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="RUN", nome="Corrida", descricao="Km", tipo="decimal", periodo="daily")
+def test_get_metric(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="RUN", nome="Corrida", descricao="Km", tipo="decimal", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
@@ -108,8 +121,8 @@ def test_get_metric(client: TestClient, token: str, session: Session):
     assert resp.json()["codigo"] == "RUN"
 
 
-def test_update_metric(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="SLEEP", nome="Sono", descricao="Horas", tipo="decimal", periodo="daily")
+def test_update_metric(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="SLEEP", nome="Sono", descricao="Horas", tipo="decimal", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
@@ -123,8 +136,8 @@ def test_update_metric(client: TestClient, token: str, session: Session):
     assert resp.json()["nome"] == "Sono Total"
 
 
-def test_soft_delete_metric(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="GYM", nome="Academia", descricao="Treinos", tipo="number", periodo="daily")
+def test_soft_delete_metric(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="GYM", nome="Academia", descricao="Treinos", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
@@ -148,8 +161,8 @@ def test_deleted_metric_not_listed(client: TestClient, token: str, session: Sess
 
 # ---------- Goals ----------
 
-def test_create_goal(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="AGUA2", nome="Água", descricao="Copos", tipo="number", periodo="daily")
+def test_create_goal(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="AGUA2", nome="Água", descricao="Copos", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
@@ -163,13 +176,13 @@ def test_create_goal(client: TestClient, token: str, session: Session):
     assert resp.json()["alvo"] == "8"
 
 
-def test_list_goals(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="STEPS", nome="Passos", descricao="Passos", tipo="number", periodo="daily")
+def test_list_goals(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="STEPS", nome="Passos", descricao="Passos", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
 
-    g = Goal(metric=m.id, alvo="10000", periodo_referencia="2026-06-23")
+    g = Goal(metric=m.id, alvo="10000", periodo_referencia="2026-06-23", organization_id=org_id)
     session.add(g)
     session.commit()
 
@@ -178,13 +191,13 @@ def test_list_goals(client: TestClient, token: str, session: Session):
     assert len(resp.json()) == 1
 
 
-def test_soft_delete_goal(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="CAL", nome="Calorias", descricao="Kcal", tipo="number", periodo="daily")
+def test_soft_delete_goal(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="CAL", nome="Calorias", descricao="Kcal", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
 
-    g = Goal(metric=m.id, alvo="2000", periodo_referencia="2026-06-23")
+    g = Goal(metric=m.id, alvo="2000", periodo_referencia="2026-06-23", organization_id=org_id)
     session.add(g)
     session.commit()
     session.refresh(g)
@@ -198,13 +211,13 @@ def test_soft_delete_goal(client: TestClient, token: str, session: Session):
 
 # ---------- LogEntries ----------
 
-def test_create_log_entry(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="WATER", nome="Água", descricao="Copos", tipo="number", periodo="daily")
+def test_create_log_entry(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="WATER", nome="Água", descricao="Copos", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
 
-    g = Goal(metric=m.id, alvo="8", periodo_referencia="2026-06-23")
+    g = Goal(metric=m.id, alvo="8", periodo_referencia="2026-06-23", organization_id=org_id)
     session.add(g)
     session.commit()
     session.refresh(g)
@@ -218,18 +231,18 @@ def test_create_log_entry(client: TestClient, token: str, session: Session):
     assert resp.json()["valor_logado"] == "6"
 
 
-def test_list_log_entries(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="BOOK", nome="Leitura", descricao="Páginas", tipo="number", periodo="daily")
+def test_list_log_entries(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="BOOK", nome="Leitura", descricao="Páginas", tipo="number", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
 
-    g = Goal(metric=m.id, alvo="30", periodo_referencia="2026-06-23")
+    g = Goal(metric=m.id, alvo="30", periodo_referencia="2026-06-23", organization_id=org_id)
     session.add(g)
     session.commit()
     session.refresh(g)
 
-    log = LogEntry(goal=g.id, data=date(2026, 6, 23), valor_logado="25")
+    log = LogEntry(goal=g.id, data=date(2026, 6, 23), valor_logado="25", organization_id=org_id)
     session.add(log)
     session.commit()
 
@@ -238,18 +251,18 @@ def test_list_log_entries(client: TestClient, token: str, session: Session):
     assert len(resp.json()) == 1
 
 
-def test_soft_delete_log_entry(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="MEDIA", nome="Mídia", descricao="Horas", tipo="decimal", periodo="daily")
+def test_soft_delete_log_entry(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="MEDIA", nome="Mídia", descricao="Horas", tipo="decimal", periodo="daily", organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)
 
-    g = Goal(metric=m.id, alvo="2", periodo_referencia="2026-06-23")
+    g = Goal(metric=m.id, alvo="2", periodo_referencia="2026-06-23", organization_id=org_id)
     session.add(g)
     session.commit()
     session.refresh(g)
 
-    log = LogEntry(goal=g.id, data=date(2026, 6, 23), valor_logado="1.5")
+    log = LogEntry(goal=g.id, data=date(2026, 6, 23), valor_logado="1.5", organization_id=org_id)
     session.add(log)
     session.commit()
     session.refresh(log)

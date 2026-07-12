@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatValor } from "@/lib/formatValor";
@@ -16,8 +17,8 @@ export default function MetricList() {
     }
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
-      fetch("http://localhost:8000/api/v1/metrics/", { headers }).then(r => r.json()),
-      fetch("http://localhost:8000/api/v1/subscriptions/", { headers }).then(r => r.json()),
+      apiFetch("http://localhost:8000/api/v1/metrics/", { headers }).then(r => r.json()),
+      apiFetch("http://localhost:8000/api/v1/subscriptions/", { headers }).then(r => r.json()),
     ]).then(([mData, sData]) => {
       const all: any[] = Array.isArray(mData) ? mData : mData.results || [];
       const subscribedIds = new Set<number>((Array.isArray(sData) ? sData : []).map((s: any) => s.metric_id));
@@ -31,7 +32,7 @@ export default function MetricList() {
     const token = localStorage.getItem("access_token");
     if (!confirm("Tem certeza que deseja apagar? Isso removerá a visualização da métrica e metas associadas.")) return;
     try {
-      await fetch(`http://localhost:8000/api/v1/metrics/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await apiFetch(`http://localhost:8000/api/v1/metrics/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setItems(items.filter(i => i.id !== id));
     } catch {}
   };

@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models import get_session, User, Metric, Goal
+from models import get_session, User, Metric, Goal, Organization, Membership
 from auth import hash_password, create_access_token
 from progress import compute_progress, bucket_key
 
@@ -25,20 +25,29 @@ def client_fixture(session: Session):
     app.dependency_overrides.clear()
 
 
-def make_user(session, username="ana"):
+@pytest.fixture(name="org_id")
+def org_id_fixture(session):
+    org = Organization(nome="Org Progress")
+    session.add(org); session.commit(); session.refresh(org)
+    return org.id
+
+
+def make_user(session, org_id, username="ana"):
     u = User(username=username, hashed_password=hash_password("s"))
     session.add(u); session.commit(); session.refresh(u)
+    session.add(Membership(user_id=u.id, organization_id=org_id, role="admin"))
+    session.commit()
     return u
 
 
-def make_metric(session, periodo="daily", tipo="currency"):
-    m = Metric(codigo="REC", nome="Receita", descricao="d", tipo=tipo, periodo=periodo)
+def make_metric(session, org_id, periodo="daily", tipo="currency"):
+    m = Metric(codigo="REC", nome="Receita", descricao="d", tipo=tipo, periodo=periodo, organization_id=org_id)
     session.add(m); session.commit(); session.refresh(m)
     return m
 
 
-def add_goal(session, metric_id, alvo, ref):
-    g = Goal(metric=metric_id, alvo=alvo, periodo_referencia=ref)
+def add_goal(session, org_id, metric_id, alvo, ref):
+    g = Goal(metric=metric_id, alvo=alvo, periodo_referencia=ref, organization_id=org_id)
     session.add(g); session.commit(); session.refresh(g)
     return g
 
@@ -47,14 +56,14 @@ def auth(u):
     return {"Authorization": f"Bearer {create_access_token(u.username)}"}
 
 
-def test_realizado_atribuido_ao_periodo_da_meta_nao_a_data_do_log(client, session):
+def test_realizado_atribuido_ao_periodo_da_meta_nao_a_data_do_log(client, session, org_id):
     """Reproduz o bug do dashboard: lançamentos registrados todos no mesmo dia
     (data=2026-07-08) mas para metas de dias diferentes. O realizado deve cair
     no periodo_referencia da meta, não na data do check-in."""
-    u = make_user(session)
-    m = make_metric(session, periodo="daily")
-    g1 = add_goal(session, m.id, "300", "2026-07-01")
-    g2 = add_goal(session, m.id, "300", "2026-07-05")
+    u = make_user(session, org_id)
+    m = make_metric(session, org_id, periodo="daily")
+    g1 = add_goal(session, org_id, m.id, "300", "2026-07-01")
+    g2 = add_goal(session, org_id, m.id, "300", "2026-07-05")
     # todos os lançamentos com data 2026-07-08:
     for goal_id, valor in [(g1.id, "800"), (g1.id, "50"), (g2.id, "300")]:
         client.post("/api/v1/logs/", json={"goal": goal_id, "data": "2026-07-08", "valor_logado": valor}, headers=auth(u))
@@ -71,11 +80,11 @@ def test_realizado_atribuido_ao_periodo_da_meta_nao_a_data_do_log(client, sessio
     assert pontos["2026-07-05"]["meta"] == 300
 
 
-def test_totais_e_percentual(client, session):
-    u = make_user(session, "bob")
-    m = make_metric(session, periodo="daily")
-    g1 = add_goal(session, m.id, "300", "2026-07-01")
-    g2 = add_goal(session, m.id, "300", "2026-07-05")
+def test_totais_e_percentual(client, session, org_id):
+    u = make_user(session, org_id, "bob")
+    m = make_metric(session, org_id, periodo="daily")
+    g1 = add_goal(session, org_id, m.id, "300", "2026-07-01")
+    g2 = add_goal(session, org_id, m.id, "300", "2026-07-05")
     client.post("/api/v1/logs/", json={"goal": g1.id, "data": "2026-07-08", "valor_logado": "150"}, headers=auth(u))
     client.post("/api/v1/logs/", json={"goal": g2.id, "data": "2026-07-08", "valor_logado": "300"}, headers=auth(u))
 
@@ -85,11 +94,11 @@ def test_totais_e_percentual(client, session):
     assert body["pct"] == 75
 
 
-def test_meta_fora_do_intervalo_e_ignorada(client, session):
-    u = make_user(session, "cid")
-    m = make_metric(session, periodo="daily")
-    dentro = add_goal(session, m.id, "100", "2026-07-10")
-    fora = add_goal(session, m.id, "100", "2026-08-10")
+def test_meta_fora_do_intervalo_e_ignorada(client, session, org_id):
+    u = make_user(session, org_id, "cid")
+    m = make_metric(session, org_id, periodo="daily")
+    dentro = add_goal(session, org_id, m.id, "100", "2026-07-10")
+    fora = add_goal(session, org_id, m.id, "100", "2026-08-10")
     client.post("/api/v1/logs/", json={"goal": dentro.id, "data": "2026-07-08", "valor_logado": "40"}, headers=auth(u))
     client.post("/api/v1/logs/", json={"goal": fora.id, "data": "2026-07-08", "valor_logado": "90"}, headers=auth(u))
 
@@ -98,10 +107,10 @@ def test_meta_fora_do_intervalo_e_ignorada(client, session):
     assert pontos["2026-07-10"]["realizado"] == 40
 
 
-def test_bucket_mensal_agrega_por_mes(client, session):
-    u = make_user(session, "dan")
-    m = make_metric(session, periodo="monthly")
-    g = add_goal(session, m.id, "1000", "2026-07")
+def test_bucket_mensal_agrega_por_mes(client, session, org_id):
+    u = make_user(session, org_id, "dan")
+    m = make_metric(session, org_id, periodo="monthly")
+    g = add_goal(session, org_id, m.id, "1000", "2026-07")
     client.post("/api/v1/logs/", json={"goal": g.id, "data": "2026-07-03", "valor_logado": "400"}, headers=auth(u))
     client.post("/api/v1/logs/", json={"goal": g.id, "data": "2026-07-28", "valor_logado": "600"}, headers=auth(u))
     pontos = {p["periodo"]: p for p in client.get(f"/api/v1/metrics/{m.id}/progress?start=2026-07-01&end=2026-07-31", headers=auth(u)).json()["pontos"]}

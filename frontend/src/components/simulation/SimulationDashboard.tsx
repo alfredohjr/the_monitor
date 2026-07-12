@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
@@ -227,9 +228,9 @@ export default function SimulationDashboard() {
   const fetchData = useCallback(async (t: string) => {
     try {
       const [mRes, gRes, lRes] = await Promise.all([
-        fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${t}` } }),
-        fetch("http://localhost:8000/api/v1/goals/", { headers: { Authorization: `Bearer ${t}` } }),
-        fetch("http://localhost:8000/api/v1/logs/", { headers: { Authorization: `Bearer ${t}` } })
+        apiFetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${t}` } }),
+        apiFetch("http://localhost:8000/api/v1/goals/", { headers: { Authorization: `Bearer ${t}` } }),
+        apiFetch("http://localhost:8000/api/v1/logs/", { headers: { Authorization: `Bearer ${t}` } })
       ]);
       const m = await mRes.json();
       const g = await gRes.json();
@@ -324,14 +325,14 @@ export default function SimulationDashboard() {
     setSaving(true);
     try {
       const postPromises = pendingPosts.map(d =>
-        fetch(`http://localhost:8000/api/v1/goals/`, {
+        apiFetch(`http://localhost:8000/api/v1/goals/`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
           body: JSON.stringify({ metric: selectedMetric, alvo: d.alvo.toString(), periodo_referencia: d.periodRef })
         })
       );
       const putPromises = pendingPuts.map(d =>
-        fetch(`http://localhost:8000/api/v1/goals/${d.goalId}/`, {
+        apiFetch(`http://localhost:8000/api/v1/goals/${d.goalId}/`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
           body: JSON.stringify({ ...d.goalOriginal, alvo: d.alvo.toString() })
