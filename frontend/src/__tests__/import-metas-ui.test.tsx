@@ -73,3 +73,24 @@ describe('ImportGoals', () => {
     expect(await screen.findByText(/4 meta\(s\) criada\(s\)/)).toBeInTheDocument();
   });
 });
+
+describe('ImportGoals — prefill por modelo (#143)', () => {
+  const template = { id: 9, nome: 'Meta de receita', metric_codigo: 'REC', alvo_sugerido: '500', estrategia: 'rampa_crescente' };
+
+  beforeEach(() => {
+    localStorage.setItem('access_token', 'tok');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/goal-templates/')) return Promise.resolve({ ok: true, json: async () => [template] });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, json: async () => [metrica] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+  });
+
+  it('clicar no modelo pré-preenche métrica, alvo e curva', async () => {
+    const { container } = render(<ImportGoals />);
+    fireEvent.click(await screen.findByText('Meta de receita'));
+    expect((container.querySelector('select[name="metric_id"]') as HTMLSelectElement).value).toBe('1');
+    expect((container.querySelector('input[name="alvo_total"]') as HTMLInputElement).value).toBe('500');
+    expect((container.querySelector('select[name="estrategia"]') as HTMLSelectElement).value).toBe('rampa_crescente');
+  });
+});
