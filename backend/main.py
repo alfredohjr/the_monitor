@@ -759,6 +759,65 @@ def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser)
     session.commit()
 
 
+# ---------- Import de lançamentos / histórico (#144) ----------
+
+class LogImportItem(BaseModel):
+    data: str            # YYYY-MM-DD
+    valor: str
+
+class LogImportRequest(BaseModel):
+    metric_id: int
+    lancamentos: list[LogImportItem]
+    dry_run: bool = False
+
+
+@app.post('/api/v1/logs/import')
+def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Importa lançamentos (histórico realizado) em lote, casando cada valor com
+    a meta diária do mesmo dia (métrica + org + período). Dias sem meta são
+    contados em `sem_meta` (não cria meta). Idempotente por meta+data. Não
+    dispara notificação de meta atingida (evita spam em importação em massa)."""
+    from datetime import date as date_type
+    org_id = require_active_org(org)
+    if not _visible_metric(body.metric_id, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+
+    criadas = ignoradas = sem_meta = 0
+    for item in body.lancamentos:
+        try:
+            d = date_type.fromisoformat(item.data)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Data inválida: {item.data}")
+        goal = session.exec(
+            select(Goal).where(
+                Goal.metric == body.metric_id,
+                Goal.organization_id == org_id,
+                Goal.periodo_referencia == item.data,
+                Goal.deleted == False,
+            )
+        ).first()
+        if not goal:
+            sem_meta += 1
+            continue
+        ja_existe = session.exec(
+            select(LogEntry).where(
+                LogEntry.goal == goal.id,
+                LogEntry.data == d,
+                LogEntry.deleted == False,
+            )
+        ).first()
+        if ja_existe:
+            ignoradas += 1
+            continue
+        if not body.dry_run:
+            session.add(LogEntry(goal=goal.id, data=d, valor_logado=item.valor, organization_id=org_id))
+        criadas += 1
+
+    if not body.dry_run:
+        session.commit()
+    return {"dry_run": body.dry_run, "criadas": criadas, "ignoradas": ignoradas, "sem_meta": sem_meta}
+
+
 # ---------- Organizations ----------
 
 class OrganizationCreate(BaseModel):
