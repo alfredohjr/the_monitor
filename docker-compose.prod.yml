@@ -44,8 +44,10 @@ services:
 
   # Puxa e reinicia os containers quando a tag móvel (ex.: :0.3) recebe um novo
   # patch. Não cruza para 0.4 sozinho — a tag 0.3 para de andar quando sai a 0.4.0.
+  # Fork mantido: o projeto original containrrr/watchtower foi arquivado (dez/2025);
+  # nickfedor/watchtower é o sucessor ativo, drop-in compatível.
   watchtower:
-    image: containrrr/watchtower
+    image: nickfedor/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --cleanup --interval 300
