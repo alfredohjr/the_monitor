@@ -73,6 +73,7 @@ export default function Navbar() {
             <Link href="/logs" className="text-zinc-300 hover:text-white transition">Lançamentos</Link>
             {!isUser && <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>}
             {!isUser && <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>}
+            {!isUser && <Link href="/metas/importar" className="text-zinc-300 hover:text-white transition">Importar</Link>}
             {isAdmin && <Link href="/admin" className="text-amber-300 hover:text-amber-200 transition">Admin</Link>}
           </>
         )}
