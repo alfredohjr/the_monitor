@@ -7,12 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, EmailVerificationToken, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, EmailVerificationToken, GoalTemplate, get_session
 import secrets
 
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email
-from seed import seed_exemplo, seed_metricas_padrao
+from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates
 from progress import compute_progress
 from import_metas import distribuir_alvo, ESTRATEGIAS
 from auth import (
@@ -70,6 +70,7 @@ def on_startup():
     from models.database import engine
     with Session(engine) as session:
         seed_metricas_padrao(session)
+        seed_goal_templates(session)
     _start_scheduler()
 
 
@@ -660,6 +661,15 @@ def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _
         criadas += 1
     session.commit()
     return {"dry_run": False, "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
+
+
+# ---------- Catálogo de metas-modelo (GoalTemplate) (#143) ----------
+
+@app.get('/api/v1/goal-templates/')
+def list_goal_templates(session: SessionDep, _: CurrentUser) -> list[GoalTemplate]:
+    """Catálogo curado de metas-modelo. O front usa cada modelo para pré-preencher
+    o import (métrica + alvo sugerido + curva) em POST /api/v1/goals/import."""
+    return session.exec(select(GoalTemplate).where(GoalTemplate.deleted == False)).all()
 
 
 # ---------- LogEntries ----------

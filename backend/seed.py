@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from models import Goal, Metric, Organization, User
+from models import Goal, GoalTemplate, Metric, Organization, User
 
 _METRICAS_PADRAO = [
     dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                tipo="currency", periodo="daily",   valor_padrao="0"),
@@ -20,6 +20,26 @@ def seed_metricas_padrao(session: Session) -> None:
         if dados["codigo"] in codigos_existentes:
             continue
         session.add(Metric(**dados, is_default=True))
+    session.commit()
+
+
+_TEMPLATES_PADRAO = [
+    dict(nome="Faturamento do mês", descricao="Distribui a meta de receita ao longo do mês, pesando mais o fim.",
+         metric_codigo="PAD_RECEITA_MENSAL", alvo_sugerido="30000", estrategia="sazonal_mes", categoria="Negócios"),
+    dict(nome="Rotina de estudos", descricao="Horas de estudo nos dias úteis (fim de semana livre).",
+         metric_codigo="PAD_HORAS_ESTUDO", alvo_sugerido="40", estrategia="peso_semana", categoria="Educação"),
+    dict(nome="Meta de leitura", descricao="Páginas lidas por dia, distribuídas por igual.",
+         metric_codigo="PAD_PAGINAS_LIDAS", alvo_sugerido="600", estrategia="linear", categoria="Educação"),
+]
+
+
+def seed_goal_templates(session: Session) -> None:
+    """Semeia o catálogo curado de metas-modelo (idempotente por nome)."""
+    existentes = {t.nome for t in session.exec(select(GoalTemplate)).all()}
+    for dados in _TEMPLATES_PADRAO:
+        if dados["nome"] in existentes:
+            continue
+        session.add(GoalTemplate(**dados))
     session.commit()
 
 
