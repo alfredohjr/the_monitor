@@ -109,7 +109,8 @@ export default function ImportGoals() {
       <div className="relative z-10 w-full max-w-2xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
         <Link href="/goals" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar pra Metas</Link>
         <h1 className="text-3xl font-extrabold tracking-tight mb-1">Importar metas</h1>
-        <p className="text-zinc-400 text-sm mb-8">Distribui um alvo total em metas diárias segundo uma curva.</p>
+        <p className="text-zinc-400 text-sm mb-2">Distribui um alvo total em metas diárias segundo uma curva.</p>
+        <p className="text-zinc-500 text-xs mb-8">Já tem o histórico em planilha? <Link href="/lancamentos/importar" className="text-blue-400 hover:text-blue-300">Importar lançamentos por CSV →</Link></p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {result && (
