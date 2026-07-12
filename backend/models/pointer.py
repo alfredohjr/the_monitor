@@ -49,3 +49,18 @@ class UserMetricSubscription(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     metric_id: int = Field(foreign_key="metric.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class GoalTemplate(SQLModel, table=True):
+    """Modelo de meta pronto (catálogo curado). Aponta para uma métrica do
+    catálogo por código e sugere um alvo total + curva de distribuição. Importar
+    a partir dele reusa POST /api/v1/goals/import (só pré-preenche os campos)."""
+    id: int | None = Field(default=None, primary_key=True)
+    nome: str = Field(max_length=150)
+    descricao: str = Field(default="")
+    metric_codigo: str = Field(max_length=50, index=True)
+    alvo_sugerido: str = Field(max_length=255)
+    estrategia: str = Field(default="linear", max_length=30)
+    categoria: str = Field(default="", max_length=50)
+    deleted: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
