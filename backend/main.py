@@ -29,7 +29,7 @@ def nulo():
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"
 
 # Origens permitidas para CORS. Configuravel via env CORS_ORIGINS
 # (lista separada por virgula); default cobre o front Next.js local.
