@@ -14,6 +14,7 @@ from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email
 from seed import seed_exemplo, seed_metricas_padrao
 from progress import compute_progress
+from import_metas import distribuir_alvo, ESTRATEGIAS
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -585,6 +586,76 @@ def delete_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUse
     goal.deleted = True
     session.add(goal)
     session.commit()
+
+
+# ---------- Import de metas (#140) ----------
+
+class GoalImportRequest(BaseModel):
+    metric_id: int
+    alvo_total: float
+    inicio: str          # YYYY-MM-DD
+    fim: str             # YYYY-MM-DD
+    estrategia: str = "linear"
+    dry_run: bool = False
+
+
+@app.post('/api/v1/goals/import')
+def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Gera metas diárias a partir de um alvo total distribuído por uma curva.
+
+    `dry_run=true` devolve a prévia (pontos + soma) sem gravar. Sem dry_run,
+    cria um Goal por dia (com alvo > 0) na org ativa, de forma idempotente
+    (não duplica um dia que já tenha meta para a mesma métrica/período)."""
+    org_id = require_active_org(org)
+    metric = _visible_metric(body.metric_id, session, org_id)
+    if not metric:
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    if body.estrategia not in ESTRATEGIAS:
+        raise HTTPException(status_code=422, detail="Estratégia inválida")
+    try:
+        d0 = datetime.date.fromisoformat(body.inicio)
+        d1 = datetime.date.fromisoformat(body.fim)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+    if d1 < d0:
+        raise HTTPException(status_code=422, detail="Data fim anterior à início")
+    dias = (d1 - d0).days + 1
+    if dias > 366:
+        raise HTTPException(status_code=422, detail="Intervalo muito longo (máx. 366 dias)")
+
+    datas = [d0 + datetime.timedelta(days=i) for i in range(dias)]
+    valores = distribuir_alvo(body.alvo_total, datas, body.estrategia)
+    pontos = [{"data": d.isoformat(), "alvo": v} for d, v in zip(datas, valores)]
+    soma = round(sum(valores), 2)
+
+    if body.dry_run:
+        return {"dry_run": True, "pontos": pontos, "soma": soma}
+
+    criadas = 0
+    ignoradas = 0
+    for d, v in zip(datas, valores):
+        if v == 0:
+            continue  # dia sem meta (ex.: fim de semana na curva peso_semana)
+        ja_existe = session.exec(
+            select(Goal).where(
+                Goal.metric == body.metric_id,
+                Goal.organization_id == org_id,
+                Goal.periodo_referencia == d.isoformat(),
+                Goal.deleted == False,
+            )
+        ).first()
+        if ja_existe:
+            ignoradas += 1
+            continue
+        session.add(Goal(
+            metric=body.metric_id,
+            alvo=str(v),
+            periodo_referencia=d.isoformat(),
+            organization_id=org_id,
+        ))
+        criadas += 1
+    session.commit()
+    return {"dry_run": False, "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
 
 
 # ---------- LogEntries ----------
