@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 interface Ponto { data: string; alvo: number }
+interface Metric { id: number; codigo: string; nome?: string; periodo: string }
+interface Template { id: number; nome: string; metric_codigo: string; alvo_sugerido: string; estrategia: string; categoria?: string }
 
 const ESTRATEGIAS = [
   { value: "linear", label: "Linear (igual todo dia)" },
@@ -25,18 +26,33 @@ export default function ImportGoals() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { metrics } = useSubscribedMetrics(token);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
     if (!t) return void router.push("/login");
     setToken(t);
+    // todas as métricas visíveis (org + catálogo) para mapear o código do modelo
+    apiFetch("http://localhost:8000/api/v1/metrics/").then(r => r.json())
+      .then(d => setMetrics(Array.isArray(d) ? d : [])).catch(() => {});
+    apiFetch("http://localhost:8000/api/v1/goal-templates/").then(r => r.json())
+      .then(d => setTemplates(Array.isArray(d) ? d : [])).catch(() => {});
   }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(p => ({ ...p, [e.target.name]: e.target.value }));
     setPontos(null);
     setResult(null);
+  };
+
+  // Pré-preenche o form a partir de um modelo do catálogo (#143).
+  const usarModelo = (t: Template) => {
+    const m = metrics.find(x => x.codigo === t.metric_codigo);
+    setForm(p => ({ ...p, metric_id: m ? String(m.id) : "", alvo_total: t.alvo_sugerido, estrategia: t.estrategia }));
+    setPontos(null);
+    setResult(null);
+    setError(m ? "" : `A métrica ${t.metric_codigo} não está disponível — assine-a no catálogo.`);
   };
 
   async function chamar(dry_run: boolean) {
@@ -99,6 +115,20 @@ export default function ImportGoals() {
         {result && (
           <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">
             Importado: {result.criadas} meta(s) criada(s), {result.ignoradas} já existente(s).
+          </div>
+        )}
+
+        {templates.length > 0 && (
+          <div className="mb-6">
+            <p className="text-sm text-zinc-400 mb-2">Começar de um modelo:</p>
+            <div className="flex flex-wrap gap-2">
+              {templates.map(t => (
+                <button key={t.id} type="button" onClick={() => usarModelo(t)} title={t.metric_codigo}
+                  className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition">
+                  {t.nome}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
