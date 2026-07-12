@@ -117,6 +117,38 @@ def test_sem_organizacao_400(client, session):
     assert r.status_code == 400
 
 
+def test_sazonal_mes(client, session):
+    alice, org = make_admin_org(client, session, "alice")
+    mid = criar_metrica(client, alice, org)
+    # 3 dias no começo do mês; pesos = dia do mês [1,2,3] -> soma bate
+    r = client.post("/api/v1/goals/import",
+                    json=payload(mid, inicio="2026-08-01", fim="2026-08-03", alvo_total=60, estrategia="sazonal_mes"),
+                    headers=auth(alice, org))
+    assert r.status_code == 200
+    goals = session.exec(select(Goal).where(Goal.metric == mid)).all()
+    assert sum(float(g.alvo) for g in goals) == 60
+
+
+def test_pesos_custom(client, session):
+    alice, org = make_admin_org(client, session, "alice")
+    mid = criar_metrica(client, alice, org)
+    r = client.post("/api/v1/goals/import",
+                    json=payload(mid, alvo_total=80, estrategia="pesos_custom", pesos=[1, 3]),
+                    headers=auth(alice, org))
+    assert r.status_code == 200
+    goals = session.exec(select(Goal).where(Goal.metric == mid)).all()
+    assert sum(float(g.alvo) for g in goals) == 80
+
+
+def test_pesos_custom_sem_pesos_422(client, session):
+    alice, org = make_admin_org(client, session, "alice")
+    mid = criar_metrica(client, alice, org)
+    r = client.post("/api/v1/goals/import",
+                    json=payload(mid, estrategia="pesos_custom"),
+                    headers=auth(alice, org))
+    assert r.status_code == 422
+
+
 def test_datas_invalidas_422(client, session):
     alice, org = make_admin_org(client, session, "alice")
     mid = criar_metrica(client, alice, org)

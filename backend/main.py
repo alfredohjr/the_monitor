@@ -596,6 +596,7 @@ class GoalImportRequest(BaseModel):
     inicio: str          # YYYY-MM-DD
     fim: str             # YYYY-MM-DD
     estrategia: str = "linear"
+    pesos: list[float] | None = None   # usado quando estrategia == "pesos_custom"
     dry_run: bool = False
 
 
@@ -624,7 +625,10 @@ def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _
         raise HTTPException(status_code=422, detail="Intervalo muito longo (máx. 366 dias)")
 
     datas = [d0 + datetime.timedelta(days=i) for i in range(dias)]
-    valores = distribuir_alvo(body.alvo_total, datas, body.estrategia)
+    try:
+        valores = distribuir_alvo(body.alvo_total, datas, body.estrategia, pesos_custom=body.pesos)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     pontos = [{"data": d.isoformat(), "alvo": v} for d, v in zip(datas, valores)]
     soma = round(sum(valores), 2)
 
