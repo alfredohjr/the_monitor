@@ -15,6 +15,7 @@ from email_service import build_resumo, render_html, enviar_resumo_para_todos, s
 from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates
 from progress import compute_progress
 from import_metas import distribuir_alvo, ESTRATEGIAS
+from import_csv import parse_csv_lancamentos
 from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -781,28 +782,17 @@ class LogImportRequest(BaseModel):
     dry_run: bool = False
 
 
-@app.post('/api/v1/logs/import')
-def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
-    """Importa lançamentos (histórico realizado) em lote, casando cada valor com
-    a meta diária do mesmo dia (métrica + org + período). Dias sem meta são
-    contados em `sem_meta` (não cria meta). Idempotente por meta+data. Não
-    dispara notificação de meta atingida (evita spam em importação em massa)."""
-    from datetime import date as date_type
-    org_id = require_active_org(org)
-    if not _visible_metric(body.metric_id, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
-
+def _importar_lancamentos(session: Session, org_id: int, metric_id: int, itens, dry_run: bool) -> dict:
+    """Casa cada (data, valor) com a meta diária do mesmo dia e cria o LogEntry.
+    `itens`: iterável de (date, valor_str). Idempotente por meta+data; dias sem
+    meta contam em `sem_meta`. Não dispara notificação (import em massa)."""
     criadas = ignoradas = sem_meta = 0
-    for item in body.lancamentos:
-        try:
-            d = date_type.fromisoformat(item.data)
-        except ValueError:
-            raise HTTPException(status_code=422, detail=f"Data inválida: {item.data}")
+    for d, valor in itens:
         goal = session.exec(
             select(Goal).where(
-                Goal.metric == body.metric_id,
+                Goal.metric == metric_id,
                 Goal.organization_id == org_id,
-                Goal.periodo_referencia == item.data,
+                Goal.periodo_referencia == d.isoformat(),
                 Goal.deleted == False,
             )
         ).first()
@@ -819,13 +809,50 @@ def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: 
         if ja_existe:
             ignoradas += 1
             continue
-        if not body.dry_run:
-            session.add(LogEntry(goal=goal.id, data=d, valor_logado=item.valor, organization_id=org_id))
+        if not dry_run:
+            session.add(LogEntry(goal=goal.id, data=d, valor_logado=valor, organization_id=org_id))
         criadas += 1
 
-    if not body.dry_run:
+    if not dry_run:
         session.commit()
-    return {"dry_run": body.dry_run, "criadas": criadas, "ignoradas": ignoradas, "sem_meta": sem_meta}
+    return {"criadas": criadas, "ignoradas": ignoradas, "sem_meta": sem_meta}
+
+
+@app.post('/api/v1/logs/import')
+def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Importa lançamentos (histórico realizado) em lote. Ver _importar_lancamentos."""
+    from datetime import date as date_type
+    org_id = require_active_org(org)
+    if not _visible_metric(body.metric_id, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    itens = []
+    for item in body.lancamentos:
+        try:
+            itens.append((date_type.fromisoformat(item.data), item.valor))
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Data inválida: {item.data}")
+    res = _importar_lancamentos(session, org_id, body.metric_id, itens, body.dry_run)
+    return {"dry_run": body.dry_run, **res}
+
+
+class LogImportCSVRequest(BaseModel):
+    metric_id: int
+    csv: str
+    dry_run: bool = False
+
+
+@app.post('/api/v1/logs/import-csv')
+def import_logs_csv(body: LogImportCSVRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Importa lançamentos a partir de um CSV (colunas data,valor). Erros por
+    linha são devolvidos em `erros` (linhas válidas são importadas mesmo assim)."""
+    from datetime import date as date_type
+    org_id = require_active_org(org)
+    if not _visible_metric(body.metric_id, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    linhas, erros = parse_csv_lancamentos(body.csv)
+    itens = [(date_type.fromisoformat(l["data"]), l["valor"]) for l in linhas]
+    res = _importar_lancamentos(session, org_id, body.metric_id, itens, body.dry_run)
+    return {"dry_run": body.dry_run, **res, "erros": erros}
 
 
 # ---------- Organizations ----------
