@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { placeholderValor } from "@/lib/formatValor";
@@ -30,7 +31,7 @@ export default function GoalForm({ id }: { id?: string }) {
     setToken(storedToken);
 
     if (id) {
-      fetch(`http://localhost:8000/api/v1/goals/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
+      apiFetch(`http://localhost:8000/api/v1/goals/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
         .then(r => r.json()).then(d => setGoalData({ metric: d.metric, alvo: d.alvo, periodo_referencia: d.periodo_referencia || "" }));
     }
   }, [id, router]);
@@ -66,7 +67,7 @@ export default function GoalForm({ id }: { id?: string }) {
     try {
       const url = id ? `http://localhost:8000/api/v1/goals/${id}/` : `http://localhost:8000/api/v1/goals/`;
       const method = id ? "PUT" : "POST";
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(goalData) });
+      const response = await apiFetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(goalData) });
       if (!response.ok) throw new Error("Erro ao gravar. Todos os dados preenchidos?");
       setMessage({ text: id ? "Desafio regravado!" : "Meta estabelecida!", type: "success" });
       if (!id) setGoalData({ metric: "", alvo: "", periodo_referencia: "" });

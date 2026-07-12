@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models import get_session, User, Metric
+from models import get_session, User, Metric, Organization, Membership
 from auth import hash_password, create_access_token
 
 
@@ -30,10 +30,22 @@ def client_fixture(session: Session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(name="org_id")
+def org_id_fixture(session: Session):
+    org = Organization(nome="Org Default")
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org.id
+
+
 @pytest.fixture(name="token")
-def token_fixture(session: Session):
+def token_fixture(session: Session, org_id: int):
     user = User(username="tester", hashed_password=hash_password("secret"))
     session.add(user)
+    session.commit()
+    session.refresh(user)
+    session.add(Membership(user_id=user.id, organization_id=org_id, role="admin"))
     session.commit()
     return create_access_token("tester")
 
@@ -66,8 +78,8 @@ def test_metric_listada_expoe_is_default(client: TestClient, token: str, session
     assert resp.json()[0]["is_default"] is True
 
 
-def test_metric_update_altera_is_default(client: TestClient, token: str, session: Session):
-    m = Metric(codigo="M1", nome="Nome", descricao="desc", is_default=False)
+def test_metric_update_altera_is_default(client: TestClient, token: str, session: Session, org_id: int):
+    m = Metric(codigo="M1", nome="Nome", descricao="desc", is_default=False, organization_id=org_id)
     session.add(m)
     session.commit()
     session.refresh(m)

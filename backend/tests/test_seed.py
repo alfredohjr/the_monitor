@@ -40,51 +40,68 @@ def make_user(session: Session, username: str = "ana") -> User:
     return user
 
 
+def make_org(session: Session, nome: str = "Acme") -> Organization:
+    org = Organization(nome=nome)
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org
+
+
 def reg_payload(username, organizacao="Acme", codigo="chave-acme"):
     return {"username": username, "password": "secret123", "organizacao": organizacao, "codigo_organizacao": codigo}
 
 
-# --- seed_exemplo: apenas métrica/meta de exemplo (org é responsabilidade do cadastro) ---
+# --- seed_exemplo: métrica/meta de exemplo escopada à organização ---
 
 def test_seed_cria_metric_exemplo(session):
     user = make_user(session)
-    seed_exemplo(user, session)
+    org = make_org(session)
+    seed_exemplo(user, org, session)
     metric = session.exec(select(Metric)).first()
     assert metric is not None
     assert metric.deleted is False
+    assert metric.organization_id == org.id
 
 
 def test_seed_cria_goal_exemplo(session):
     user = make_user(session)
-    seed_exemplo(user, session)
+    org = make_org(session)
+    seed_exemplo(user, org, session)
     goal = session.exec(select(Goal)).first()
     assert goal is not None
     assert goal.deleted is False
+    assert goal.organization_id == org.id
 
 
-def test_seed_nao_cria_org_nem_membership(session):
-    # A org agora vem do formulário de cadastro, não do seed.
+def test_seed_nao_cria_membership(session):
+    # O seed só cria métrica/meta de exemplo; o vínculo (membership) é feito no cadastro.
     user = make_user(session)
-    seed_exemplo(user, session)
-    assert session.exec(select(Organization)).first() is None
+    org = make_org(session)
+    seed_exemplo(user, org, session)
     assert session.exec(select(Membership)).first() is None
 
 
-def test_seed_nao_repete_se_ja_existem_metricas(session):
+def test_seed_nao_repete_na_mesma_org(session):
     user = make_user(session)
-    seed_exemplo(user, session)
-    seed_exemplo(user, session)  # segunda chamada não deve duplicar
+    org = make_org(session)
+    seed_exemplo(user, org, session)
+    seed_exemplo(user, org, session)  # segunda chamada não deve duplicar
     metrics = session.exec(select(Metric)).all()
     assert len(metrics) == 1
 
 
-def test_seed_nao_repete_para_segundo_usuario(session):
+def test_seed_gera_exemplo_por_org(session):
+    # Cada organização ganha sua própria métrica de exemplo.
     ana = make_user(session, "ana")
     bob = make_user(session, "bob")
-    seed_exemplo(ana, session)
-    seed_exemplo(bob, session)
+    org_a = make_org(session, "OrgA")
+    org_b = make_org(session, "OrgB")
+    seed_exemplo(ana, org_a, session)
+    seed_exemplo(bob, org_b, session)
     metrics = session.exec(select(Metric)).all()
-    assert len(metrics) == 1
+    assert len(metrics) == 2
+    assert {m.organization_id for m in metrics} == {org_a.id, org_b.id}
 
 
 # --- integração via endpoint de registro ---

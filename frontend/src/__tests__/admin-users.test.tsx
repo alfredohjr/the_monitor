@@ -46,17 +46,18 @@ describe('AdminUsers', () => {
     expect(screen.getByText('Acme')).toBeInTheDocument();
   });
 
-  it('cria um usuário via POST', async () => {
+  it('adiciona um membro só com e-mail via POST', async () => {
     const onPost = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
     mockApi({ me: adminMe, users: [], onPost });
     render(<AdminUsers />);
     await screen.findByText('Adicionar');
-    fireEvent.change(screen.getByPlaceholderText('Usuário'), { target: { value: 'novo', name: 'username' } });
-    fireEvent.change(screen.getByPlaceholderText('Senha'), { target: { value: 'senha123', name: 'password' } });
+    fireEvent.change(screen.getByPlaceholderText('E-mail do novo membro'), { target: { value: 'novo@x.com' } });
     fireEvent.click(screen.getByText('Adicionar'));
     await waitFor(() => expect(onPost).toHaveBeenCalled());
     const body = JSON.parse((onPost.mock.calls[0][1] as RequestInit).body as string);
-    expect(body.username).toBe('novo');
+    expect(body.email).toBe('novo@x.com');
+    expect(body.username).toBeUndefined();
+    expect(body.password).toBeUndefined();
     expect(onPost.mock.calls[0][0]).toContain('/organizations/7/users/');
   });
 

@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from models import Goal, Metric, User
+from models import Goal, Metric, Organization, User
 
 _METRICAS_PADRAO = [
     dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                tipo="currency", periodo="daily",   valor_padrao="0"),
@@ -23,15 +23,19 @@ def seed_metricas_padrao(session: Session) -> None:
     session.commit()
 
 
-def seed_exemplo(user: User, session: Session) -> None:
-    # Cria apenas a métrica/meta de exemplo (uma vez). A organização e o vínculo
-    # do usuário são criados no cadastro (endpoint /register/), a partir do que
-    # ele preenche no formulário.
-    if session.exec(select(Metric)).first():
+def seed_exemplo(user: User, org: Organization, session: Session) -> None:
+    # Cria a métrica/meta de exemplo da organização (uma vez por org). Fica
+    # escopada à org para que o novo usuário veja algo ao entrar. O `codigo` da
+    # métrica é único no banco, então incluímos o id da org para não colidir
+    # entre organizações.
+    ja_tem = session.exec(
+        select(Metric).where(Metric.organization_id == org.id)
+    ).first()
+    if ja_tem:
         return
 
     metric = Metric(
-        codigo="EXEMPLO_META",
+        codigo=f"EXEMPLO_META_ORG{org.id}",
         nome="Meta de exemplo",
         descricao=(
             "Esta é uma métrica de exemplo. "
@@ -41,10 +45,11 @@ def seed_exemplo(user: User, session: Session) -> None:
         tipo="number",
         periodo="daily",
         valor_padrao="0",
+        organization_id=org.id,
     )
     session.add(metric)
     session.commit()
     session.refresh(metric)
 
-    session.add(Goal(metric=metric.id, alvo="10", periodo_referencia="daily"))
+    session.add(Goal(metric=metric.id, alvo="10", periodo_referencia="daily", organization_id=org.id))
     session.commit()

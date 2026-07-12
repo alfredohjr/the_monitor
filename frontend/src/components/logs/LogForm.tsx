@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { placeholderValor } from "@/lib/formatValor";
@@ -20,13 +21,13 @@ export default function LogForm({ id }: { id?: string }) {
     if (!storedToken) return router.push("/login");
     setToken(storedToken);
 
-    fetch("http://localhost:8000/api/v1/goals/", { headers: { Authorization: `Bearer ${storedToken}` } })
+    apiFetch("http://localhost:8000/api/v1/goals/", { headers: { Authorization: `Bearer ${storedToken}` } })
       .then(r => r.json()).then(d => setGoals(Array.isArray(d) ? d : d.results || []));
-    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${storedToken}` } })
+    apiFetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${storedToken}` } })
       .then(r => r.json()).then(d => setMetrics(Array.isArray(d) ? d : d.results || []));
 
     if (id) {
-      fetch(`http://localhost:8000/api/v1/logs/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
+      apiFetch(`http://localhost:8000/api/v1/logs/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
         .then(r => r.json()).then(d => setLogData({ goal: String(d.goal), data: d.data, valor_logado: d.valor_logado }));
     }
   }, [id, router]);
@@ -63,7 +64,7 @@ export default function LogForm({ id }: { id?: string }) {
       const url = id ? `http://localhost:8000/api/v1/logs/${id}/` : `http://localhost:8000/api/v1/logs/`;
       const method = id ? "PUT" : "POST";
       const payload = id ? logData : { ...logData, data: new Date().toISOString().split("T")[0] };
-      const response = await fetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(payload) });
+      const response = await apiFetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(payload) });
       if (!response.ok) throw new Error("Atenção na digitação do seu lançamento.");
       setMessage({ text: id ? "Alteração feita." : "Registro enviado com sucesso!", type: "success" });
       if (!id) setLogData(p => ({ ...p, valor_logado: "" }));

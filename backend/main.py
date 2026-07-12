@@ -2,7 +2,7 @@ from typing import Annotated
 import datetime
 import os
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
@@ -244,7 +244,7 @@ def register(body: RegisterRequest, session: SessionDep):
     session.add(Membership(user_id=user.id, organization_id=org.id, role=role))
     session.commit()
 
-    seed_exemplo(user, session)
+    seed_exemplo(user, org, session)
 
     if body.email:
         token = EmailVerificationToken(
@@ -356,6 +356,64 @@ def me(session: SessionDep, user: CurrentUser):
     }
 
 
+# ---------- Organização ativa (escopo dos dados) ----------
+
+def get_active_org_id(
+    session: SessionDep,
+    user: CurrentUser,
+    x_org_id: Annotated[int | None, Header(alias="X-Org-Id")] = None,
+) -> int | None:
+    """Resolve a organização ativa da requisição.
+
+    O front manda o header `X-Org-Id` (definido pelo switch de organização).
+    Sem header, cai na primeira org do usuário. Um id de org onde o usuário não
+    é membro é recusado (403) — ninguém enxerga dados de outra organização só
+    trocando o header.
+    """
+    org_ids = set(
+        session.exec(select(Membership.organization_id).where(Membership.user_id == user.id)).all()
+    )
+    if x_org_id is not None:
+        if x_org_id not in org_ids:
+            raise HTTPException(status_code=403, detail="Sem acesso a esta organização")
+        return x_org_id
+    return min(org_ids) if org_ids else None
+
+
+ActiveOrg = Annotated[int | None, Depends(get_active_org_id)]
+
+
+def require_active_org(org_id: int | None) -> int:
+    if org_id is None:
+        raise HTTPException(status_code=400, detail="Nenhuma organização ativa")
+    return org_id
+
+
+def _visible_metric(metric_id: int, session: Session, org: int | None) -> Metric | None:
+    """Métrica visível à org ativa: a própria da org ou uma padrão (catálogo)."""
+    metric = session.get(Metric, metric_id)
+    if not metric or metric.deleted:
+        return None
+    if metric.is_default or metric.organization_id == org:
+        return metric
+    return None
+
+
+def _owned_metric(metric_id: int, session: Session, org: int | None) -> Metric | None:
+    """Métrica que a org pode editar/excluir (a própria; padrão é read-only)."""
+    metric = session.get(Metric, metric_id)
+    if not metric or metric.deleted or metric.organization_id != org:
+        return None
+    return metric
+
+
+def _owned_goal(goal_id: int, session: Session, org: int | None) -> Goal | None:
+    goal = session.get(Goal, goal_id)
+    if not goal or goal.deleted or goal.organization_id != org:
+        return None
+    return goal
+
+
 # ---------- Metrics ----------
 
 class MetricCreate(BaseModel):
@@ -371,28 +429,46 @@ class MetricUpdate(MetricCreate):
     pass
 
 @app.get('/api/v1/metrics/')
-def list_metrics(session: SessionDep, _: CurrentUser) -> list[Metric]:
-    return session.exec(select(Metric).where(Metric.deleted == False)).all()
+def list_metrics(
+    session: SessionDep, org: ActiveOrg, user: CurrentUser, apenas_inscritas: bool = False
+) -> list[Metric]:
+    # Métricas da org ativa + catálogo padrão (global).
+    cond = Metric.is_default == True
+    if org is not None:
+        cond = cond | (Metric.organization_id == org)
+    metrics = session.exec(select(Metric).where(Metric.deleted == False).where(cond)).all()
+    if apenas_inscritas:
+        # Regra: o usuário acompanha suas métricas da org (sempre) + as métricas
+        # de catálogo (default) que ele assinou. Antes isso era filtrado no front;
+        # ficou aqui, perto do dado.
+        subs = set(
+            session.exec(
+                select(UserMetricSubscription.metric_id).where(UserMetricSubscription.user_id == user.id)
+            ).all()
+        )
+        metrics = [m for m in metrics if not m.is_default or m.id in subs]
+    return metrics
 
 @app.post('/api/v1/metrics/', status_code=201)
-def create_metric(body: MetricCreate, session: SessionDep, _: CurrentUser) -> Metric:
-    metric = Metric(**body.model_dump())
+def create_metric(body: MetricCreate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
+    org_id = require_active_org(org)
+    metric = Metric(**body.model_dump(), organization_id=org_id)
     session.add(metric)
     session.commit()
     session.refresh(metric)
     return metric
 
 @app.get('/api/v1/metrics/{metric_id}/')
-def get_metric(metric_id: int, session: SessionDep, _: CurrentUser) -> Metric:
-    metric = session.get(Metric, metric_id)
-    if not metric or metric.deleted:
+def get_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
+    metric = _visible_metric(metric_id, session, org)
+    if not metric:
         raise HTTPException(status_code=404, detail="Métrica não encontrada")
     return metric
 
 @app.put('/api/v1/metrics/{metric_id}/')
-def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, _: CurrentUser) -> Metric:
-    metric = session.get(Metric, metric_id)
-    if not metric or metric.deleted:
+def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
+    metric = _owned_metric(metric_id, session, org)
+    if not metric:
         raise HTTPException(status_code=404, detail="Métrica não encontrada")
     for key, val in body.model_dump().items():
         setattr(metric, key, val)
@@ -402,9 +478,9 @@ def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, _: Cu
     return metric
 
 @app.delete('/api/v1/metrics/{metric_id}/', status_code=204)
-def delete_metric(metric_id: int, session: SessionDep, _: CurrentUser):
-    metric = session.get(Metric, metric_id)
-    if not metric or metric.deleted:
+def delete_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    metric = _owned_metric(metric_id, session, org)
+    if not metric:
         raise HTTPException(status_code=404, detail="Métrica não encontrada")
     metric.deleted = True
     session.add(metric)
@@ -425,16 +501,18 @@ class ProgressResp(BaseModel):
     pct: int
 
 @app.get('/api/v1/metrics/{metric_id}/progress', response_model=ProgressResp)
-def metric_progress(metric_id: int, start: str, end: str, session: SessionDep, _: CurrentUser) -> ProgressResp:
-    metric = session.get(Metric, metric_id)
-    if not metric or metric.deleted:
+def metric_progress(metric_id: int, start: str, end: str, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> ProgressResp:
+    metric = _visible_metric(metric_id, session, org)
+    if not metric:
         raise HTTPException(status_code=404, detail="Métrica não encontrada")
     try:
         start_d = datetime.date.fromisoformat(start)
         end_d = datetime.date.fromisoformat(end)
     except ValueError:
         raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
-    goals = session.exec(select(Goal).where(Goal.metric == metric_id, Goal.deleted == False)).all()
+    goals = session.exec(
+        select(Goal).where(Goal.metric == metric_id, Goal.deleted == False, Goal.organization_id == org)
+    ).all()
     goal_ids = {g.id for g in goals}
     logs = [
         l for l in session.exec(select(LogEntry).where(LogEntry.deleted == False)).all()
@@ -462,28 +540,32 @@ class GoalUpdate(GoalCreate):
     pass
 
 @app.get('/api/v1/goals/')
-def list_goals(session: SessionDep, _: CurrentUser) -> list[Goal]:
-    return session.exec(select(Goal).where(Goal.deleted == False)).all()
+def list_goals(session: SessionDep, org: ActiveOrg, _: CurrentUser) -> list[Goal]:
+    return session.exec(select(Goal).where(Goal.deleted == False, Goal.organization_id == org)).all()
 
 @app.post('/api/v1/goals/', status_code=201)
-def create_goal(body: GoalCreate, session: SessionDep, _: CurrentUser) -> Goal:
-    goal = Goal(**body.model_dump())
+def create_goal(body: GoalCreate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+    org_id = require_active_org(org)
+    # A métrica-alvo precisa ser visível à org (a própria ou uma padrão).
+    if not _visible_metric(body.metric, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    goal = Goal(**body.model_dump(), organization_id=org_id)
     session.add(goal)
     session.commit()
     session.refresh(goal)
     return goal
 
 @app.get('/api/v1/goals/{goal_id}/')
-def get_goal(goal_id: int, session: SessionDep, _: CurrentUser) -> Goal:
-    goal = session.get(Goal, goal_id)
-    if not goal or goal.deleted:
+def get_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+    goal = _owned_goal(goal_id, session, org)
+    if not goal:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
     return goal
 
 @app.put('/api/v1/goals/{goal_id}/')
-def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, _: CurrentUser) -> Goal:
-    goal = session.get(Goal, goal_id)
-    if not goal or goal.deleted:
+def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+    goal = _owned_goal(goal_id, session, org)
+    if not goal:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
     for key, val in body.model_dump().items():
         setattr(goal, key, val)
@@ -493,9 +575,9 @@ def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, _: CurrentU
     return goal
 
 @app.delete('/api/v1/goals/{goal_id}/', status_code=204)
-def delete_goal(goal_id: int, session: SessionDep, _: CurrentUser):
-    goal = session.get(Goal, goal_id)
-    if not goal or goal.deleted:
+def delete_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    goal = _owned_goal(goal_id, session, org)
+    if not goal:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
     goal.deleted = True
     session.add(goal)
@@ -513,8 +595,8 @@ class LogUpdate(LogCreate):
     pass
 
 @app.get('/api/v1/logs/')
-def list_logs(session: SessionDep, _: CurrentUser) -> list[LogEntry]:
-    return session.exec(select(LogEntry).where(LogEntry.deleted == False)).all()
+def list_logs(session: SessionDep, org: ActiveOrg, _: CurrentUser) -> list[LogEntry]:
+    return session.exec(select(LogEntry).where(LogEntry.deleted == False, LogEntry.organization_id == org)).all()
 
 def _to_float(valor) -> float | None:
     try:
@@ -547,9 +629,18 @@ def _notify_if_goal_reached(new_log: LogEntry, session: Session, user: User) -> 
 
 
 @app.post('/api/v1/logs/', status_code=201)
-def create_log(body: LogCreate, session: SessionDep, user: CurrentUser) -> LogEntry:
+def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: CurrentUser) -> LogEntry:
     from datetime import date as date_type
-    log = LogEntry(goal=body.goal, data=date_type.fromisoformat(body.data), valor_logado=body.valor_logado)
+    org_id = require_active_org(org)
+    # Só lança em meta da própria org.
+    if not _owned_goal(body.goal, session, org_id):
+        raise HTTPException(status_code=404, detail="Meta não encontrada")
+    log = LogEntry(
+        goal=body.goal,
+        data=date_type.fromisoformat(body.data),
+        valor_logado=body.valor_logado,
+        organization_id=org_id,
+    )
     session.add(log)
     session.commit()
     session.refresh(log)
@@ -557,18 +648,21 @@ def create_log(body: LogCreate, session: SessionDep, user: CurrentUser) -> LogEn
     return log
 
 @app.get('/api/v1/logs/{log_id}/')
-def get_log(log_id: int, session: SessionDep, _: CurrentUser) -> LogEntry:
+def get_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> LogEntry:
     log = session.get(LogEntry, log_id)
-    if not log or log.deleted:
+    if not log or log.deleted or log.organization_id != org:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
     return log
 
 @app.put('/api/v1/logs/{log_id}/')
-def update_log(log_id: int, body: LogUpdate, session: SessionDep, _: CurrentUser) -> LogEntry:
+def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> LogEntry:
     from datetime import date as date_type
     log = session.get(LogEntry, log_id)
-    if not log or log.deleted:
+    if not log or log.deleted or log.organization_id != org:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    # A meta destino também precisa ser da org ativa.
+    if not _owned_goal(body.goal, session, org):
+        raise HTTPException(status_code=404, detail="Meta não encontrada")
     log.goal = body.goal
     log.data = date_type.fromisoformat(body.data)
     log.valor_logado = body.valor_logado
@@ -578,9 +672,9 @@ def update_log(log_id: int, body: LogUpdate, session: SessionDep, _: CurrentUser
     return log
 
 @app.delete('/api/v1/logs/{log_id}/', status_code=204)
-def delete_log(log_id: int, session: SessionDep, _: CurrentUser):
+def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
     log = session.get(LogEntry, log_id)
-    if not log or log.deleted:
+    if not log or log.deleted or log.organization_id != org:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
     log.deleted = True
     session.add(log)
@@ -642,9 +736,7 @@ def require_org_admin(session: Session, user: User, org_id: int) -> Organization
 
 
 class OrgUserCreate(BaseModel):
-    username: str
-    password: str
-    email: str | None = None
+    email: str
 
 
 @app.get('/api/v1/organizations/{org_id}/users/')
@@ -661,18 +753,39 @@ def list_org_users(org_id: int, session: SessionDep, user: CurrentUser):
 
 @app.post('/api/v1/organizations/{org_id}/users/', status_code=201)
 def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user: CurrentUser):
+    """Admin adiciona um membro à org só com o e-mail.
+
+    - E-mail já cadastrado: vincula a conta existente à org (papel 'user').
+    - E-mail novo: cria a conta (username = e-mail, sem senha utilizável) e
+      vincula. A pessoa entra depois pelo login com Google usando o mesmo
+      e-mail (o backend casa por e-mail).
+    """
     require_org_admin(session, user, org_id)
 
-    if session.exec(select(User).where(User.username == body.username)).first():
-        raise HTTPException(status_code=400, detail="Username já cadastrado")
-    if body.email and session.exec(select(User).where(User.email == body.email)).first():
-        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    email = body.email.strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="E-mail é obrigatório")
 
-    # Criado pelo admin: já verificado (não passa por auto-cadastro) e papel 'user'.
+    existente = session.exec(select(User).where(User.email == email)).first()
+    if existente:
+        ja_membro = session.exec(
+            select(Membership).where(
+                Membership.user_id == existente.id,
+                Membership.organization_id == org_id,
+            )
+        ).first()
+        if ja_membro:
+            raise HTTPException(status_code=400, detail="Usuário já é membro desta organização")
+        session.add(Membership(user_id=existente.id, organization_id=org_id, role="user"))
+        session.commit()
+        return {"id": existente.id, "username": existente.username, "email": existente.email, "role": "user"}
+
+    # E-mail novo: cria a conta pronta para login por Google. Senha aleatória
+    # (não utilizável para login por senha) evita conta sem hash.
     novo = User(
-        username=body.username,
-        hashed_password=hash_password(body.password),
-        email=body.email,
+        username=email,
+        hashed_password=hash_password(secrets.token_urlsafe(32)),
+        email=email,
         email_verified=True,
     )
     session.add(novo)

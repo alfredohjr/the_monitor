@@ -13,6 +13,9 @@ class Metric(SQLModel, table=True):
     tipo: str = Field(default="number", max_length=20)
     periodo: str = Field(default="daily", max_length=20)
     is_default: bool = Field(default=False)
+    # Dono do dado. None = métrica global (catálogo padrão, is_default) visível a
+    # todas as organizações. Caso contrário, só membros da org a enxergam.
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -22,6 +25,8 @@ class Goal(SQLModel, table=True):
     metric: int = Field(foreign_key="metric.id")
     alvo: str = Field(max_length=255)
     periodo_referencia: str = Field(default="", max_length=50)
+    # Org a que a meta pertence (definida na criação, a partir da org ativa).
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -31,6 +36,8 @@ class LogEntry(SQLModel, table=True):
     goal: int = Field(foreign_key="goal.id")
     data: date
     valor_logado: str = Field(max_length=255)
+    # Org a que o lançamento pertence (definida na criação, a partir da org ativa).
+    organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

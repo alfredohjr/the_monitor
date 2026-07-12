@@ -43,33 +43,37 @@ afterEach(() => {
   delete (global as { fetch?: unknown }).fetch;
 });
 
+// O filtro (próprias + defaults assinadas) agora é feito no backend via
+// ?apenas_inscritas=true (coberto por pytest). Aqui verificamos apenas que a
+// tela consome a lista já filtrada que o endpoint entrega — /metrics/ devolve
+// exatamente o que deve aparecer.
+
 // --- DashboardGrid ---
 
-describe('DashboardGrid — filtra métricas por subscrição', () => {
-  function mockFetch(subscriptions: { id: number; metric_id: number }[]) {
+describe('DashboardGrid — consome a lista de métricas do backend', () => {
+  function mockMetrics(returned: unknown[]) {
     (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
-      if (url.includes('/metrics/'))       return Promise.resolve({ ok: true, status: 200, json: async () => [metricaPropria, metricaSistema, metricaSistema2] });
-      if (url.includes('/subscriptions/')) return Promise.resolve({ ok: true, status: 200, json: async () => subscriptions });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => returned });
       return Promise.resolve({ ok: true, status: 200, json: async () => [] });
     });
   }
 
-  it('exibe métrica própria (is_default=false) sem necessidade de subscrição', async () => {
-    mockFetch([]);
+  it('exibe métrica própria retornada pelo backend', async () => {
+    mockMetrics([metricaPropria]);
     render(<DashboardGrid />);
     await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
     expect(screen.getByRole('option', { name: 'Minha Métrica' })).toBeInTheDocument();
   });
 
-  it('exibe métrica do sistema apenas se assinada', async () => {
-    mockFetch([{ id: 10, metric_id: 2 }]);
+  it('exibe métrica do sistema quando o backend a inclui (assinada)', async () => {
+    mockMetrics([metricaPropria, metricaSistema]);
     render(<DashboardGrid />);
     await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
     expect(screen.getByRole('option', { name: 'Métrica Sistema' })).toBeInTheDocument();
   });
 
-  it('oculta métrica do sistema não assinada', async () => {
-    mockFetch([{ id: 10, metric_id: 2 }]);
+  it('não exibe métrica que o backend não retornou (não assinada)', async () => {
+    mockMetrics([metricaPropria, metricaSistema]);
     render(<DashboardGrid />);
     await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
     expect(screen.queryByRole('option', { name: 'Não Assinada' })).not.toBeInTheDocument();
@@ -78,29 +82,28 @@ describe('DashboardGrid — filtra métricas por subscrição', () => {
 
 // --- GoalForm ---
 
-describe('GoalForm — filtra métricas por subscrição no select', () => {
-  function mockFetch(subscriptions: { id: number; metric_id: number }[]) {
+describe('GoalForm — consome a lista de métricas do backend no select', () => {
+  function mockMetrics(returned: unknown[]) {
     (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
-      if (url.includes('/metrics/'))       return Promise.resolve({ ok: true, status: 200, json: async () => [metricaPropria, metricaSistema, metricaSistema2] });
-      if (url.includes('/subscriptions/')) return Promise.resolve({ ok: true, status: 200, json: async () => subscriptions });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, status: 200, json: async () => returned });
       return Promise.resolve({ ok: true, status: 200, json: async () => [] });
     });
   }
 
-  it('exibe métrica própria sem subscrição', async () => {
-    mockFetch([]);
+  it('exibe métrica própria retornada pelo backend', async () => {
+    mockMetrics([metricaPropria]);
     render(<GoalForm />);
     expect(await screen.findByText('Minha Métrica (daily)')).toBeInTheDocument();
   });
 
-  it('exibe métrica do sistema assinada', async () => {
-    mockFetch([{ id: 10, metric_id: 2 }]);
+  it('exibe métrica do sistema quando o backend a inclui', async () => {
+    mockMetrics([metricaPropria, metricaSistema]);
     render(<GoalForm />);
     expect(await screen.findByText(/Métrica Sistema/)).toBeInTheDocument();
   });
 
-  it('oculta métrica do sistema não assinada', async () => {
-    mockFetch([{ id: 10, metric_id: 2 }]);
+  it('não exibe métrica que o backend não retornou', async () => {
+    mockMetrics([metricaPropria, metricaSistema]);
     render(<GoalForm />);
     await screen.findByText(/Minha Métrica/);
     expect(screen.queryByText(/Não Assinada/)).not.toBeInTheDocument();
