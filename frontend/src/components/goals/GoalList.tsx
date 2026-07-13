@@ -37,7 +37,10 @@ export default function GoalList() {
             <h1 className="text-3xl font-extrabold tracking-tight">Suas Metas (Goals) Ativas</h1>
             <p className="text-zinc-400">Pedaços de esforço fracionados no tempo.</p>
           </div>
-          <Link href="/goals/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">+ Lançar Desafio</Link>
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/metas/clonar" className="px-6 py-3 bg-white/10 rounded-xl font-bold hover:bg-white/20 truncate text-center">Clonar metas</Link>
+            <Link href="/goals/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">+ Lançar Desafio</Link>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[600px]">
