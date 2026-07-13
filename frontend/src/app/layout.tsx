@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Quantified Self",
   description: "Track your objectives and performance.",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({
