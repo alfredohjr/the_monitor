@@ -664,6 +664,75 @@ def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _
     return {"dry_run": False, "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
 
 
+# ---------- Clonar metas de um período (#142) ----------
+
+class GoalCloneRequest(BaseModel):
+    metric_id: int
+    origem_inicio: str      # YYYY-MM-DD
+    origem_fim: str
+    destino_inicio: str     # onde começa a cópia (define o deslocamento de datas)
+    escala: float = 1.0     # multiplica o alvo (ex.: 1.1 = +10%)
+    dry_run: bool = False
+
+
+@app.post('/api/v1/goals/clone')
+def clone_goals(body: GoalCloneRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Replica as metas diárias de um período para outro, deslocando as datas
+    (origem_inicio → destino_inicio) e opcionalmente escalando o alvo. Idempotente
+    por métrica/período; alvo não-numérico (ex.: boolean) é copiado sem escalar."""
+    from datetime import date as date_type
+    org_id = require_active_org(org)
+    if not _visible_metric(body.metric_id, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    try:
+        oi = date_type.fromisoformat(body.origem_inicio)
+        of = date_type.fromisoformat(body.origem_fim)
+        di = date_type.fromisoformat(body.destino_inicio)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+    if of < oi:
+        raise HTTPException(status_code=422, detail="Fim da origem anterior ao início")
+    offset = di - oi
+
+    goals = session.exec(
+        select(Goal).where(Goal.metric == body.metric_id, Goal.organization_id == org_id, Goal.deleted == False)
+    ).all()
+    criadas = ignoradas = 0
+    soma = 0.0
+    for g in goals:
+        try:
+            gd = date_type.fromisoformat(g.periodo_referencia)
+        except ValueError:
+            continue  # não é meta diária (ex.: período "2026-08")
+        if not (oi <= gd <= of):
+            continue
+        novo_dia = (gd + offset).isoformat()
+        try:
+            v = round(float(g.alvo) * body.escala, 2)
+            novo_alvo = str(int(v) if float(v).is_integer() else v)
+            soma += v
+        except ValueError:
+            novo_alvo = g.alvo  # alvo não numérico: copia como está
+        existe = session.exec(
+            select(Goal).where(
+                Goal.metric == body.metric_id,
+                Goal.organization_id == org_id,
+                Goal.periodo_referencia == novo_dia,
+                Goal.deleted == False,
+            )
+        ).first()
+        if existe:
+            ignoradas += 1
+            continue
+        if not body.dry_run:
+            session.add(Goal(metric=body.metric_id, alvo=novo_alvo, periodo_referencia=novo_dia, organization_id=org_id))
+        criadas += 1
+
+    if not body.dry_run:
+        session.commit()
+    return {"dry_run": body.dry_run, "criadas": criadas, "ignoradas": ignoradas, "soma": round(soma, 2)}
+
+
 # ---------- Catálogo de metas-modelo (GoalTemplate) (#143) ----------
 
 @app.get('/api/v1/goal-templates/')
