@@ -1,0 +1,16 @@
+# Variante A — Cloudflare proxy (nuvem laranja) + Origin Certificate.
+# O Cloudflare termina o TLS na borda; aqui servimos o Origin Certificate (SSL
+# mode "Full (strict)" no painel). /api/* mantém o prefixo (o FastAPI expõe as
+# rotas em /api/v1/...), o resto vai pro Next.js.
+
+{$DOMAIN} {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
