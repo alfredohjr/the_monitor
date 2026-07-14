@@ -7,6 +7,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Versão exata do build (o CI injeta a tag, ex.: 0.4.0). Vira NEXT_PUBLIC_* para
+# o Next inlinar no bundle e o rodapé refletir o patch realmente buildado (#146).
+ARG APP_VERSION=""
+ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
 RUN npm run build
 
 FROM node:20-alpine AS runner
