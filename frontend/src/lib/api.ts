@@ -2,7 +2,10 @@
 // toda requisição de dados, para não repetir essa montagem em cada componente
 // nem deixar essa regra espalhada pelo front.
 
-export const API_BASE = "http://localhost:8000";
+// Base da API. Em produção o front é servido no mesmo domínio e o proxy (Caddy)
+// roteia /api/* pro backend — então NEXT_PUBLIC_API_BASE="" faz as chamadas
+// ficarem same-origin (/api/v1/...). Sem env (dev/testes) cai em localhost:8000.
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 const ACTIVE_ORG_KEY = "active_org_id";
 

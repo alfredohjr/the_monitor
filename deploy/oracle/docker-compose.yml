@@ -53,6 +53,7 @@ services:
       context: ../../frontend
       args:
         APP_VERSION: ${APP_VERSION:-0.4.0-dev}
+        NEXT_PUBLIC_API_BASE: ""   # same-origin: o browser chama /api/v1/... (Caddy roteia)
     restart: unless-stopped
     depends_on:
       - backend

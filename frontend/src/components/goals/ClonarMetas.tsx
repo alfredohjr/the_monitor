@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 interface Metric { id: number; codigo: string; nome?: string; periodo: string }
 interface CloneResult { criadas: number; ignoradas: number; soma: number }
@@ -21,7 +21,7 @@ export default function ClonarMetas() {
     const t = localStorage.getItem("access_token");
     if (!t) return void router.push("/login");
     setToken(t);
-    apiFetch("http://localhost:8000/api/v1/metrics/").then(r => r.json())
+    apiFetch(API_BASE + "/api/v1/metrics/").then(r => r.json())
       .then(d => setMetrics(Array.isArray(d) ? d : [])).catch(() => {});
   }, [router]);
 
@@ -35,7 +35,7 @@ export default function ClonarMetas() {
     setError("");
     setLoading(true);
     try {
-      const resp = await apiFetch("http://localhost:8000/api/v1/goals/clone", {
+      const resp = await apiFetch(API_BASE + "/api/v1/goals/clone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

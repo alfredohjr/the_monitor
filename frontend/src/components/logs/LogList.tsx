@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatValor } from "@/lib/formatValor";
@@ -22,13 +22,13 @@ export default function LogList() {
     const token = localStorage.getItem("access_token");
     if (!token) return router.push("/login");
 
-    apiFetch("http://localhost:8000/api/v1/logs/", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(API_BASE + "/api/v1/logs/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : d.results || []));
-    apiFetch("http://localhost:8000/api/v1/goals/", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(API_BASE + "/api/v1/goals/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setGoals(Array.isArray(d) ? d : d.results || []));
-    apiFetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(API_BASE + "/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setMetrics(Array.isArray(d) ? d : d.results || []));
-    apiFetch("http://localhost:8000/api/v1/me/log-permissions/", { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(API_BASE + "/api/v1/me/log-permissions/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => { if (d && typeof d === "object" && "metrics" in d) setPerms(d); }).catch(() => {});
   }, [router]);
 
@@ -49,7 +49,7 @@ export default function LogList() {
     const token = localStorage.getItem("access_token");
     if (!confirm("Deletar apontamento do dia?")) return;
     try {
-      await apiFetch(`http://localhost:8000/api/v1/logs/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await apiFetch(`${API_BASE}/api/v1/logs/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setItems(items.filter(i => i.id !== id));
     } catch {}
   };

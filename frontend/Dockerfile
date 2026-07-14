@@ -11,6 +11,10 @@ COPY . .
 # o Next inlinar no bundle e o rodapé refletir o patch realmente buildado (#146).
 ARG APP_VERSION=""
 ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
+# Base da API inlinada no bundle (#174). Vazia = same-origin (/api/v1/...), o
+# caminho de produção atrás do proxy. Sem valor, o app cai em localhost:8000 (dev).
+ARG NEXT_PUBLIC_API_BASE=""
+ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 RUN npm run build
 
 FROM node:20-alpine AS runner

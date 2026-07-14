@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -13,7 +14,7 @@ export default function OnboardingFlow() {
     const t = localStorage.getItem("access_token");
     if (!t) return router.push("/login");
     setToken(t);
-    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${t}` } })
+    fetch(API_BASE + "/api/v1/metrics/", { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
       .then(d => {
         const all = Array.isArray(d) ? d : d.results || [];
@@ -27,7 +28,7 @@ export default function OnboardingFlow() {
   const handleComecar = async () => {
     setLoading(true);
     for (const id of selected) {
-      await fetch("http://localhost:8000/api/v1/subscriptions/", {
+      await fetch(API_BASE + "/api/v1/subscriptions/", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ metric_id: id }),

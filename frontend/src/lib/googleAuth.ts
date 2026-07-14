@@ -1,10 +1,11 @@
+import { API_BASE } from "./api";
 export interface AuthTokens {
   access: string;
   refresh: string;
   username: string;
 }
 
-const DEFAULT_API_BASE = "http://localhost:8000";
+const DEFAULT_API_BASE = API_BASE + "";
 
 /**
  * Troca um ID token do Google (credential) pelos nossos tokens de acesso,

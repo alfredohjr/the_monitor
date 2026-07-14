@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
-import { getActiveOrg, setActiveOrg, clearActiveOrg } from "@/lib/api";
+import { getActiveOrg, setActiveOrg, clearActiveOrg, API_BASE } from "@/lib/api";
 
 interface Org { id: number; nome: string; role: string }
 
@@ -23,7 +23,7 @@ export default function Navbar() {
     setLoggedIn(!!storedToken);
     setUsername(storedToken ? storedName : null);
     if (!storedToken) { setRole(null); setOrgs([]); return; }
-    fetch("http://localhost:8000/api/v1/me/", { headers: { Authorization: `Bearer ${storedToken}` } })
+    fetch(API_BASE + "/api/v1/me/", { headers: { Authorization: `Bearer ${storedToken}` } })
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         setRole(d?.role ?? null);
