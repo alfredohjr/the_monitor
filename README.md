@@ -124,6 +124,10 @@ action que automatiza isso: adicione no PR o label `port:<branch>`
 (ex.: `port:master` para forward-port, `port:release/0.3` para backport) e ela
 abre o PR de cherry-pick na branch alvo.
 
+Ao empurrar uma tag `v0.3.x` **estável**, o workflow `forward-port-reminder.yml`
+abre automaticamente um issue lembrando de forward-portar o fix para o `master`
+(a decisão e o cherry-pick seguem manuais — o bot é só o gatilho).
+
 ### Publicação de imagens (GHCR)
 Ao empurrar uma tag `vX.Y.Z`, o CI (`.github/workflows/release.yml`) publica as
 imagens no GHCR com a tag exata **e** uma tag móvel `X.Y`:
