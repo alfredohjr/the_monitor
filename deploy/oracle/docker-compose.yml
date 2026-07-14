@@ -1,0 +1,96 @@
+# Deploy numa única VM ARM (Oracle Cloud Always Free, VM.Standard.A1.Flex) — #162.
+#
+# Topologia: só o Caddy fala com a internet; frontend/backend/postgres conversam
+# pela rede interna do Compose (hostname = nome do serviço). Build local na VM
+# (arch ARM — as imagens do GHCR do #146 são amd64 e NÃO rodam nativo aqui).
+#
+# Uso:  docker compose -f deploy/oracle/docker-compose.yml up -d --build
+# Requer:  deploy/oracle/.env  (a partir do .env.example) e o Caddyfile.
+#
+# Variante A (padrão abaixo): Cloudflare proxy laranja + Origin Certificate; o
+# Caddy expõe 80/443. Variante B (Cloudflare Tunnel): descomente o serviço
+# `cloudflared`, REMOVA o bloco `ports:` do caddy e use o Caddyfile.tunnel.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../../backend
+      args:
+        APP_VERSION: ${APP_VERSION:-0.4.0-dev}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose: ["8000"]          # visível só na rede interna, nunca na internet
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/version').status==200 else sys.exit(1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ../../frontend
+      args:
+        APP_VERSION: ${APP_VERSION:-0.4.0-dev}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose: ["3000"]
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:                    # Variante A. Na Variante B, REMOVA este bloco.
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro   # só na Variante A (Origin Certificate)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks: [internal]
+
+  # --- Variante B (Cloudflare Tunnel): descomente e ajuste o Caddyfile.tunnel ---
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   command: tunnel run
+  #   environment:
+  #     TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+  #   depends_on: [caddy]
+  #   networks: [internal]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

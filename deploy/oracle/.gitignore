@@ -1,0 +1,4 @@
+# Segredos e artefatos locais do deploy — nunca versionar.
+.env
+certs/
+backups/
