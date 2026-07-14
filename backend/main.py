@@ -7,12 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email
-from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates
+from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates, seed_external_indices
 from progress import compute_progress
 from import_metas import distribuir_alvo, ESTRATEGIAS
 from import_csv import parse_csv_lancamentos
@@ -72,6 +72,7 @@ def on_startup():
     with Session(engine) as session:
         seed_metricas_padrao(session)
         seed_goal_templates(session)
+        seed_external_indices(session)
     _start_scheduler()
 
 
@@ -794,6 +795,73 @@ def list_goal_templates(session: SessionDep, _: CurrentUser) -> list[GoalTemplat
     """Catálogo curado de metas-modelo. O front usa cada modelo para pré-preencher
     o import (métrica + alvo sugerido + curva) em POST /api/v1/goals/import."""
     return session.exec(select(GoalTemplate).where(GoalTemplate.deleted == False)).all()
+
+
+# ---------- Índices externos (#167) ----------
+# Provider layer: mapeia o `provider` do índice para a função que puxa a série
+# normalizada [{ref_date, value}]. Fontes sem API estável (ex.: ABRAS) usam
+# "manual" (sem provider automático) — entram por seed/import curado.
+
+def _fetch_bcb_sgs_433() -> list[dict]:
+    """IPCA mensal via BCB/SGS (série 433). Retorna [{data:'DD/MM/YYYY', valor}]."""
+    import httpx
+    url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=json"
+    r = httpx.get(url, timeout=30)
+    r.raise_for_status()
+    out = []
+    for x in r.json():
+        d, m, a = x["data"].split("/")
+        out.append({"ref_date": f"{a}-{m}-{d}", "value": str(x["valor"])})
+    return out
+
+
+EXTERNAL_PROVIDERS = {"bcb_sgs_433": _fetch_bcb_sgs_433}
+
+
+@app.get('/api/v1/external-indices/')
+def list_external_indices(session: SessionDep, _: CurrentUser) -> list[ExternalIndex]:
+    return session.exec(select(ExternalIndex)).all()
+
+
+@app.get('/api/v1/external-indices/{code}/series')
+def external_index_series(code: str, session: SessionDep, _: CurrentUser):
+    idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == code)).first()
+    if not idx:
+        raise HTTPException(status_code=404, detail="Índice não encontrado")
+    pts = session.exec(
+        select(ExternalIndexPoint).where(ExternalIndexPoint.index_id == idx.id).order_by(ExternalIndexPoint.ref_date)
+    ).all()
+    return {"code": idx.code, "value_type": idx.value_type,
+            "pontos": [{"ref_date": p.ref_date, "value": p.value} for p in pts]}
+
+
+@app.post('/api/v1/external-indices/{code}/refresh')
+def refresh_external_index(code: str, session: SessionDep, _: CurrentUser):
+    """Puxa a série do provider e faz upsert idempotente (unique por índice/mês);
+    revisões atualizam o ponto existente em vez de duplicar."""
+    idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == code)).first()
+    if not idx:
+        raise HTTPException(status_code=404, detail="Índice não encontrado")
+    provider = EXTERNAL_PROVIDERS.get(idx.provider)
+    if not provider:
+        raise HTTPException(status_code=400, detail=f"Índice '{code}' não tem provider automático (entra por import curado)")
+    novos = 0
+    for d in provider():
+        existente = session.exec(
+            select(ExternalIndexPoint).where(
+                ExternalIndexPoint.index_id == idx.id,
+                ExternalIndexPoint.ref_date == d["ref_date"],
+            )
+        ).first()
+        if existente:
+            existente.value = str(d["value"])
+            session.add(existente)
+        else:
+            session.add(ExternalIndexPoint(index_id=idx.id, ref_date=d["ref_date"], value=str(d["value"])))
+            novos += 1
+    session.commit()
+    total = len(session.exec(select(ExternalIndexPoint).where(ExternalIndexPoint.index_id == idx.id)).all())
+    return {"code": idx.code, "novos": novos, "total": total}
 
 
 # ---------- LogEntries ----------

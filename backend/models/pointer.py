@@ -83,6 +83,31 @@ class UserMetricAssignment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ExternalIndex(SQLModel, table=True):
+    """Série externa real, normalizada e curada (#167): IPCA (BCB/SGS), PMC (IBGE),
+    ABRAS (manual). Global e read-only — a base para metas ancoradas no mundo real.
+    Os pontos ficam em ExternalIndexPoint."""
+    id: int | None = Field(default=None, primary_key=True)
+    code: str = Field(unique=True, index=True, max_length=50)
+    nome: str = Field(max_length=150)
+    provider: str = Field(max_length=50)              # ex.: "bcb_sgs_433", "manual"
+    frequencia: str = Field(default="monthly", max_length=20)
+    unidade: str = Field(default="", max_length=20)
+    value_type: str = Field(default="variacao_pct", max_length=20)  # variacao_pct | indice | nivel
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ExternalIndexPoint(SQLModel, table=True):
+    """Ponto de uma série externa. Idempotente: um valor por índice/mês."""
+    __table_args__ = (UniqueConstraint("index_id", "ref_date"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    index_id: int = Field(foreign_key="externalindex.id", index=True)
+    ref_date: str = Field(max_length=10)             # YYYY-MM-01 (mês de referência)
+    value: str = Field(max_length=50)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class GoalTemplate(SQLModel, table=True):
     """Modelo de meta pronto (catálogo curado). Aponta para uma métrica do
     catálogo por código e sugere um alvo total + curva de distribuição. Importar
