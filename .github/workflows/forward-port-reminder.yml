@@ -1,0 +1,47 @@
+name: Forward-port reminder
+
+# Enforcement contínuo do fluxo multi-linha (#147): quando sai um patch de
+# manutenção (tag v0.3.x ESTÁVEL, na linha release/0.3), abre um issue lembrando
+# de forward-portar o fix para o master (0.4-dev). A decisão e o cherry-pick
+# continuam humanos (label `port:master` no PR) — isto é só o gatilho pra a regra
+# não depender de memória. Publicação de imagem/tag móvel é a #146.
+
+on:
+  push:
+    tags:
+      - "v0.3.*"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    # Só releases estáveis: ignora pré-releases (v0.3.x-dev.N / -rc.N).
+    if: ${{ !contains(github.ref_name, '-') }}
+    steps:
+      - name: Abrir issue de forward-port
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const title = `Forward-port: ${tag} → master (0.4-dev)`;
+            const body = [
+              `O release de manutenção **${tag}** saiu na linha \`release/0.3\`.`,
+              '',
+              'Pela política (README → *Deploy e versionamento*), o fix precisa ser',
+              'levado ao `master` (0.4-dev) por **cherry-pick** (squash-safe):',
+              '',
+              `- [ ] Confirmar se o(s) fix(es) de ${tag} já foram forward-portados`,
+              '- [ ] Se não, adicionar o label `port:master` no(s) PR(s) de origem',
+              '- [ ] Verificar `release/0.3` vs `master` sem divergência pendente',
+              '',
+              '_Aberto automaticamente por `.github/workflows/forward-port-reminder.yml` (#147)._',
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+            });
