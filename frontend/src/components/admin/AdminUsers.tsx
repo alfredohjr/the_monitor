@@ -10,6 +10,12 @@ interface OrgUser {
   role: string;
 }
 
+interface Metric {
+  id: number;
+  codigo: string;
+  nome?: string;
+}
+
 export default function AdminUsers() {
   const router = useRouter();
   const [token, setToken] = useState("");
@@ -21,6 +27,10 @@ export default function AdminUsers() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [expandedUser, setExpandedUser] = useState<number | null>(null);
+  const [assigned, setAssigned] = useState<Set<number>>(new Set());
+  const [savingMetrics, setSavingMetrics] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
@@ -41,12 +51,56 @@ export default function AdminUsers() {
   useEffect(() => {
     if (!orgId || !token) return;
     loadUsers(orgId, token);
+    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}`, "X-Org-Id": String(orgId) } })
+      .then(r => r.json())
+      .then(d => setMetrics(Array.isArray(d) ? d : []))
+      .catch(() => {});
   }, [orgId, token]);
 
   function loadUsers(id: number, t: string) {
     fetch(`http://localhost:8000/api/v1/organizations/${id}/users/`, { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
       .then(d => setUsers(Array.isArray(d) ? d : []));
+  }
+
+  async function toggleMetricsPanel(userId: number) {
+    if (expandedUser === userId) return setExpandedUser(null);
+    setExpandedUser(userId);
+    setAssigned(new Set());
+    const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`,
+      { headers: { Authorization: `Bearer ${token}` } });
+    const d = await resp.json().catch(() => ({ metric_ids: [] }));
+    setAssigned(new Set<number>(Array.isArray(d.metric_ids) ? d.metric_ids : []));
+  }
+
+  function toggleMetric(metricId: number) {
+    setAssigned(prev => {
+      const next = new Set(prev);
+      if (next.has(metricId)) next.delete(metricId); else next.add(metricId);
+      return next;
+    });
+  }
+
+  async function saveMetrics(userId: number) {
+    setSavingMetrics(true);
+    setError("");
+    setMessage("");
+    try {
+      const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ metric_ids: [...assigned] }),
+      });
+      if (!resp.ok) {
+        const d = await resp.json().catch(() => ({}));
+        setError(d.detail ?? "Não foi possível salvar as métricas");
+        return;
+      }
+      setMessage("Métricas atribuídas atualizadas.");
+      setExpandedUser(null);
+    } finally {
+      setSavingMetrics(false);
+    }
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -118,16 +172,46 @@ export default function AdminUsers() {
           </thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} className="border-b border-white/5">
-                <td className="py-3">{u.username}</td>
-                <td className="text-zinc-400">{u.email || "—"}</td>
-                <td>{u.role}</td>
-                <td className="text-right">
-                  {u.id !== meId && (
-                    <button onClick={() => handleRemove(u.id)} className="text-red-400 hover:text-red-300 text-xs">Remover</button>
-                  )}
-                </td>
-              </tr>
+              <React.Fragment key={u.id}>
+                <tr className="border-b border-white/5">
+                  <td className="py-3">{u.username}</td>
+                  <td className="text-zinc-400">{u.email || "—"}</td>
+                  <td>{u.role}</td>
+                  <td className="text-right whitespace-nowrap">
+                    {u.role !== "admin" && (
+                      <button onClick={() => toggleMetricsPanel(u.id)} className="text-blue-400 hover:text-blue-300 text-xs mr-3">
+                        {expandedUser === u.id ? "Fechar" : "Métricas"}
+                      </button>
+                    )}
+                    {u.id !== meId && (
+                      <button onClick={() => handleRemove(u.id)} className="text-red-400 hover:text-red-300 text-xs">Remover</button>
+                    )}
+                  </td>
+                </tr>
+                {expandedUser === u.id && (
+                  <tr className="border-b border-white/5 bg-white/5">
+                    <td colSpan={4} className="p-4">
+                      <p className="text-zinc-400 text-xs mb-3">Selecione as métricas que <strong>{u.username}</strong> pode ver e lançar:</p>
+                      {metrics.length === 0 ? (
+                        <p className="text-zinc-500 text-xs">Nenhuma métrica nesta organização.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {metrics.map(m => (
+                            <label key={m.id} className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 cursor-pointer">
+                              <input type="checkbox" checked={assigned.has(m.id)} onChange={() => toggleMetric(m.id)} />
+                              {m.nome || m.codigo}
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      <button onClick={() => saveMetrics(u.id)} disabled={savingMetrics}
+                        className="text-xs bg-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-500 transition">
+                        {savingMetrics ? "Salvando..." : "Salvar métricas"}
+                      </button>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

@@ -10,7 +10,7 @@ from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models import get_session, User, Metric, Goal, LogEntry, Membership
+from models import get_session, User, Metric, Goal, LogEntry, Membership, UserMetricAssignment
 from auth import hash_password, create_access_token
 
 
@@ -67,6 +67,12 @@ def criar_metrica(client, user, org_id, codigo):
 def add_membro(session, user, org_id, role="user"):
     """Vincula um usuário a uma org com o papel dado (default: 'user' comum)."""
     session.add(Membership(user_id=user.id, organization_id=org_id, role=role))
+    session.commit()
+
+
+def atribuir_metrica(session, user, metric_id, org_id):
+    """Atribui uma métrica ao lançador (#163) — pré-requisito para ele lançar."""
+    session.add(UserMetricAssignment(user_id=user.id, metric_id=metric_id, organization_id=org_id))
     session.commit()
 
 
@@ -196,6 +202,7 @@ def test_usuario_comum_lanca_na_org_marcada(client, session):
 
     colab = make_user(session, "colab")
     add_membro(session, colab, org, role="user")
+    atribuir_metrica(session, colab, mid, org)  # #163: precisa da atribuição
 
     r = client.post(
         "/api/v1/logs/",
@@ -217,6 +224,7 @@ def test_usuario_comum_multi_org_lanca_na_org_do_header(client, session):
     colab = make_user(session, "colab")
     add_membro(session, colab, org1, role="user")
     add_membro(session, colab, org2, role="user")
+    atribuir_metrica(session, colab, m1, org1)  # #163: precisa da atribuição
 
     # marca org1 → cai em org1
     ok = client.post(
