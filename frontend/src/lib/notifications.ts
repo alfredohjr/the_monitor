@@ -1,3 +1,4 @@
+import { API_BASE } from "./api";
 export interface Notification {
   id: number;
   mensagem: string;
@@ -5,7 +6,7 @@ export interface Notification {
   created_at: string;
 }
 
-const DEFAULT_API_BASE = "http://localhost:8000";
+const DEFAULT_API_BASE = API_BASE + "";
 
 /** Conta quantas notificações ainda não foram lidas. */
 export function unreadCount(list: Notification[]): number {

@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -17,7 +18,7 @@ export default function VerifyEmail() {
       setMessage("Link inválido: token ausente.");
       return;
     }
-    fetch("http://localhost:8000/api/v1/verify-email/", {
+    fetch(API_BASE + "/api/v1/verify-email/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 interface Metric { id: number; codigo: string; nome?: string; periodo: string }
 interface ErroLinha { linha: number; motivo: string }
@@ -23,7 +23,7 @@ export default function ImportLogsCSV() {
     const t = localStorage.getItem("access_token");
     if (!t) return void router.push("/login");
     setToken(t);
-    apiFetch("http://localhost:8000/api/v1/metrics/").then(r => r.json())
+    apiFetch(API_BASE + "/api/v1/metrics/").then(r => r.json())
       .then(d => setMetrics(Array.isArray(d) ? d : [])).catch(() => {});
   }, [router]);
 
@@ -31,7 +31,7 @@ export default function ImportLogsCSV() {
     setError("");
     setLoading(true);
     try {
-      const resp = await apiFetch("http://localhost:8000/api/v1/logs/import-csv", {
+      const resp = await apiFetch(API_BASE + "/api/v1/logs/import-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ metric_id: Number(metricId), csv, dry_run }),

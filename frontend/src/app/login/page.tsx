@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -66,7 +67,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/token/", {
+      const response = await fetch(API_BASE + "/api/v1/token/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),

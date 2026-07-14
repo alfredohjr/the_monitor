@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { placeholderValor } from "@/lib/formatValor";
@@ -31,7 +31,7 @@ export default function GoalForm({ id }: { id?: string }) {
     setToken(storedToken);
 
     if (id) {
-      apiFetch(`http://localhost:8000/api/v1/goals/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
+      apiFetch(`${API_BASE}/api/v1/goals/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
         .then(r => r.json()).then(d => setGoalData({ metric: d.metric, alvo: d.alvo, periodo_referencia: d.periodo_referencia || "" }));
     }
   }, [id, router]);
@@ -65,7 +65,7 @@ export default function GoalForm({ id }: { id?: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setMessage({ text: "", type: "" });
     try {
-      const url = id ? `http://localhost:8000/api/v1/goals/${id}/` : `http://localhost:8000/api/v1/goals/`;
+      const url = id ? `${API_BASE}/api/v1/goals/${id}/` : `${API_BASE}/api/v1/goals/`;
       const method = id ? "PUT" : "POST";
       const response = await apiFetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(goalData) });
       if (!response.ok) throw new Error("Erro ao gravar. Todos os dados preenchidos?");

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 export function useSubscribedMetrics(token: string) {
   const [metrics, setMetrics] = useState<any[]>([]);
@@ -9,7 +9,7 @@ export function useSubscribedMetrics(token: string) {
     if (!token) { setLoading(false); return; }
     // A regra de "quais métricas o usuário acompanha" (próprias + defaults
     // assinadas) vive no backend; aqui só consumimos a lista já filtrada.
-    apiFetch("http://localhost:8000/api/v1/metrics/?apenas_inscritas=true")
+    apiFetch(API_BASE + "/api/v1/metrics/?apenas_inscritas=true")
       .then(r => r.json())
       .then(data => setMetrics(Array.isArray(data) ? data : data.results || []))
       .finally(() => setLoading(false));

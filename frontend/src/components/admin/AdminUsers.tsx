@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,7 +39,7 @@ export default function AdminUsers() {
     const t = localStorage.getItem("access_token");
     if (!t) return void router.push("/login");
     setToken(t);
-    fetch("http://localhost:8000/api/v1/me/", { headers: { Authorization: `Bearer ${t}` } })
+    fetch(API_BASE + "/api/v1/me/", { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
       .then(d => {
         setMeId(d?.id ?? null);
@@ -53,14 +54,14 @@ export default function AdminUsers() {
   useEffect(() => {
     if (!orgId || !token) return;
     loadUsers(orgId, token);
-    fetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}`, "X-Org-Id": String(orgId) } })
+    fetch(API_BASE + "/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}`, "X-Org-Id": String(orgId) } })
       .then(r => r.json())
       .then(d => setMetrics(Array.isArray(d) ? d : []))
       .catch(() => {});
   }, [orgId, token]);
 
   function loadUsers(id: number, t: string) {
-    fetch(`http://localhost:8000/api/v1/organizations/${id}/users/`, { headers: { Authorization: `Bearer ${t}` } })
+    fetch(`${API_BASE}/api/v1/organizations/${id}/users/`, { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
       .then(d => setUsers(Array.isArray(d) ? d : []));
   }
@@ -69,7 +70,7 @@ export default function AdminUsers() {
     if (expandedUser === userId) return setExpandedUser(null);
     setExpandedUser(userId);
     setAssigned(new Set()); setCanEdit(new Set()); setCanDelete(new Set());
-    const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`,
+    const resp = await fetch(`${API_BASE}/api/v1/organizations/${orgId}/users/${userId}/metrics/`,
       { headers: { Authorization: `Bearer ${token}` } });
     const d = await resp.json().catch(() => ({ assignments: [] }));
     const items: { metric_id: number; can_edit: boolean; can_delete: boolean }[] = Array.isArray(d.assignments) ? d.assignments : [];
@@ -110,7 +111,7 @@ export default function AdminUsers() {
         can_edit: canEdit.has(mid),
         can_delete: canDelete.has(mid),
       }));
-      const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`, {
+      const resp = await fetch(`${API_BASE}/api/v1/organizations/${orgId}/users/${userId}/metrics/`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ assignments }),
@@ -131,7 +132,7 @@ export default function AdminUsers() {
     e.preventDefault();
     setError("");
     setMessage("");
-    const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/`, {
+    const resp = await fetch(`${API_BASE}/api/v1/organizations/${orgId}/users/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ email }),
@@ -147,7 +148,7 @@ export default function AdminUsers() {
   };
 
   const handleRemove = async (userId: number) => {
-    const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/`, {
+    const resp = await fetch(`${API_BASE}/api/v1/organizations/${orgId}/users/${userId}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

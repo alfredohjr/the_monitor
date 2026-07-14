@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 
 interface Ponto { data: string; alvo: number }
 interface Metric { id: number; codigo: string; nome?: string; periodo: string }
@@ -34,9 +34,9 @@ export default function ImportGoals() {
     if (!t) return void router.push("/login");
     setToken(t);
     // todas as métricas visíveis (org + catálogo) para mapear o código do modelo
-    apiFetch("http://localhost:8000/api/v1/metrics/").then(r => r.json())
+    apiFetch(API_BASE + "/api/v1/metrics/").then(r => r.json())
       .then(d => setMetrics(Array.isArray(d) ? d : [])).catch(() => {});
-    apiFetch("http://localhost:8000/api/v1/goal-templates/").then(r => r.json())
+    apiFetch(API_BASE + "/api/v1/goal-templates/").then(r => r.json())
       .then(d => setTemplates(Array.isArray(d) ? d : [])).catch(() => {});
   }, [router]);
 
@@ -59,7 +59,7 @@ export default function ImportGoals() {
     setError("");
     setLoading(true);
     try {
-      const resp = await apiFetch("http://localhost:8000/api/v1/goals/import", {
+      const resp = await apiFetch(API_BASE + "/api/v1/goals/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +17,7 @@ export default function MetricForm({ id }: { id?: string }) {
     setToken(storedToken);
 
     if (id && id !== 'new') {
-      apiFetch(`http://localhost:8000/api/v1/metrics/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
+      apiFetch(`${API_BASE}/api/v1/metrics/${id}/`, { headers: { Authorization: `Bearer ${storedToken}` } })
         .then(r => r.json()).then(d => {
           setFormData({ codigo: d.codigo, nome: d.nome || "", descricao: d.descricao, valor_padrao: d.valor_padrao || "", tipo: d.tipo, periodo: d.periodo, is_default: d.is_default ?? false });
         }).catch(() => setMessage({ text: "Não foi possível carregar métrica.", type: "error" }));
@@ -34,7 +34,7 @@ export default function MetricForm({ id }: { id?: string }) {
     e.preventDefault();
     setLoading(true); setMessage({ text: "", type: "" });
     try {
-      const url = id ? `http://localhost:8000/api/v1/metrics/${id}/` : `http://localhost:8000/api/v1/metrics/`;
+      const url = id ? `${API_BASE}/api/v1/metrics/${id}/` : `${API_BASE}/api/v1/metrics/`;
       const method = id ? "PUT" : "POST";
       const response = await apiFetch(url, { method, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(formData) });
       if (!response.ok) throw new Error(id ? "Erro ao atualizar." : "Erro ao criar. Código pode já existir.");

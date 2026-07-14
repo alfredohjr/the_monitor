@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -42,8 +42,8 @@ export default function DashboardGrid() {
     try {
       const headers = { "Authorization": `Bearer ${storedToken}` };
       const [gRes, lRes] = await Promise.all([
-        apiFetch("http://localhost:8000/api/v1/goals/", { headers }),
-        apiFetch("http://localhost:8000/api/v1/logs/", { headers }),
+        apiFetch(API_BASE + "/api/v1/goals/", { headers }),
+        apiFetch(API_BASE + "/api/v1/logs/", { headers }),
       ]);
 
       if (gRes.status === 401 || lRes.status === 401) {
@@ -106,7 +106,7 @@ export default function DashboardGrid() {
       return;
     }
     let cancelado = false;
-    apiFetch(`http://localhost:8000/api/v1/metrics/${selectedMetric}/progress?start=${startDate}&end=${endDate}`, {
+    apiFetch(`${API_BASE}/api/v1/metrics/${selectedMetric}/progress?start=${startDate}&end=${endDate}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => (r.ok ? r.json() : null))
