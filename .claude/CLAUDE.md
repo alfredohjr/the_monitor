@@ -72,3 +72,38 @@ useEffect(() => {
 ```
 
 Ao criar uma nova página protegida, adicionar o componente nos dois `describe` de `auth-guard.test.tsx`.
+
+## Convenções e gotchas (mantido em dia)
+
+### Migrations (Alembic + SQLite)
+Todo novo model/coluna precisa de migration em `backend/alembic/versions/`.
+- **Use `batch_alter_table`** para `add_column`/`drop_column`/FK — o SQLite (usado
+  nos testes) não faz `ALTER` de constraint direto. Colunas `NOT NULL` novas em
+  tabela com dados precisam de `server_default`. Espelhe o padrão de
+  `f6a7b8c9d0e1_scope_metric_goal_log_by_org.py`.
+- `backend/tests/test_migrations.py` valida **models ↔ migrations** em sincronia
+  (`compare_metadata`) e roda o upgrade do zero em SQLite. Rode-o ao mexer em model.
+
+### Frontend — base da API (nunca hardcode `localhost:8000`)
+Use `API_BASE` de `@/lib/api` (ou `apiFetch` com path relativo `/api/v1/...`). Em
+produção o front é same-origin atrás de proxy: `NEXT_PUBLIC_API_BASE=""` faz as
+chamadas irem pra `/api/v1/...`. Sem env (dev/testes) cai em `localhost:8000`.
+
+### Permissões: lançador vs admin (por organização)
+- Admin da org define, por lançador, **quais métricas** ele manipula
+  (`UserMetricAssignment`) e as flags **`can_edit_entry` / `can_delete_entry`**.
+- Lançador só **vê/lança** nas métricas atribuídas, e só **edita/exclui os
+  próprios** lançamentos com a flag ligada — senão **403** (validado no backend).
+- **Admin bypassa** todas as flags. Edição/exclusão gera trilha em `LogEntryAudit`.
+- A UI espelha as permissões efetivas via `GET /api/v1/me/log-permissions/`.
+
+### Deploy e versionamento
+Detalhes no `README.md` (§ *Deploy e versionamento*) e em `deploy/oracle/`:
+- Linhas: **`release/0.3`** (manutenção 0.3.x) e **`master`** (`0.4.0-dev`).
+- Corrigir na linha mais antiga afetada e **forward-portar** por label
+  **`port:<branch>`** (cherry-pick — o merge de branch conflita com o squash).
+- Imagens no **GHCR** com tag móvel `MAJOR.MINOR` + **Watchtower** (auto-update
+  travado na minor). Versão do app vem do build-arg `APP_VERSION` (não hardcode).
+
+### Fluxo de merge
+PR + `gh pr merge --auto --squash`: com CI verde, mergeia sozinho e apaga a branch.
