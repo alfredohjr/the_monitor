@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, get_session
 import secrets
 
 from db_migrations import run_migrations
@@ -429,6 +429,31 @@ def _assigned_metric_ids(session: Session, user_id: int, org_id: int | None) -> 
     )
 
 
+def _assignment(session: Session, user_id: int, metric_id: int, org_id: int) -> UserMetricAssignment | None:
+    return session.exec(
+        select(UserMetricAssignment).where(
+            UserMetricAssignment.user_id == user_id,
+            UserMetricAssignment.metric_id == metric_id,
+            UserMetricAssignment.organization_id == org_id,
+        )
+    ).first()
+
+
+def _enforce_entry_permission(session: Session, user: User, log: LogEntry, org_id: int, action: str) -> None:
+    """Regras de editar/excluir lançamento (#164). Admin passa livre. Lançador só
+    mexe nos próprios lançamentos e só com a flag ligada; senão 403."""
+    if _is_org_admin(session, user.id, org_id):
+        return
+    if log.created_by != user.id:
+        raise HTTPException(status_code=403, detail="Você só pode alterar os próprios lançamentos")
+    goal = session.get(Goal, log.goal)
+    a = _assignment(session, user.id, goal.metric, org_id) if goal else None
+    permitido = bool(a and (a.can_edit_entry if action == "edit" else a.can_delete_entry))
+    if not permitido:
+        verbo = "editar" if action == "edit" else "excluir"
+        raise HTTPException(status_code=403, detail=f"Sem permissão para {verbo} este lançamento")
+
+
 def _owned_metric(metric_id: int, session: Session, org: int | None) -> Metric | None:
     """Métrica que a org pode editar/excluir (a própria; padrão é read-only)."""
     metric = session.get(Metric, metric_id)
@@ -832,6 +857,7 @@ def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: Curre
         data=date_type.fromisoformat(body.data),
         valor_logado=body.valor_logado,
         organization_id=org_id,
+        created_by=user.id,
     )
     session.add(log)
     session.commit()
@@ -847,14 +873,18 @@ def get_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) ->
     return log
 
 @app.put('/api/v1/logs/{log_id}/')
-def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> LogEntry:
+def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg, user: CurrentUser) -> LogEntry:
     from datetime import date as date_type
+    org_id = require_active_org(org)
     log = session.get(LogEntry, log_id)
-    if not log or log.deleted or log.organization_id != org:
+    if not log or log.deleted or log.organization_id != org_id:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    _enforce_entry_permission(session, user, log, org_id, "edit")
     # A meta destino também precisa ser da org ativa.
-    if not _owned_goal(body.goal, session, org):
+    if not _owned_goal(body.goal, session, org_id):
         raise HTTPException(status_code=404, detail="Meta não encontrada")
+    # Auditoria: registra o valor anterior antes de sobrescrever (#164).
+    session.add(LogEntryAudit(log_entry_id=log.id, action="edit", actor_id=user.id, valor_anterior=log.valor_logado))
     log.goal = body.goal
     log.data = date_type.fromisoformat(body.data)
     log.valor_logado = body.valor_logado
@@ -864,10 +894,13 @@ def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg
     return log
 
 @app.delete('/api/v1/logs/{log_id}/', status_code=204)
-def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, user: CurrentUser):
+    org_id = require_active_org(org)
     log = session.get(LogEntry, log_id)
-    if not log or log.deleted or log.organization_id != org:
+    if not log or log.deleted or log.organization_id != org_id:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    _enforce_entry_permission(session, user, log, org_id, "delete")
+    session.add(LogEntryAudit(log_entry_id=log.id, action="delete", actor_id=user.id, valor_anterior=log.valor_logado))
     log.deleted = True
     session.add(log)
     session.commit()
@@ -1096,8 +1129,16 @@ def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: Curren
 
 # ---------- Atribuição de métricas ao lançador (#163) ----------
 
+class MetricAssignmentItem(BaseModel):
+    metric_id: int
+    can_edit: bool = False
+    can_delete: bool = False
+
+
 class MetricAssignmentUpdate(BaseModel):
-    metric_ids: list[int]
+    # Compat #163: aceita `metric_ids` (flags desligadas) OU `assignments` com flags.
+    metric_ids: list[int] | None = None
+    assignments: list[MetricAssignmentItem] | None = None
 
 
 def _require_member(session: Session, user_id: int, org_id: int) -> Membership:
@@ -1111,21 +1152,38 @@ def _require_member(session: Session, user_id: int, org_id: int) -> Membership:
 
 @app.get('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
 def list_user_metric_assignments(org_id: int, user_id: int, session: SessionDep, user: CurrentUser):
-    """Lista os ids de métricas que o admin atribuiu a um lançador nesta org."""
+    """Lista as métricas atribuídas ao lançador + as flags de permissão (#163/#164)."""
     require_org_admin(session, user, org_id)
     _require_member(session, user_id, org_id)
-    return {"metric_ids": sorted(_assigned_metric_ids(session, user_id, org_id))}
+    rows = session.exec(
+        select(UserMetricAssignment).where(
+            UserMetricAssignment.user_id == user_id,
+            UserMetricAssignment.organization_id == org_id,
+        )
+    ).all()
+    return {
+        "metric_ids": sorted(r.metric_id for r in rows),
+        "assignments": [
+            {"metric_id": r.metric_id, "can_edit": r.can_edit_entry, "can_delete": r.can_delete_entry}
+            for r in sorted(rows, key=lambda r: r.metric_id)
+        ],
+    }
 
 
 @app.put('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
 def set_user_metric_assignments(org_id: int, user_id: int, body: MetricAssignmentUpdate, session: SessionDep, user: CurrentUser):
-    """Substitui o conjunto de métricas atribuídas ao lançador (idempotente).
-    Só aceita métricas visíveis à org. Remover uma atribuição não apaga os
-    lançamentos históricos daquele usuário (apenas o vínculo é removido)."""
+    """Substitui o conjunto de métricas atribuídas ao lançador (idempotente) e suas
+    flags de permissão. Só aceita métricas visíveis à org. Remover uma atribuição
+    não apaga os lançamentos históricos daquele usuário (só o vínculo é removido)."""
     require_org_admin(session, user, org_id)
     _require_member(session, user_id, org_id)
 
-    validas = {mid for mid in body.metric_ids if _visible_metric(mid, session, org_id)}
+    # Normaliza para um dict metric_id -> (can_edit, can_delete).
+    if body.assignments is not None:
+        pedidos = {it.metric_id: (it.can_edit, it.can_delete) for it in body.assignments}
+    else:
+        pedidos = {mid: (False, False) for mid in (body.metric_ids or [])}
+    validos = {mid: flags for mid, flags in pedidos.items() if _visible_metric(mid, session, org_id)}
 
     atuais = session.exec(
         select(UserMetricAssignment).where(
@@ -1136,10 +1194,38 @@ def set_user_metric_assignments(org_id: int, user_id: int, body: MetricAssignmen
     for a in atuais:
         session.delete(a)
     session.flush()  # aplica os deletes antes dos inserts (evita colisão no unique)
-    for mid in validas:
-        session.add(UserMetricAssignment(user_id=user_id, metric_id=mid, organization_id=org_id))
+    for mid, (can_edit, can_delete) in validos.items():
+        session.add(UserMetricAssignment(
+            user_id=user_id, metric_id=mid, organization_id=org_id,
+            can_edit_entry=can_edit, can_delete_entry=can_delete,
+        ))
     session.commit()
-    return {"metric_ids": sorted(validas)}
+    return {
+        "metric_ids": sorted(validos),
+        "assignments": [
+            {"metric_id": mid, "can_edit": f[0], "can_delete": f[1]}
+            for mid, f in sorted(validos.items())
+        ],
+    }
+
+
+@app.get('/api/v1/me/log-permissions/')
+def my_log_permissions(session: SessionDep, org: ActiveOrg, user: CurrentUser):
+    """Permissões efetivas do usuário atual sobre lançamentos na org ativa — a UI
+    usa para mostrar/esconder os botões de editar/excluir (#164)."""
+    org_id = require_active_org(org)
+    is_admin = _is_org_admin(session, user.id, org_id)
+    rows = session.exec(
+        select(UserMetricAssignment).where(
+            UserMetricAssignment.user_id == user.id,
+            UserMetricAssignment.organization_id == org_id,
+        )
+    ).all()
+    return {
+        "is_admin": is_admin,
+        "user_id": user.id,
+        "metrics": {str(r.metric_id): {"can_edit": r.can_edit_entry, "can_delete": r.can_delete_entry} for r in rows},
+    }
 
 
 # ---------- Email ----------

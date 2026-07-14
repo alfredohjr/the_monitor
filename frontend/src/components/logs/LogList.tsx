@@ -5,10 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatValor } from "@/lib/formatValor";
 
+interface LogPermissions {
+  is_admin: boolean;
+  user_id: number | null;
+  metrics: Record<string, { can_edit: boolean; can_delete: boolean }>;
+}
+
 export default function LogList() {
   const [items, setItems] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
+  const [perms, setPerms] = useState<LogPermissions>({ is_admin: false, user_id: null, metrics: {} });
   const router = useRouter();
 
   useEffect(() => {
@@ -21,7 +28,22 @@ export default function LogList() {
       .then(r => r.json()).then(d => setGoals(Array.isArray(d) ? d : d.results || []));
     apiFetch("http://localhost:8000/api/v1/metrics/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setMetrics(Array.isArray(d) ? d : d.results || []));
+    apiFetch("http://localhost:8000/api/v1/me/log-permissions/", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d && typeof d === "object" && "metrics" in d) setPerms(d); }).catch(() => {});
   }, [router]);
+
+  // Permissões efetivas do lançamento: admin pode tudo; lançador só nos próprios
+  // e conforme as flags da métrica (#164).
+  function permsFor(log: any): { canEdit: boolean; canDelete: boolean } {
+    if (perms.is_admin) return { canEdit: true, canDelete: true };
+    const g = goals.find(x => x.id === log.goal);
+    const flags = g ? perms.metrics[String(g.metric)] : undefined;
+    const own = log.created_by != null && log.created_by === perms.user_id;
+    return {
+      canEdit: !!(own && flags?.can_edit),
+      canDelete: !!(own && flags?.can_delete),
+    };
+  }
 
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem("access_token");
@@ -67,8 +89,16 @@ export default function LogList() {
                     <td className="py-4 px-2 font-medium text-blue-300">{metricName} {metricRef}</td>
                     <td className="py-4 px-2 text-blue-300 font-bold text-lg">{formatValor(i.valor_logado, m?.tipo ?? 'number')}</td>
                     <td className="py-4 px-2 text-right">
-                      <Link href={`/logs/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>
-                      <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Desfazer</button>
+                      {(() => {
+                        const p = permsFor(i);
+                        return (
+                          <>
+                            {p.canEdit && <Link href={`/logs/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>}
+                            {p.canDelete && <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Desfazer</button>}
+                            {!p.canEdit && !p.canDelete && <span className="text-zinc-600 text-xs">—</span>}
+                          </>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
