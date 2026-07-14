@@ -81,6 +81,44 @@ describe('AdminUsers', () => {
     render(<AdminUsers />);
     expect(await screen.findByText(/acesso restrito/i)).toBeInTheDocument();
   });
+
+  it('atribui métricas a um lançador (carrega, alterna e salva via PUT) (#163)', async () => {
+    const putCall = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({ metric_ids: [10, 11] }) }));
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => adminMe });
+      // atribuições do lançador (checar antes de /metrics/ genérico)
+      if (url.match(/\/users\/2\/metrics\/$/)) {
+        if (opts?.method === 'PUT') return putCall(url, opts);
+        return Promise.resolve({ ok: true, json: async () => ({ metric_ids: [10] }) });
+      }
+      if (url.endsWith('/api/v1/metrics/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 10, codigo: 'M1', nome: 'Receita' },
+        { id: 11, codigo: 'M2', nome: 'Custo' },
+      ] });
+      if (url.includes('/users/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 1, username: 'admin', email: null, role: 'admin' },
+        { id: 2, username: 'colab', email: null, role: 'user' },
+      ] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    render(<AdminUsers />);
+    fireEvent.click(await screen.findByText('Métricas'));
+
+    // painel abre com M1 marcada (atribuída) e M2 desmarcada
+    const receita = await screen.findByLabelText('Receita') as HTMLInputElement;
+    const custo = screen.getByLabelText('Custo') as HTMLInputElement;
+    expect(receita.checked).toBe(true);
+    expect(custo.checked).toBe(false);
+
+    fireEvent.click(custo); // adiciona M2
+    fireEvent.click(screen.getByText('Salvar métricas'));
+
+    await waitFor(() => expect(putCall).toHaveBeenCalled());
+    const body = JSON.parse((putCall.mock.calls[0][1] as RequestInit).body as string);
+    expect(new Set(body.metric_ids)).toEqual(new Set([10, 11]));
+    expect(putCall.mock.calls[0][0]).toContain('/organizations/7/users/2/metrics/');
+  });
 });
 
 function mockMe(role: string) {

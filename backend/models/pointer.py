@@ -51,6 +51,20 @@ class UserMetricSubscription(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class UserMetricAssignment(SQLModel, table=True):
+    """Atribuição controlada pelo admin: quais métricas um usuário lançador pode
+    manipular numa organização (#163). Diferente de UserMetricSubscription (que é
+    auto-assinatura do catálogo): aqui quem concede é o admin da org. Sem
+    atribuição = sem acesso (403). Remover a atribuição não apaga lançamentos."""
+    __table_args__ = (UniqueConstraint("user_id", "metric_id", "organization_id"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    metric_id: int = Field(foreign_key="metric.id", index=True)
+    organization_id: int = Field(foreign_key="organization.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class GoalTemplate(SQLModel, table=True):
     """Modelo de meta pronto (catálogo curado). Aponta para uma métrica do
     catálogo por código e sugere um alvo total + curva de distribuição. Importar

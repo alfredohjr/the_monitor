@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, EmailVerificationToken, GoalTemplate, get_session
+from models import Item, Historico, News, Metric, Goal, LogEntry, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, get_session
 import secrets
 
 from db_migrations import run_migrations
@@ -405,6 +405,30 @@ def _visible_metric(metric_id: int, session: Session, org: int | None) -> Metric
     return None
 
 
+def _is_org_admin(session: Session, user_id: int, org_id: int | None) -> bool:
+    """True se o usuário é admin da organização (papel 'admin')."""
+    if org_id is None:
+        return False
+    m = session.exec(
+        select(Membership).where(Membership.user_id == user_id, Membership.organization_id == org_id)
+    ).first()
+    return bool(m and m.role == "admin")
+
+
+def _assigned_metric_ids(session: Session, user_id: int, org_id: int | None) -> set[int]:
+    """Métricas atribuídas ao lançador nesta org pelo admin (#163)."""
+    if org_id is None:
+        return set()
+    return set(
+        session.exec(
+            select(UserMetricAssignment.metric_id).where(
+                UserMetricAssignment.user_id == user_id,
+                UserMetricAssignment.organization_id == org_id,
+            )
+        ).all()
+    )
+
+
 def _owned_metric(metric_id: int, session: Session, org: int | None) -> Metric | None:
     """Métrica que a org pode editar/excluir (a própria; padrão é read-only)."""
     metric = session.get(Metric, metric_id)
@@ -453,6 +477,11 @@ def list_metrics(
             ).all()
         )
         metrics = [m for m in metrics if not m.is_default or m.id in subs]
+    # Enforcement de atribuição (#163): o lançador (não-admin) só vê as métricas
+    # que o admin atribuiu a ele nesta org. Admin enxerga tudo.
+    if org is not None and not _is_org_admin(session, user.id, org):
+        atribuidas = _assigned_metric_ids(session, user.id, org)
+        metrics = [m for m in metrics if m.id in atribuidas]
     return metrics
 
 @app.post('/api/v1/metrics/', status_code=201)
@@ -791,8 +820,13 @@ def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: Curre
     from datetime import date as date_type
     org_id = require_active_org(org)
     # Só lança em meta da própria org.
-    if not _owned_goal(body.goal, session, org_id):
+    goal = _owned_goal(body.goal, session, org_id)
+    if not goal:
         raise HTTPException(status_code=404, detail="Meta não encontrada")
+    # Enforcement de atribuição (#163): lançador só lança em métrica atribuída.
+    if not _is_org_admin(session, user.id, org_id):
+        if goal.metric not in _assigned_metric_ids(session, user.id, org_id):
+            raise HTTPException(status_code=403, detail="Métrica não atribuída a você")
     log = LogEntry(
         goal=body.goal,
         data=date_type.fromisoformat(body.data),
@@ -1058,6 +1092,54 @@ def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: Curren
     session.delete(membership)
     session.commit()
     return {"removed": True}
+
+
+# ---------- Atribuição de métricas ao lançador (#163) ----------
+
+class MetricAssignmentUpdate(BaseModel):
+    metric_ids: list[int]
+
+
+def _require_member(session: Session, user_id: int, org_id: int) -> Membership:
+    m = session.exec(
+        select(Membership).where(Membership.user_id == user_id, Membership.organization_id == org_id)
+    ).first()
+    if not m:
+        raise HTTPException(status_code=404, detail="Usuário não pertence a esta organização")
+    return m
+
+
+@app.get('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
+def list_user_metric_assignments(org_id: int, user_id: int, session: SessionDep, user: CurrentUser):
+    """Lista os ids de métricas que o admin atribuiu a um lançador nesta org."""
+    require_org_admin(session, user, org_id)
+    _require_member(session, user_id, org_id)
+    return {"metric_ids": sorted(_assigned_metric_ids(session, user_id, org_id))}
+
+
+@app.put('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
+def set_user_metric_assignments(org_id: int, user_id: int, body: MetricAssignmentUpdate, session: SessionDep, user: CurrentUser):
+    """Substitui o conjunto de métricas atribuídas ao lançador (idempotente).
+    Só aceita métricas visíveis à org. Remover uma atribuição não apaga os
+    lançamentos históricos daquele usuário (apenas o vínculo é removido)."""
+    require_org_admin(session, user, org_id)
+    _require_member(session, user_id, org_id)
+
+    validas = {mid for mid in body.metric_ids if _visible_metric(mid, session, org_id)}
+
+    atuais = session.exec(
+        select(UserMetricAssignment).where(
+            UserMetricAssignment.user_id == user_id,
+            UserMetricAssignment.organization_id == org_id,
+        )
+    ).all()
+    for a in atuais:
+        session.delete(a)
+    session.flush()  # aplica os deletes antes dos inserts (evita colisão no unique)
+    for mid in validas:
+        session.add(UserMetricAssignment(user_id=user_id, metric_id=mid, organization_id=org_id))
+    session.commit()
+    return {"metric_ids": sorted(validas)}
 
 
 # ---------- Email ----------
