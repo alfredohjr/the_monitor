@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 
-from models import Goal, GoalTemplate, Metric, Organization, User
+from models import Goal, GoalTemplate, Metric, Organization, User, ExternalIndex
 
 _METRICAS_PADRAO = [
     dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                tipo="currency", periodo="daily",   valor_padrao="0"),
@@ -40,6 +40,23 @@ def seed_goal_templates(session: Session) -> None:
         if dados["nome"] in existentes:
             continue
         session.add(GoalTemplate(**dados))
+    session.commit()
+
+
+_INDICES_EXTERNOS = [
+    dict(code="IPCA", nome="IPCA (inflação, BCB/SGS 433)", provider="bcb_sgs_433",
+         frequencia="monthly", unidade="%", value_type="variacao_pct"),
+]
+
+
+def seed_external_indices(session: Session) -> None:
+    """Semeia as DEFINIÇÕES dos índices externos (#167), idempotente por code. Os
+    pontos são preenchidos depois via POST /external-indices/{code}/refresh."""
+    existentes = {i.code for i in session.exec(select(ExternalIndex)).all()}
+    for dados in _INDICES_EXTERNOS:
+        if dados["code"] in existentes:
+            continue
+        session.add(ExternalIndex(**dados))
     session.commit()
 
 
