@@ -30,6 +30,8 @@ export default function AdminUsers() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [assigned, setAssigned] = useState<Set<number>>(new Set());
+  const [canEdit, setCanEdit] = useState<Set<number>>(new Set());
+  const [canDelete, setCanDelete] = useState<Set<number>>(new Set());
   const [savingMetrics, setSavingMetrics] = useState(false);
 
   useEffect(() => {
@@ -66,19 +68,36 @@ export default function AdminUsers() {
   async function toggleMetricsPanel(userId: number) {
     if (expandedUser === userId) return setExpandedUser(null);
     setExpandedUser(userId);
-    setAssigned(new Set());
+    setAssigned(new Set()); setCanEdit(new Set()); setCanDelete(new Set());
     const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`,
       { headers: { Authorization: `Bearer ${token}` } });
-    const d = await resp.json().catch(() => ({ metric_ids: [] }));
-    setAssigned(new Set<number>(Array.isArray(d.metric_ids) ? d.metric_ids : []));
+    const d = await resp.json().catch(() => ({ assignments: [] }));
+    const items: { metric_id: number; can_edit: boolean; can_delete: boolean }[] = Array.isArray(d.assignments) ? d.assignments : [];
+    setAssigned(new Set(items.map(a => a.metric_id)));
+    setCanEdit(new Set(items.filter(a => a.can_edit).map(a => a.metric_id)));
+    setCanDelete(new Set(items.filter(a => a.can_delete).map(a => a.metric_id)));
+  }
+
+  function toggleInSet(setFn: React.Dispatch<React.SetStateAction<Set<number>>>, metricId: number) {
+    setFn(prev => {
+      const next = new Set(prev);
+      if (next.has(metricId)) next.delete(metricId); else next.add(metricId);
+      return next;
+    });
   }
 
   function toggleMetric(metricId: number) {
     setAssigned(prev => {
       const next = new Set(prev);
-      if (next.has(metricId)) next.delete(metricId); else next.add(metricId);
+      if (next.has(metricId)) { next.delete(metricId); toggleOff(metricId); } else next.add(metricId);
       return next;
     });
+  }
+
+  // Ao desmarcar a métrica, também limpa as flags dela.
+  function toggleOff(metricId: number) {
+    setCanEdit(prev => { const n = new Set(prev); n.delete(metricId); return n; });
+    setCanDelete(prev => { const n = new Set(prev); n.delete(metricId); return n; });
   }
 
   async function saveMetrics(userId: number) {
@@ -86,10 +105,15 @@ export default function AdminUsers() {
     setError("");
     setMessage("");
     try {
+      const assignments = [...assigned].map(mid => ({
+        metric_id: mid,
+        can_edit: canEdit.has(mid),
+        can_delete: canDelete.has(mid),
+      }));
       const resp = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/users/${userId}/metrics/`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ metric_ids: [...assigned] }),
+        body: JSON.stringify({ assignments }),
       });
       if (!resp.ok) {
         const d = await resp.json().catch(() => ({}));
@@ -195,12 +219,26 @@ export default function AdminUsers() {
                       {metrics.length === 0 ? (
                         <p className="text-zinc-500 text-xs">Nenhuma métrica nesta organização.</p>
                       ) : (
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-col gap-2 mb-3">
                           {metrics.map(m => (
-                            <label key={m.id} className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 cursor-pointer">
-                              <input type="checkbox" checked={assigned.has(m.id)} onChange={() => toggleMetric(m.id)} />
-                              {m.nome || m.codigo}
-                            </label>
+                            <div key={m.id} className="flex items-center gap-4 text-xs">
+                              <label className="flex items-center gap-2 min-w-[160px] cursor-pointer">
+                                <input type="checkbox" checked={assigned.has(m.id)} onChange={() => toggleMetric(m.id)} />
+                                {m.nome || m.codigo}
+                              </label>
+                              {assigned.has(m.id) && (
+                                <div className="flex items-center gap-4 text-zinc-400">
+                                  <label className="flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" aria-label={`Editar ${m.codigo}`} checked={canEdit.has(m.id)} onChange={() => toggleInSet(setCanEdit, m.id)} />
+                                    pode editar
+                                  </label>
+                                  <label className="flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" aria-label={`Excluir ${m.codigo}`} checked={canDelete.has(m.id)} onChange={() => toggleInSet(setCanDelete, m.id)} />
+                                    pode excluir
+                                  </label>
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}

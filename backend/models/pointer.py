@@ -38,7 +38,21 @@ class LogEntry(SQLModel, table=True):
     valor_logado: str = Field(max_length=255)
     # Org a que o lançamento pertence (definida na criação, a partir da org ativa).
     organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
+    # Autor do lançamento (#164): habilita a regra "o lançador só mexe nos
+    # próprios lançamentos". Nulo em registros antigos (pré-migração).
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     deleted: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class LogEntryAudit(SQLModel, table=True):
+    """Trilha de auditoria de edição/exclusão de lançamento (#164): quem fez,
+    quando e o valor anterior. Append-only (nunca é apagada)."""
+    id: int | None = Field(default=None, primary_key=True)
+    log_entry_id: int = Field(foreign_key="logentry.id", index=True)
+    action: str = Field(max_length=20)  # "edit" | "delete"
+    actor_id: int = Field(foreign_key="user.id", index=True)
+    valor_anterior: Optional[str] = Field(default=None, max_length=255)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -62,6 +76,10 @@ class UserMetricAssignment(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     metric_id: int = Field(foreign_key="metric.id", index=True)
     organization_id: int = Field(foreign_key="organization.id", index=True)
+    # Flags de permissão sobre lançamentos desta métrica (#164). Default seguro:
+    # desligado — o lançador não edita/exclui até o admin ligar.
+    can_edit_entry: bool = Field(default=False)
+    can_delete_entry: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

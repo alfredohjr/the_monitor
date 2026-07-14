@@ -89,7 +89,10 @@ describe('AdminUsers', () => {
       // atribuições do lançador (checar antes de /metrics/ genérico)
       if (url.match(/\/users\/2\/metrics\/$/)) {
         if (opts?.method === 'PUT') return putCall(url, opts);
-        return Promise.resolve({ ok: true, json: async () => ({ metric_ids: [10] }) });
+        return Promise.resolve({ ok: true, json: async () => ({
+          metric_ids: [10],
+          assignments: [{ metric_id: 10, can_edit: false, can_delete: false }],
+        }) });
       }
       if (url.endsWith('/api/v1/metrics/')) return Promise.resolve({ ok: true, json: async () => [
         { id: 10, codigo: 'M1', nome: 'Receita' },
@@ -116,7 +119,8 @@ describe('AdminUsers', () => {
 
     await waitFor(() => expect(putCall).toHaveBeenCalled());
     const body = JSON.parse((putCall.mock.calls[0][1] as RequestInit).body as string);
-    expect(new Set(body.metric_ids)).toEqual(new Set([10, 11]));
+    const ids = body.assignments.map((a: { metric_id: number }) => a.metric_id);
+    expect(new Set(ids)).toEqual(new Set([10, 11]));
     expect(putCall.mock.calls[0][0]).toContain('/organizations/7/users/2/metrics/');
   });
 });
