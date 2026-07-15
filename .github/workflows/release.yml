@@ -1,0 +1,58 @@
+name: Publish images
+
+# Publica as imagens no GHCR quando uma tag de versão é empurrada (ex.: v0.4.0,
+# v0.3.1, v0.4.0-dev.1). O docker/metadata-action gera as tags a partir da
+# semver:
+#   - {{version}}      -> tag exata (0.4.0, 0.3.1, 0.4.0-dev.1)
+#   - {{major}}.{{minor}} -> tag MÓVEL (0.4, 0.3) usada pelo deploy p/ travar na linha
+# Pré-releases (ex.: -dev.1) NÃO geram a tag móvel nem 'latest' — a linha
+# estável fica protegida. 'latest' desativado de propósito (nunca deployamos por latest).
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+          - name: frontend
+            context: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/the_monitor-${{ matrix.name }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.meta.outputs.version }}
