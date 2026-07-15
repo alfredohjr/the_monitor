@@ -17,6 +17,17 @@ afterEach(() => {
   delete (global as { fetch?: unknown }).fetch;
 });
 
+describe('NotificationBell — legibilidade (#182)', () => {
+  it('o painel aberto tem fundo sólido (não translúcido)', async () => {
+    render(<NotificationBell />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    const panel = await screen.findByTestId('notif-panel');
+    expect(panel.className).toContain('bg-zinc-900');
+    expect(panel.className).not.toContain('glass');
+  });
+});
+
 describe('NotificationBell — recarrega ao abrir', () => {
   it('busca notificações novas ao abrir o sino (não fica preso ao fetch inicial)', async () => {
     render(<NotificationBell />);
