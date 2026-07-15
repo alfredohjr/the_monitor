@@ -75,7 +75,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-3 w-72 max-h-96 overflow-y-auto glass border border-white/10 rounded-2xl shadow-xl z-50 p-2">
+        <div data-testid="notif-panel" className="absolute right-0 mt-3 w-72 max-h-96 overflow-y-auto bg-zinc-900 border border-white/15 rounded-2xl shadow-xl z-50 p-2">
           <p className="text-xs uppercase tracking-wider text-zinc-500 px-3 py-2">Notificações</p>
           {items.length === 0 ? (
             <p className="text-sm text-zinc-500 px-3 py-4 text-center">Nenhuma notificação.</p>
