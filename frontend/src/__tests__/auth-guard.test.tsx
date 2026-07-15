@@ -16,6 +16,7 @@ import CatalogPage from '@/components/catalog/CatalogPage';
 import AdminUsers from '@/components/admin/AdminUsers';
 import ImportGoals from '@/components/goals/ImportGoals';
 import ClonarMetas from '@/components/goals/ClonarMetas';
+import ImportAnchored from '@/components/goals/ImportAnchored';
 import ImportLogsCSV from '@/components/logs/ImportLogsCSV';
 
 const mockPush = jest.fn();
@@ -66,6 +67,7 @@ describe('Auth guard — redireciona para /login sem token', () => {
   it('AdminUsers', () => expectRedirectToLogin(<AdminUsers />));
   it('ImportGoals', () => expectRedirectToLogin(<ImportGoals />));
   it('ClonarMetas', () => expectRedirectToLogin(<ClonarMetas />));
+  it('ImportAnchored', () => expectRedirectToLogin(<ImportAnchored />));
   it('ImportLogsCSV', () => expectRedirectToLogin(<ImportLogsCSV />));
 });
 
@@ -87,5 +89,6 @@ describe('Auth guard — nao redireciona com token', () => {
   it('AdminUsers', () => { render(<AdminUsers />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('ImportGoals', () => { render(<ImportGoals />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('ClonarMetas', () => { render(<ClonarMetas />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
+  it('ImportAnchored', () => { render(<ImportAnchored />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
   it('ImportLogsCSV', () => { render(<ImportLogsCSV />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
 });
