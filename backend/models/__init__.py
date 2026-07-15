@@ -13,7 +13,7 @@ from .database import (
 )
 from .monitor import Item, Historico, News
 from .accounts import User, Organization, Membership, EmailVerificationToken
-from .pointer import Metric, Goal, LogEntry, LogEntryAudit, UserMetricSubscription, UserMetricAssignment, GoalTemplate, ExternalIndex, ExternalIndexPoint
+from .pointer import Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, UserMetricSubscription, UserMetricAssignment, GoalTemplate, ExternalIndex, ExternalIndexPoint
 from .notifications import Notification
 
 __all__ = [
@@ -35,6 +35,7 @@ __all__ = [
     "UserMetricSubscription",
     "UserMetricAssignment",
     "GoalTemplate",
+    "GoalAnchor",
     "ExternalIndex",
     "ExternalIndexPoint",
     "Notification",

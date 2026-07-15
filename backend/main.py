@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
+from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
 from db_migrations import run_migrations
@@ -15,6 +15,7 @@ from email_service import build_resumo, render_html, enviar_resumo_para_todos, s
 from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates, seed_external_indices
 from progress import compute_progress
 from import_metas import distribuir_alvo, ESTRATEGIAS
+from external_index import resolver_alvo_ancorado
 from import_csv import parse_csv_lancamentos
 from auth import (
     hash_password, verify_password,
@@ -862,6 +863,122 @@ def refresh_external_index(code: str, session: SessionDep, _: CurrentUser):
     session.commit()
     total = len(session.exec(select(ExternalIndexPoint).where(ExternalIndexPoint.index_id == idx.id)).all())
     return {"code": idx.code, "novos": novos, "total": total}
+
+
+# ---------- Metas ancoradas em índice (#167) ----------
+
+class GoalAnchoredImportRequest(BaseModel):
+    metric_id: int
+    alvo_base: float
+    inicio: str
+    fim: str
+    index_code: str
+    strategy: str = "real"
+    estrategia_base: str = "linear"
+    dry_run: bool = False
+
+
+def _serie_indice(session: Session, index_id: int) -> list[tuple[str, float]]:
+    pts = session.exec(select(ExternalIndexPoint).where(ExternalIndexPoint.index_id == index_id)).all()
+    return [(p.ref_date, float(p.value)) for p in pts]
+
+
+def _resolver_curva_ancorada(session: Session, idx: ExternalIndex, body_or_anchor, alvo_base: float,
+                             inicio: str, fim: str, estrategia_base: str, strategy: str):
+    """Resolve o alvo corrigido e a curva diária. Levanta 422 em datas/strategy inválidas."""
+    import datetime as _dt
+    try:
+        d0 = _dt.date.fromisoformat(inicio)
+        d1 = _dt.date.fromisoformat(fim)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+    if d1 < d0:
+        raise HTTPException(status_code=422, detail="Data fim anterior à início")
+    serie = _serie_indice(session, idx.id)
+    try:
+        alvo_corrigido = resolver_alvo_ancorado(alvo_base, serie, inicio, fim, strategy)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    datas = [d0 + _dt.timedelta(days=i) for i in range((d1 - d0).days + 1)]
+    valores = distribuir_alvo(alvo_corrigido, datas, estrategia_base)
+    return alvo_corrigido, datas, valores
+
+
+@app.post('/api/v1/goals/import-anchored')
+def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Importa metas ancoradas num índice externo (#167). Snapshot: resolve a curva
+    agora e grava; guarda o GoalAnchor (fórmula) para re-ancorar sob demanda."""
+    org_id = require_active_org(org)
+    if not _visible_metric(body.metric_id, session, org_id):
+        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+    idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == body.index_code)).first()
+    if not idx:
+        raise HTTPException(status_code=404, detail="Índice não encontrado")
+
+    alvo_corrigido, datas, valores = _resolver_curva_ancorada(
+        session, idx, body, body.alvo_base, body.inicio, body.fim, body.estrategia_base, body.strategy)
+    soma = round(sum(valores), 2)
+
+    if body.dry_run:
+        return {"dry_run": True, "alvo_base": body.alvo_base, "alvo_corrigido": alvo_corrigido,
+                "soma": soma, "pontos": [{"data": d.isoformat(), "alvo": v} for d, v in zip(datas, valores)]}
+
+    anchor = GoalAnchor(metric_id=body.metric_id, organization_id=org_id, index_id=idx.id,
+                        strategy=body.strategy, estrategia_base=body.estrategia_base,
+                        alvo_base=str(body.alvo_base), inicio=body.inicio, fim=body.fim)
+    session.add(anchor)
+    session.commit()
+    session.refresh(anchor)
+
+    criadas = ignoradas = 0
+    for d, v in zip(datas, valores):
+        if v == 0:
+            continue
+        ja = session.exec(select(Goal).where(
+            Goal.metric == body.metric_id, Goal.organization_id == org_id,
+            Goal.periodo_referencia == d.isoformat(), Goal.deleted == False)).first()
+        if ja:
+            ignoradas += 1
+            continue
+        session.add(Goal(metric=body.metric_id, alvo=str(v), periodo_referencia=d.isoformat(),
+                         organization_id=org_id, anchor_id=anchor.id))
+        criadas += 1
+    session.commit()
+    return {"dry_run": False, "anchor_id": anchor.id, "alvo_corrigido": alvo_corrigido,
+            "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
+
+
+@app.post('/api/v1/goals/anchors/{anchor_id}/re-anchor')
+def re_anchor_goals(anchor_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+    """Re-ancora sob demanda: recomputa a curva com a série mais recente do índice
+    e substitui as metas daquele anchor (snapshot novo)."""
+    org_id = require_active_org(org)
+    anchor = session.get(GoalAnchor, anchor_id)
+    if not anchor or anchor.organization_id != org_id:
+        raise HTTPException(status_code=404, detail="Âncora não encontrada")
+    idx = session.get(ExternalIndex, anchor.index_id)
+    if not idx:
+        raise HTTPException(status_code=404, detail="Índice não encontrado")
+
+    alvo_corrigido, datas, valores = _resolver_curva_ancorada(
+        session, idx, anchor, float(anchor.alvo_base), anchor.inicio, anchor.fim,
+        anchor.estrategia_base, anchor.strategy)
+
+    # Substitui as metas do anchor (soft-delete as antigas, recria resolvidas).
+    antigas = session.exec(select(Goal).where(Goal.anchor_id == anchor_id, Goal.deleted == False)).all()
+    for g in antigas:
+        g.deleted = True
+        session.add(g)
+    atualizadas = 0
+    for d, v in zip(datas, valores):
+        if v == 0:
+            continue
+        session.add(Goal(metric=anchor.metric_id, alvo=str(v), periodo_referencia=d.isoformat(),
+                         organization_id=org_id, anchor_id=anchor_id))
+        atualizadas += 1
+    session.commit()
+    return {"anchor_id": anchor_id, "alvo_corrigido": alvo_corrigido, "atualizadas": atualizadas,
+            "soma": round(sum(valores), 2)}
 
 
 # ---------- LogEntries ----------
