@@ -11,9 +11,11 @@ COPY . .
 # o Next inlinar no bundle e o rodapé refletir o patch realmente buildado (#146).
 ARG APP_VERSION=""
 ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
-# Base da API inlinada no bundle (#174). Vazia = same-origin (/api/v1/...), o
-# caminho de produção atrás do proxy. Sem valor, o app cai em localhost:8000 (dev).
-ARG NEXT_PUBLIC_API_BASE=""
+# Base da API inlinada no bundle (#174). Default = localhost:8000, que serve o
+# compose local (frontend:3000 + backend:8000, sem proxy) e qualquer build avulso.
+# O deploy atrás de proxy (Caddy) passa NEXT_PUBLIC_API_BASE="" p/ ficar same-origin
+# (/api/v1/...). Nunca deixe vazio sem um proxy roteando /api → o Next 404aria.
+ARG NEXT_PUBLIC_API_BASE="http://localhost:8000"
 ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 RUN npm run build
 
