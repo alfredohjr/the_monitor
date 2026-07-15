@@ -658,8 +658,23 @@ class GoalImportRequest(BaseModel):
     dry_run: bool = False
 
 
+def _ensure_subscription(session: Session, user_id: int, metric_id: int) -> None:
+    """Inscreve o usuário na métrica se ainda não estiver (#185). Idempotente
+    (unique user+metric). Faz a meta importada aparecer nas telas que filtram por
+    `apenas_inscritas` (dashboard/simulação/GoalForm/métricas)."""
+    ja = session.exec(
+        select(UserMetricSubscription).where(
+            UserMetricSubscription.user_id == user_id,
+            UserMetricSubscription.metric_id == metric_id,
+        )
+    ).first()
+    if not ja:
+        session.add(UserMetricSubscription(user_id=user_id, metric_id=metric_id))
+        session.commit()
+
+
 @app.post('/api/v1/goals/import')
-def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser):
     """Gera metas diárias a partir de um alvo total distribuído por uma curva.
 
     `dry_run=true` devolve a prévia (pontos + soma) sem gravar. Sem dry_run,
@@ -717,6 +732,7 @@ def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, _
         ))
         criadas += 1
     session.commit()
+    _ensure_subscription(session, user.id, body.metric_id)  # #185: aparece nas telas
     return {"dry_run": False, "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
 
 
@@ -905,7 +921,7 @@ def _resolver_curva_ancorada(session: Session, idx: ExternalIndex, body_or_ancho
 
 
 @app.post('/api/v1/goals/import-anchored')
-def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser):
     """Importa metas ancoradas num índice externo (#167). Snapshot: resolve a curva
     agora e grava; guarda o GoalAnchor (fórmula) para re-ancorar sob demanda."""
     org_id = require_active_org(org)
@@ -944,6 +960,7 @@ def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, 
                          organization_id=org_id, anchor_id=anchor.id))
         criadas += 1
     session.commit()
+    _ensure_subscription(session, user.id, body.metric_id)  # #185: aparece nas telas
     return {"dry_run": False, "anchor_id": anchor.id, "alvo_corrigido": alvo_corrigido,
             "criadas": criadas, "ignoradas": ignoradas, "soma": soma}
 
