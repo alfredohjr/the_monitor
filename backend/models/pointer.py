@@ -27,7 +27,26 @@ class Goal(SQLModel, table=True):
     periodo_referencia: str = Field(default="", max_length=50)
     # Org a que a meta pertence (definida na criação, a partir da org ativa).
     organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
+    # Se a meta veio de um import ancorado num índice externo (#167), aponta para
+    # o GoalAnchor com a fórmula (base + estratégia + índice) — habilita re-ancorar.
+    anchor_id: Optional[int] = Field(default=None, foreign_key="goalanchor.id", index=True)
     deleted: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class GoalAnchor(SQLModel, table=True):
+    """Fórmula de uma meta ancorada num índice externo (#167). Snapshot: as metas
+    diárias são gravadas resolvidas no import; re-ancorar sob demanda recomputa a
+    partir desta fórmula com a série mais recente do índice."""
+    id: int | None = Field(default=None, primary_key=True)
+    metric_id: int = Field(foreign_key="metric.id", index=True)
+    organization_id: int = Field(foreign_key="organization.id", index=True)
+    index_id: int = Field(foreign_key="externalindex.id", index=True)
+    strategy: str = Field(max_length=20)          # "real" (acompanhar/indice+delta: futuro)
+    estrategia_base: str = Field(default="linear", max_length=30)  # curva de distribuição
+    alvo_base: str = Field(max_length=50)
+    inicio: str = Field(max_length=10)
+    fim: str = Field(max_length=10)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
