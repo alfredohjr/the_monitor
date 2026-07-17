@@ -99,11 +99,15 @@ chamadas irem pra `/api/v1/...`. Sem env (dev/testes) cai em `localhost:8000`.
 
 ### Deploy e versionamento
 Detalhes no `README.md` (§ *Deploy e versionamento*) e em `deploy/vps/`:
-- Linhas: **`release/0.3`** (manutenção 0.3.x) e **`master`** (`0.4.0-dev`).
+- Linhas: **`release/0.4`** (estável, **em produção**), **`release/0.3`** (antiga)
+  e **`master`** (`0.5.0-dev`).
 - Corrigir na linha mais antiga afetada e **forward-portar** por label
   **`port:<branch>`** (cherry-pick — o merge de branch conflita com o squash).
 - Imagens no **GHCR** com tag móvel `MAJOR.MINOR` + **Watchtower** (auto-update
   travado na minor). Versão do app vem do build-arg `APP_VERSION` (não hardcode).
+- A **0.3 não é deployável** atrás de proxy (`API_BASE` hardcoded); same-origin
+  só da 0.4 em diante. Deploy real: `deploy/vps/` — o `docker-compose.prod.yml`
+  não tem proxy e publica o Postgres.
 
 ### Fluxo de merge
 PR + `gh pr merge --auto --squash`: com CI verde, mergeia sozinho e apaga a branch.
