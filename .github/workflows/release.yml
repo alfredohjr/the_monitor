@@ -25,8 +25,16 @@ jobs:
         include:
           - name: backend
             context: ./backend
+            extra_build_args: ""
           - name: frontend
             context: ./frontend
+            # A base da API é inlinada no bundle pelo Next em build time, então
+            # precisa ser decidida AQUI — não dá pra ajustar no compose depois.
+            # Vazio = same-origin (/api/v1/...), que é o único valor correto atrás
+            # de proxy. Sem esta linha o build cai no default do Dockerfile
+            # (localhost:8000) e a imagem publicada manda o browser do visitante
+            # chamar a própria máquina dele.
+            extra_build_args: "NEXT_PUBLIC_API_BASE="
     steps:
       - uses: actions/checkout@v4
 
@@ -56,3 +64,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             APP_VERSION=${{ steps.meta.outputs.version }}
+            ${{ matrix.extra_build_args }}
