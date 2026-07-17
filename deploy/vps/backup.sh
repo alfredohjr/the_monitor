@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Backup do Postgres (pg_dump) para deploy/oracle/backups/, com retenção.
+# Backup do Postgres (pg_dump) para deploy/vps/backups/, com retenção.
 # Agende no cron da VM, ex. (diário 03:15):
-#   15 3 * * *  /caminho/deploy/oracle/backup.sh >> /var/log/monitor-backup.log 2>&1
+#   15 3 * * *  /caminho/deploy/vps/backup.sh >> /var/log/monitor-backup.log 2>&1
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

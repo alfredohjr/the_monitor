@@ -1,11 +1,16 @@
-# Deploy numa única VM ARM (Oracle Cloud Always Free, VM.Standard.A1.Flex) — #162.
+# Deploy numa VPS x86_64 com Cloudflare na frente — #190.
 #
 # Topologia: só o Caddy fala com a internet; frontend/backend/postgres conversam
-# pela rede interna do Compose (hostname = nome do serviço). Build local na VM
-# (arch ARM — as imagens do GHCR do #146 são amd64 e NÃO rodam nativo aqui).
+# pela rede interna do Compose (hostname = nome do serviço). Nenhum outro serviço
+# publica porta — numa VPS com IP público, um `ports:` no postgres é banco aberto
+# pra internet.
 #
-# Uso:  docker compose -f deploy/oracle/docker-compose.yml up -d --build
-# Requer:  deploy/oracle/.env  (a partir do .env.example) e o Caddyfile.
+# Roda as imagens do GHCR (amd64, nativo aqui) — não builda. A tag móvel ':0.4'
+# abaixo é o ÚNICO ponto que decide a linha acompanhada; o Watchtower puxa os
+# patches dela. Migrar de linha (:0.5) é ato deliberado. Nunca use 'latest'.
+#
+# Uso:  cd deploy/vps && docker compose up -d
+# Requer:  deploy/vps/.env (a partir do .env.example) e o Caddyfile.
 #
 # Variante A (padrão abaixo): Cloudflare proxy laranja + Origin Certificate; o
 # Caddy expõe 80/443. Variante B (Cloudflare Tunnel): descomente o serviço
@@ -29,12 +34,15 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: ../../backend
-      args:
-        APP_VERSION: ${APP_VERSION:-0.4.0-dev}
+    image: ghcr.io/alfredohjr/the_monitor-backend:0.4
     restart: unless-stopped
+    # env_file (e não só `environment:`): o backend lê SECRET_KEY, FRONTEND_URL,
+    # GOOGLE_CLIENT_ID e EMAIL_HORA além do DATABASE_URL. Listar só o DATABASE_URL
+    # faz o link de verificação de e-mail sair apontando pra localhost e a app
+    # rodar com o SECRET_KEY default do repositório (#191).
+    env_file: .env
     environment:
+      # Montado aqui (e não no .env) porque o host é o nome do serviço do Compose.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
       postgres:
@@ -49,16 +57,20 @@ services:
       start_period: 20s
 
   frontend:
-    build:
-      context: ../../frontend
-      args:
-        APP_VERSION: ${APP_VERSION:-0.4.0-dev}
-        NEXT_PUBLIC_API_BASE: ""   # same-origin: o browser chama /api/v1/... (Caddy roteia)
+    # A base da API é inlinada no bundle em build time — a imagem publicada já vem
+    # same-origin (/api/v1/...) desde o #189. Não há o que configurar aqui.
+    image: ghcr.io/alfredohjr/the_monitor-frontend:0.4
     restart: unless-stopped
     depends_on:
       - backend
     expose: ["3000"]
     networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   caddy:
     image: caddy:2-alpine
@@ -76,6 +88,18 @@ services:
     depends_on:
       - frontend
       - backend
+    networks: [internal]
+
+  # Puxa e reinicia os containers quando a tag móvel (:0.4) recebe um novo patch.
+  # Não cruza para 0.5 sozinho — a tag 0.4 para de andar quando sai a 0.5.0.
+  # Fork mantido: containrrr/watchtower foi arquivado (dez/2025); nickfedor/watchtower
+  # é o sucessor ativo, drop-in compatível.
+  watchtower:
+    image: nickfedor/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 300
     networks: [internal]
 
   # --- Variante B (Cloudflare Tunnel): descomente e ajuste o Caddyfile.tunnel ---

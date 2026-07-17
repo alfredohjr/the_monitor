@@ -98,7 +98,7 @@ chamadas irem pra `/api/v1/...`. Sem env (dev/testes) cai em `localhost:8000`.
 - A UI espelha as permissões efetivas via `GET /api/v1/me/log-permissions/`.
 
 ### Deploy e versionamento
-Detalhes no `README.md` (§ *Deploy e versionamento*) e em `deploy/oracle/`:
+Detalhes no `README.md` (§ *Deploy e versionamento*) e em `deploy/vps/`:
 - Linhas: **`release/0.3`** (manutenção 0.3.x) e **`master`** (`0.4.0-dev`).
 - Corrigir na linha mais antiga afetada e **forward-portar** por label
   **`port:<branch>`** (cherry-pick — o merge de branch conflita com o squash).
