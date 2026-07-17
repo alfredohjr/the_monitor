@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Notification,
   unreadCount,
@@ -114,6 +115,12 @@ export default function NotificationBell() {
               </button>
             ))
           )}
+          <Link
+            href="/notificacoes"
+            className="block text-center text-xs text-blue-400 hover:text-blue-300 transition px-3 py-2 mt-1 border-t border-white/10"
+          >
+            Ver todas →
+          </Link>
         </div>
       )}
     </div>
