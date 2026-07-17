@@ -21,6 +21,6 @@ describe('APP_VERSION (frontend)', () => {
     jest.resetModules();
     delete process.env.NEXT_PUBLIC_APP_VERSION;
     const { APP_VERSION } = require('@/lib/version');
-    expect(APP_VERSION).toBe('0.4.0');
+    expect(APP_VERSION).toBe('0.5.0-dev');
   });
 });

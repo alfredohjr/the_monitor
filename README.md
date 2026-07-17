@@ -114,19 +114,25 @@ npm run dev
 ## Deploy e versionamento
 
 ### Linhas de versão
-- **`master`** = linha de desenvolvimento atual (hoje `0.4.0-dev`).
-- **`release/0.3`** = linha de manutenção estável; recebe só patches `0.3.x`.
+- **`master`** = linha de desenvolvimento atual (hoje `0.5.0-dev`).
+- **`release/0.4`** = linha estável **em produção**; recebe só patches `0.4.x`.
+- **`release/0.3`** = linha antiga; recebe só patches `0.3.x`.
 
-Correção de bug: **corrija primeiro na linha mais antiga afetada** (ex.: `release/0.3`),
-libere o `0.3.x` e depois **leve o fix para o `master`** (forward-port). Como os
-PRs entram por *squash*, o forward-port é feito por **cherry-pick** — há uma
-action que automatiza isso: adicione no PR o label `port:<branch>`
-(ex.: `port:master` para forward-port, `port:release/0.3` para backport) e ela
-abre o PR de cherry-pick na branch alvo.
+Correção de bug: **corrija primeiro na linha mais antiga afetada**, libere o
+patch e depois **leve o fix para as linhas mais novas até o `master`**
+(forward-port). Como os PRs entram por *squash*, o forward-port é feito por
+**cherry-pick** — há uma action que automatiza isso: adicione no PR o label
+`port:<branch>` (ex.: `port:master` para forward-port, `port:release/0.4` para
+backport) e ela abre o PR de cherry-pick na branch alvo.
 
-Ao empurrar uma tag `v0.3.x` **estável**, o workflow `forward-port-reminder.yml`
-abre automaticamente um issue lembrando de forward-portar o fix para o `master`
-(a decisão e o cherry-pick seguem manuais — o bot é só o gatilho).
+Ao empurrar uma tag de manutenção **estável** (`v0.3.x`, `v0.4.x`), o workflow
+`forward-port-reminder.yml` abre automaticamente um issue lembrando de
+forward-portar o fix (a decisão e o cherry-pick seguem manuais — o bot é só o
+gatilho).
+
+> **A 0.3 não é deployável atrás de proxy.** Lá o `API_BASE` do front é
+> hardcoded em `localhost:8000`; o same-origin só existe da 0.4 em diante
+> (#174/#176, e #189 na imagem publicada). A linha de produção é a **0.4**.
 
 ### Publicação de imagens (GHCR)
 Ao empurrar uma tag `vX.Y.Z`, o CI (`.github/workflows/release.yml`) publica as
@@ -134,7 +140,11 @@ imagens no GHCR com a tag exata **e** uma tag móvel `X.Y`:
 
 - `v0.4.0` → `ghcr.io/…/the_monitor-backend:0.4.0` **e** `:0.4`
 - `v0.3.1` → `…:0.3.1` **e** `:0.3`
-- `v0.4.0-dev.1` (pré-release) → só `…:0.4.0-dev.1` (não move `0.4` nem `latest`)
+- `v0.5.0-dev.1` (pré-release) → só `…:0.5.0-dev.1` (não move `0.5` nem `latest`)
+
+A imagem do **frontend** é publicada com `NEXT_PUBLIC_API_BASE=` vazio
+(same-origin), porque o Next inlina esse valor no bundle em build time — não há
+como ajustar no compose depois (#189).
 
 ### Rodar em produção com auto-update travado na linha
 `docker-compose.prod.yml` roda as imagens do GHCR e inclui um **Watchtower** que
@@ -144,15 +154,19 @@ atualiza sozinho quando a tag móvel recebe um novo patch:
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-A linha seguida é definida **só** pela tag no compose (`:0.3`). Enquanto ela
-apontar para `0.3`, você recebe todos os `0.3.x` e **nunca** cruza para `0.4`
-automaticamente — migrar de linha (`:0.4`) é um ato manual e deliberado.
+A linha seguida é definida **só** pela tag no compose. Enquanto ela apontar para
+`0.4`, você recebe todos os `0.4.x` e **nunca** cruza para `0.5` automaticamente
+— migrar de linha (`:0.5`) é um ato manual e deliberado.
+
+> Para deploy real (VPS + proxy + HTTPS), use `deploy/vps/` (#190), não este
+> compose: o `docker-compose.prod.yml` publica o Postgres em `5433` e não tem
+> proxy — serve para rodar as imagens localmente.
 
 > As imagens no GHCR nascem privadas (vinculadas ao repo). Para o host de deploy
 > puxar, faça `docker login ghcr.io` nele (ou torne os pacotes públicos).
 
 ### Que versão está rodando?
-- `GET /version` e o rodapé do front mostram a versão (`v0.4.0-dev`, `v0.3.1`…).
+- `GET /version` e o rodapé do front mostram a versão (`v0.5.0-dev`, `v0.4.0`…).
   Em imagem publicada, o CI injeta a tag exata via build-arg, então o `/version`
   reflete o patch real.
 - Comparação definitiva: o **digest** da imagem (`docker compose images`) e as

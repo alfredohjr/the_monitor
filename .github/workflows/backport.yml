@@ -2,8 +2,11 @@ name: Forward-port / backport
 
 # Leva um PR já mergeado para outra linha via cherry-pick automático.
 # Uso: adicione um label no PR indicando a branch alvo, no formato port:<branch>
-#   - port:master         -> forward-port de um fix da release/0.3 para o master (0.4-dev)
-#   - port:release/0.3     -> backport de um fix do master para a linha 0.3.x
+#   - port:master          -> forward-port de um fix de uma linha de manutenção
+#                             (release/0.3, release/0.4...) para o master
+#   - port:release/0.4     -> backport de um fix do master para a linha 0.4.x
+#   - port:release/0.3     -> idem para a linha 0.3.x
+# O alvo sai do próprio label, então novas linhas não exigem mexer aqui.
 # A action abre um novo PR com o cherry-pick (adequado ao nosso fluxo de squash-merge).
 
 on:

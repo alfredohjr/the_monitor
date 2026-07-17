@@ -1,15 +1,21 @@
 name: Forward-port reminder
 
-# Enforcement contínuo do fluxo multi-linha (#147): quando sai um patch de
-# manutenção (tag v0.3.x ESTÁVEL, na linha release/0.3), abre um issue lembrando
-# de forward-portar o fix para o master (0.4-dev). A decisão e o cherry-pick
-# continuam humanos (label `port:master` no PR) — isto é só o gatilho pra a regra
-# não depender de memória. Publicação de imagem/tag móvel é a #146.
+# Enforcement contínuo do fluxo multi-linha (#147): quando sai um patch ESTÁVEL
+# numa linha de manutenção (v0.3.x, v0.4.x...), abre um issue lembrando de
+# forward-portar o fix para as linhas mais novas até o master. A decisão e o
+# cherry-pick continuam humanos (label `port:<branch>` no PR) — isto é só o
+# gatilho pra a regra não depender de memória. Publicação de imagem/tag móvel é
+# a #146.
+#
+# A linha sai da própria tag, então abrir uma release/0.5 amanhã não exige mexer
+# aqui: só a lista de linhas de manutenção abaixo. Não dispare na linha de
+# desenvolvimento atual (o master já É o alvo do forward-port).
 
 on:
   push:
     tags:
       - "v0.3.*"
+      - "v0.4.*"
 
 permissions:
   contents: read
@@ -18,7 +24,7 @@ permissions:
 jobs:
   remind:
     runs-on: ubuntu-latest
-    # Só releases estáveis: ignora pré-releases (v0.3.x-dev.N / -rc.N).
+    # Só releases estáveis: ignora pré-releases (v0.4.x-dev.N / -rc.N).
     if: ${{ !contains(github.ref_name, '-') }}
     steps:
       - name: Abrir issue de forward-port
@@ -26,16 +32,19 @@ jobs:
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
-            const title = `Forward-port: ${tag} → master (0.4-dev)`;
+            const minor = tag.replace(/^v/, '').split('.').slice(0, 2).join('.');
+            const linha = `release/${minor}`;
+            const title = `Forward-port: ${tag} → master`;
             const body = [
-              `O release de manutenção **${tag}** saiu na linha \`release/0.3\`.`,
+              `O release de manutenção **${tag}** saiu na linha \`${linha}\`.`,
               '',
-              'Pela política (README → *Deploy e versionamento*), o fix precisa ser',
-              'levado ao `master` (0.4-dev) por **cherry-pick** (squash-safe):',
+              'Pela política (README → *Deploy e versionamento*), o fix precisa subir',
+              'até o `master` por **cherry-pick** (squash-safe), passando por cada',
+              'linha intermediária mais nova que `' + linha + '`:',
               '',
               `- [ ] Confirmar se o(s) fix(es) de ${tag} já foram forward-portados`,
-              '- [ ] Se não, adicionar o label `port:master` no(s) PR(s) de origem',
-              '- [ ] Verificar `release/0.3` vs `master` sem divergência pendente',
+              '- [ ] Se não, adicionar o label `port:<branch-alvo>` no(s) PR(s) de origem',
+              `- [ ] Verificar \`${linha}\` vs a linha seguinte (e o \`master\`) sem divergência pendente`,
               '',
               '_Aberto automaticamente por `.github/workflows/forward-port-reminder.yml` (#147)._',
             ].join('\n');

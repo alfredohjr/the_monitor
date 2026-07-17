@@ -35,7 +35,7 @@ DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 # Versão da app. O default é a versão de desenvolvimento desta linha; em imagem
 # publicada, o CI injeta APP_VERSION (build-arg → env) com a tag exata (ex.:
 # "0.4.0"), então /version reflete o que foi realmente buildado.
-APP_VERSION = os.getenv("APP_VERSION") or "0.4.0"
+APP_VERSION = os.getenv("APP_VERSION") or "0.5.0-dev"
 
 # Origens permitidas para CORS. Configuravel via env CORS_ORIGINS
 # (lista separada por virgula); default cobre o front Next.js local.
