@@ -17,10 +17,10 @@ describe('APP_VERSION (frontend)', () => {
     expect(APP_VERSION).toBe('0.4.2');
   });
 
-  it('cai no default de dev quando ausente', () => {
+  it('cai no default da linha quando ausente', () => {
     jest.resetModules();
     delete process.env.NEXT_PUBLIC_APP_VERSION;
     const { APP_VERSION } = require('@/lib/version');
-    expect(APP_VERSION).toBe('0.4.0-dev');
+    expect(APP_VERSION).toBe('0.4.0');
   });
 });
