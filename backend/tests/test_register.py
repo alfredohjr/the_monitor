@@ -140,3 +140,41 @@ def test_register_org_vazia_recusada(client: TestClient, session: Session):
     response = client.post("/api/v1/register/", json=payload(organizacao="   "))
     assert response.status_code == 400
     assert session.exec(select(User).where(User.username == "novo")).first() is None
+
+
+# --- validação de formato do e-mail ---
+
+@pytest.mark.parametrize("email_invalido", [
+    "nao-e-email",
+    "sem-arroba.com",
+    "@sem-usuario.com",
+    "sem-dominio@",
+    "ana@@example.com",
+    "ana ana@example.com",
+    "ana@example",          # sem TLD
+    "ana@.com",
+])
+def test_register_email_invalido_retorna_422(client: TestClient, session: Session, email_invalido):
+    response = client.post("/api/v1/register/", json=payload(email=email_invalido))
+    assert response.status_code == 422
+    # e não deixa conta órfã pra trás
+    assert session.exec(select(User).where(User.username == "novo")).first() is None
+
+
+def test_register_email_valido_continua_201(client: TestClient, session: Session):
+    response = client.post("/api/v1/register/", json=payload(email="ana@example.com"))
+    assert response.status_code == 201
+
+
+def test_register_sem_email_continua_201(client: TestClient, session: Session):
+    # e-mail segue opcional: cadastro sem e-mail não exige verificação
+    response = client.post("/api/v1/register/", json=payload())
+    assert response.status_code == 201
+    assert session.exec(select(User).where(User.username == "novo")).first().email is None
+
+
+def test_register_aceita_email_internacionalizado(client: TestClient, session: Session):
+    # RFC 6531: acentos no local part são válidos e o email-validator aceita.
+    # Fixa a decisão de não restringir a ASCII.
+    response = client.post("/api/v1/register/", json=payload(email="joão@example.com"))
+    assert response.status_code == 201

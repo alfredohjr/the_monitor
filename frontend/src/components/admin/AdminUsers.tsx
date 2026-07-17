@@ -1,5 +1,5 @@
 "use client";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, mensagemDeErro } from "@/lib/api";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -118,7 +118,7 @@ export default function AdminUsers() {
       });
       if (!resp.ok) {
         const d = await resp.json().catch(() => ({}));
-        setError(d.detail ?? "Não foi possível salvar as métricas");
+        setError(mensagemDeErro(d.detail, "Não foi possível salvar as métricas"));
         return;
       }
       setMessage("Métricas atribuídas atualizadas.");
@@ -139,7 +139,7 @@ export default function AdminUsers() {
     });
     if (!resp.ok) {
       const d = await resp.json().catch(() => ({}));
-      setError(d.detail ?? "Não foi possível adicionar o usuário");
+      setError(mensagemDeErro(d.detail, "Não foi possível adicionar o usuário"));
       return;
     }
     setEmail("");
