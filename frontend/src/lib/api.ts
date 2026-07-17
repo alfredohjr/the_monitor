@@ -7,6 +7,26 @@
 // ficarem same-origin (/api/v1/...). Sem env (dev/testes) cai em localhost:8000.
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
+type ErroPydantic = { loc?: unknown[]; msg?: string };
+
+// Normaliza o `detail` de um erro da API para texto exibível.
+// O FastAPI manda `detail` como string nos erros nossos (400/403), mas o 422 de
+// validação do pydantic manda uma LISTA de objetos — jogar isso direto na tela
+// vira "[object Object]", e num setState do React quebra a renderização. As
+// mensagens do pydantic são em inglês, então traduzimos o caso que os formulários
+// realmente produzem (e-mail malformado) e caímos num genérico no resto.
+export function mensagemDeErro(detail: unknown, fallback = "Erro inesperado"): string {
+  if (typeof detail === "string" && detail) return detail;
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    const erros = detail as ErroPydantic[];
+    const temEmail = erros.some((e) => Array.isArray(e?.loc) && e.loc.includes("email"));
+    return temEmail ? "E-mail inválido." : "Confira os dados do formulário.";
+  }
+
+  return fallback;
+}
+
 const ACTIVE_ORG_KEY = "active_org_id";
 
 export function getActiveOrg(): number | null {

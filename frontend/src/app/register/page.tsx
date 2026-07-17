@@ -1,5 +1,5 @@
 "use client";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, mensagemDeErro } from "@/lib/api";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -41,7 +41,7 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.detail ?? "Erro ao criar conta");
+        throw new Error(mensagemDeErro(data.detail, "Erro ao criar conta"));
       }
 
       if (form.email) {

@@ -4,7 +4,7 @@ import os
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
@@ -192,13 +192,17 @@ class TokenResponse(BaseModel):
 class RegisterRequest(BaseModel):
     username: str
     password: str
-    email: str | None = None
+    # EmailStr só na entrada: e-mail malformado vira 422 antes de criar conta.
+    # Segue opcional — cadastro sem e-mail não exige verificação.
+    email: EmailStr | None = None
     organizacao: str
     codigo_organizacao: str
 
 class UserResponse(BaseModel):
     id: int
     username: str
+    # De propósito `str`, não EmailStr: numa resposta, uma linha legada com e-mail
+    # inválido viraria ResponseValidationError (500) num endpoint de leitura.
     email: str | None = None
 
 @app.post('/api/v1/register/', response_model=UserResponse, status_code=201)
@@ -1248,7 +1252,7 @@ def require_org_admin(session: Session, user: User, org_id: int) -> Organization
 
 
 class OrgUserCreate(BaseModel):
-    email: str
+    email: EmailStr
 
 
 @app.get('/api/v1/organizations/{org_id}/users/')
