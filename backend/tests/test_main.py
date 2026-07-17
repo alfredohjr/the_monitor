@@ -12,7 +12,7 @@ def test_root():
 def test_version():
     response = client.get("/version")
     assert response.status_code == 200
-    assert response.json() == {"version": "0.4.0-dev"}
+    assert response.json() == {"version": "0.4.0"}
 
 
 def test_cors_allows_frontend_origin():
@@ -37,4 +37,4 @@ def test_cors_preflight_on_token_endpoint():
 
 
 def test_app_version_metadata():
-    assert app.version == "0.4.0-dev"
+    assert app.version == "0.4.0"
