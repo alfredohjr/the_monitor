@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import {
   Notification,
   unreadCount,
@@ -11,6 +12,8 @@ export default function NotificationBell() {
   const [token, setToken] = useState<string | null>(null);
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async (t: string) => {
     try {
@@ -35,6 +38,24 @@ export default function NotificationBell() {
     return () => clearInterval(id);
   }, [token, load]);
 
+  // O painel pertence ao sino, não à página: ao navegar ele ficava aberto por
+  // cima da tela nova. Fecha no route change.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Clique fora fecha — comportamento esperado de dropdown. Só escuta enquanto
+  // aberto, pra não deixar listener global ativo à toa. `mousedown` (e não
+  // `click`) fecha antes de a página reagir ao clique.
+  useEffect(() => {
+    if (!open) return;
+    const aoClicarFora = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+  }, [open]);
+
   const handleToggle = () => {
     // Ao abrir, recarrega para pegar notificações criadas depois da montagem
     // (ex.: meta atingida em outra tela) sem precisar recarregar a página.
@@ -57,7 +78,7 @@ export default function NotificationBell() {
   const naoLidas = unreadCount(items);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={handleToggle}
         className="relative text-zinc-300 hover:text-white transition"
