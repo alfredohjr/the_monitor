@@ -113,6 +113,30 @@ def test_verify_email_token_cannot_be_reused(client, session):
     assert client.post("/api/v1/verify-email/", json={"token": tok.token}).status_code == 400
 
 
+def test_register_retorna_201_mesmo_com_smtp_indisponivel(client, session, monkeypatch):
+    # O envio acontece DEPOIS do commit do usuário. Se o SMTP propagasse a exceção,
+    # o register devolveria 500 com a conta já criada: username queimado, sem e-mail,
+    # e o usuário sem conseguir recadastrar nem logar.
+    import email_service
+
+    monkeypatch.setenv("SMTP_HOST", "smtp.inexistente.invalid")
+
+    def smtp_morto(*args, **kwargs):
+        raise OSError("conexão recusada")
+
+    monkeypatch.setattr(email_service.smtplib, "SMTP", smtp_morto)
+
+    resp = client.post(
+        "/api/v1/register/",
+        json={"username": "hugo", "password": "senha123", "email": "hugo@example.com", "organizacao": "Hugo Org", "codigo_organizacao": "k"},
+    )
+
+    assert resp.status_code == 201
+    user = session.exec(select(User).where(User.username == "hugo")).first()
+    assert user is not None
+    assert token_for(session, "hugo") is not None   # token gravado: dá pra reenviar depois
+
+
 def test_user_without_email_can_login(client, session):
     # cadastro sem e-mail não exige verificação
     client.post("/api/v1/register/", json={"username": "sem", "password": "senha123", "organizacao": "Sem Org", "codigo_organizacao": "k"})

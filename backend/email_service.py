@@ -1,6 +1,8 @@
 import logging
 import os
+import smtplib
 from datetime import date
+from email.message import EmailMessage
 
 from sqlmodel import Session, select
 
@@ -92,27 +94,88 @@ def render_html(resumo: dict) -> str:
 </html>"""
 
 
-def send_email(to_email: str, subject: str, html: str) -> None:
-    # stub — integrar com provedor após definição da issue #19
-    logger.info("Email para %s | assunto: %s | (envio não configurado)", to_email, subject)
+# Timeout do SMTP. Sem ele o socket usa o default do sistema (minutos), e como o
+# envio acontece dentro do /register, um servidor morto penduraria o cadastro.
+SMTP_TIMEOUT = 10
 
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+def _smtp_config() -> dict | None:
+    """Config do SMTP, ou None se não houver host — aí o envio só loga.
+
+    Lida a cada chamada (e não no import) para o ambiente poder mudar sem reimportar
+    o módulo, e para os testes conseguirem sobrescrever com monkeypatch.
+    """
+    host = os.getenv("SMTP_HOST", "").strip()
+    if not host:
+        return None
+    user = os.getenv("SMTP_USER", "").strip()
+    return {
+        "host": host,
+        "port": int(os.getenv("SMTP_PORT", "587")),
+        "user": user,
+        "password": os.getenv("SMTP_PASSWORD", ""),
+        "from": os.getenv("SMTP_FROM", "").strip() or user,
+        "tls": os.getenv("SMTP_TLS", "true").strip().lower() in ("1", "true", "yes"),
+    }
 
 
-def send_verification_email(to_email: str, token: str) -> None:
-    """Envia o link de verificação de e-mail (stub loga o link).
+def send_email(to_email: str, subject: str, html: str) -> bool:
+    """Envia um e-mail. Retorna se foi enviado; NUNCA levanta.
+
+    Quem chama (o /register, o resumo diário) não pode quebrar por causa de e-mail:
+    o cadastro já commitou o usuário quando chega aqui, e no resumo um destinatário
+    ruim não pode calar os demais. Falha vira log de erro + False.
+    """
+    config = _smtp_config()
+    if config is None:
+        logger.info("Email para %s | assunto: %s | (envio não configurado)", to_email, subject)
+        return False
+
+    if not config["from"]:
+        # From vazio sai como envelope <>: provedor recusa ou marca spam. Com o
+        # SMTP_HOST preenchido a intenção era enviar, então isto é erro de config.
+        logger.error(
+            "SMTP_HOST configurado mas sem remetente: defina SMTP_FROM (ou SMTP_USER). "
+            "E-mail para %s não enviado.", to_email,
+        )
+        return False
+
+    msg = EmailMessage()
+    msg["From"] = config["from"]
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(html, subtype="html")
+
+    try:
+        with smtplib.SMTP(config["host"], config["port"], timeout=SMTP_TIMEOUT) as smtp:
+            if config["tls"]:
+                smtp.starttls()
+            if config["user"]:
+                smtp.login(config["user"], config["password"])
+            smtp.send_message(msg)
+    except Exception:
+        logger.exception("Falha ao enviar e-mail para %s (assunto: %s)", to_email, subject)
+        return False
+
+    logger.info("Email enviado para %s | assunto: %s", to_email, subject)
+    return True
+
+
+def send_verification_email(to_email: str, token: str) -> bool:
+    """Envia o link de verificação de e-mail.
 
     O link aponta para o frontend, que consome o token via POST /verify-email/.
-    Enquanto não há provedor configurado, o link fica visível nos logs do servidor.
+    O link também vai pro log: se o envio falhar, é por ali que se destrava um
+    usuário preso no 403 até existir uma tela de reenvio.
     """
-    link = f"{FRONTEND_URL}/verificar-email?token={token}"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    link = f"{frontend_url}/verificar-email?token={token}"
     html = (
         f'<p>Confirme seu e-mail clicando no link abaixo (válido por 24h):</p>'
         f'<p><a href="{link}">{link}</a></p>'
     )
     logger.info("Verificação de e-mail para %s | link: %s", to_email, link)
-    send_email(to_email, "Confirme seu e-mail — The Monitor", html)
+    return send_email(to_email, "Confirme seu e-mail — The Monitor", html)
 
 
 def enviar_resumo_para_todos(session: Session) -> None:
