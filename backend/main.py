@@ -21,6 +21,7 @@ from auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
     get_current_user, verify_google_token,
+    validar_secret_key, SECRET_KEY,
 )
 
 
@@ -68,6 +69,9 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
+    # Antes de qualquer coisa: se a app não pode subir com segurança, não faz
+    # sentido migrar nem semear o banco primeiro.
+    validar_secret_key(SECRET_KEY, DEBUG)
     run_migrations()
     from models.database import engine
     with Session(engine) as session:
