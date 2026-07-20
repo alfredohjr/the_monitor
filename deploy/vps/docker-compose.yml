@@ -10,11 +10,14 @@
 # patches dela. Migrar de linha (:0.5) é ato deliberado. Nunca use 'latest'.
 #
 # Uso:  cd deploy/vps && docker compose up -d
-# Requer:  deploy/vps/.env (a partir do .env.example) e o Caddyfile.
+# Requer:  deploy/vps/.env (a partir do .env.example). No padrão (Variante B),
+#          o TUNNEL_TOKEN é obrigatório e o mount usa o Caddyfile.tunnel.
 #
-# Variante A (padrão abaixo): Cloudflare proxy laranja + Origin Certificate; o
-# Caddy expõe 80/443. Variante B (Cloudflare Tunnel): descomente o serviço
-# `cloudflared`, REMOVA o bloco `ports:` do caddy e use o Caddyfile.tunnel.
+# Variante B (padrão abaixo): Cloudflare Tunnel — nenhuma porta aberta na VPS; o
+# `cloudflared` faz a conexão de saída e o Caddy serve HTTP interno via
+# Caddyfile.tunnel. Para a Variante A (proxy laranja + Origin Certificate):
+# descomente o bloco `ports:` e o volume `./certs` do caddy, troque o mount para
+# ./Caddyfile e comente o serviço `cloudflared`.
 
 services:
   postgres:
@@ -77,12 +80,16 @@ services:
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN}
-    ports:                    # Variante A. Na Variante B, REMOVA este bloco.
-      - "80:80"
-      - "443:443"
+    # Variante B (padrão): sem `ports:` — a VPS não abre 80/443, o cloudflared
+    # entrega em http://caddy:80. Para a Variante A, descomente este bloco.
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./certs:/etc/caddy/certs:ro   # só na Variante A (Origin Certificate)
+      # Variante B: Caddyfile.tunnel (HTTP interno, sem TLS). Para a Variante A,
+      # troque para ./Caddyfile e descomente o volume ./certs abaixo.
+      - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
+      # - ./certs:/etc/caddy/certs:ro   # só na Variante A (Origin Certificate)
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -102,15 +109,18 @@ services:
     command: --cleanup --interval 300
     networks: [internal]
 
-  # --- Variante B (Cloudflare Tunnel): descomente e ajuste o Caddyfile.tunnel ---
-  # cloudflared:
-  #   image: cloudflare/cloudflared:latest
-  #   restart: unless-stopped
-  #   command: tunnel run
-  #   environment:
-  #     TUNNEL_TOKEN: ${TUNNEL_TOKEN}
-  #   depends_on: [caddy]
-  #   networks: [internal]
+  # Variante B (padrão): abre o túnel de saída pro Cloudflare e entrega em
+  # http://caddy:80. Requer TUNNEL_TOKEN no .env. Para a Variante A, comente
+  # este serviço. O destino do Public Hostname (no painel) é `http://caddy:80`,
+  # e o DNS do domínio deve ser o CNAME do túnel — nunca um A pro IP da VPS.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on: [caddy]
+    networks: [internal]
 
 volumes:
   pgdata:
