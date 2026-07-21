@@ -9,6 +9,20 @@ from models import get_session, User
 from auth import hash_password
 
 
+def test_google_auth_transport_dependency_available():
+    """Reproduz o 401 de produção (imagem sem o pacote `requests`).
+
+    `verify_google_token` faz `from google.auth.transport import requests` e
+    `requests.Request()` — mas `google-auth` NÃO instala `requests` sozinho. Sem
+    ele, esse import estoura ImportError, que o handler engole e vira 401 em TODO
+    login Google. Os outros testes mockam `verify_google_token`, então nunca
+    exercitam este caminho; este garante que a dependência está declarada/instalada.
+    """
+    from google.auth.transport import requests as google_requests
+
+    google_requests.Request()  # não deve levantar ImportError
+
+
 @pytest.fixture(name="session")
 def session_fixture():
     engine = create_engine(
