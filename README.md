@@ -146,6 +146,14 @@ A imagem do **frontend** é publicada com `NEXT_PUBLIC_API_BASE=` vazio
 (same-origin), porque o Next inlina esse valor no bundle em build time — não há
 como ajustar no compose depois (#189).
 
+Pelo mesmo motivo (build time), o **Client ID do Google** (#16) é inlinado no CI
+a partir da *repository variable* `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Settings →
+Secrets and variables → Actions → **Variables**; Client ID é público, então
+variable, não secret). Sem ela, a imagem publicada sai **sem** login Google (o
+botão simplesmente não renderiza) — defina-a **antes** de empurrar a tag de
+release. O mesmo Client ID ainda precisa ir no backend via `GOOGLE_CLIENT_ID`
+(runtime, no `.env` do deploy), que valida o token.
+
 ### Rodar em produção com auto-update travado na linha
 `docker-compose.prod.yml` roda as imagens do GHCR e inclui um **Watchtower** que
 atualiza sozinho quando a tag móvel recebe um novo patch:

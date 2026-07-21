@@ -34,7 +34,15 @@ jobs:
             # de proxy. Sem esta linha o build cai no default do Dockerfile
             # (localhost:8000) e a imagem publicada manda o browser do visitante
             # chamar a própria máquina dele.
-            extra_build_args: "NEXT_PUBLIC_API_BASE="
+            #
+            # O Client ID do Google (#16) também é inlinado aqui, pelo mesmo motivo
+            # (NEXT_PUBLIC_* é build time). Vem da *repository variable*
+            # NEXT_PUBLIC_GOOGLE_CLIENT_ID (Settings → Secrets and variables →
+            # Actions → Variables) — Client ID é público, então variable, não
+            # secret. Vazia = imagem sem login Google (botão some, sem quebrar).
+            extra_build_args: |
+              NEXT_PUBLIC_API_BASE=
+              NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
 
