@@ -23,7 +23,13 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # NEXT_PUBLIC_* é inlinado em build time — precisa vir como build-arg, não
+      # via env_file (runtime, tarde demais). O Compose substitui a partir do .env
+      # da raiz. Vazio = botão de login Google não renderiza.
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     env_file: .env
     ports:
       - "3000:3000"
