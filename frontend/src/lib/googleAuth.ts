@@ -7,6 +7,19 @@ export interface AuthTokens {
 
 const DEFAULT_API_BASE = API_BASE + "";
 
+// Opções de renderização do botão oficial do Google (#220). O botão vem do SDK
+// (não dá pra estilizar por CSS), mas dá pra deixá-lo com a cara escura do site:
+// tema preenchido escuro, formato pill (arredondado como os botões do site) e
+// texto "continue_with". Largura casa com os inputs do formulário de login.
+export const googleButtonOptions = {
+  theme: "filled_black",
+  size: "large",
+  shape: "pill",
+  text: "continue_with",
+  logo_alignment: "left",
+  width: 320,
+} as const;
+
 /**
  * Troca um ID token do Google (credential) pelos nossos tokens de acesso,
  * chamando o endpoint do backend `/api/v1/auth/google/` (issue #16).
