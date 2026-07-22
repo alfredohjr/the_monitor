@@ -93,3 +93,13 @@ describe('MetricForm — campo is_default', () => {
     expect(checkbox.checked).toBe(false);
   });
 });
+
+describe('MetricList — layout mobile (#215)', () => {
+  it('reserva espaço no topo p/ o navbar flutuante não sobrepor o conteúdo', () => {
+    mockFetch([]);
+    const { container } = render(<MetricList />);
+    const root = container.firstChild as HTMLElement;
+    // navbar é absolute/top-0; a tela precisa de padding-top suficiente no mobile
+    expect(root.className).toMatch(/pt-24/);
+  });
+});
