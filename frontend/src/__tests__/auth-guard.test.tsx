@@ -22,9 +22,10 @@ import ProfilePage from '@/components/profile/ProfilePage';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => '/',
   useParams: () => ({ id: '1' }),
 }));
@@ -40,6 +41,7 @@ jest.mock('next/link', () => {
 beforeEach(() => {
   localStorage.clear();
   mockPush.mockClear();
+  mockReplace.mockClear();
   (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
     ok: true,
     json: async () => [],
@@ -52,7 +54,9 @@ afterEach(() => {
 
 function expectRedirectToLogin(component: React.ReactElement) {
   render(component);
-  expect(mockPush).toHaveBeenCalledWith('/login');
+  // #222: o guard usa replace (não push) para não empilhar a página protegida
+  // no histórico — assim o "voltar" do navegador sai do fluxo de login.
+  expect(mockReplace).toHaveBeenCalledWith('/login');
 }
 
 describe('Auth guard — redireciona para /login sem token', () => {
@@ -80,21 +84,21 @@ describe('Auth guard — nao redireciona com token', () => {
     localStorage.setItem('access_token', 'fake-token');
   });
 
-  it('DashboardGrid', () => { render(<DashboardGrid />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('GoalList', () => { render(<GoalList />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('GoalForm', () => { render(<GoalForm />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('LogList', () => { render(<LogList />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('LogForm', () => { render(<LogForm />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('MetricList', () => { render(<MetricList />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('MetricForm', () => { render(<MetricForm />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('SimulationDashboard', () => { render(<SimulationDashboard />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('OnboardingFlow', () => { render(<OnboardingFlow />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('CatalogPage', () => { render(<CatalogPage />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('AdminUsers', () => { render(<AdminUsers />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('ImportGoals', () => { render(<ImportGoals />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('ClonarMetas', () => { render(<ClonarMetas />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('ImportAnchored', () => { render(<ImportAnchored />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('ImportLogsCSV', () => { render(<ImportLogsCSV />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('ProfilePage', () => { render(<ProfilePage />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
-  it('NotificationsPage', () => { render(<NotificationsPage />); expect(mockPush).not.toHaveBeenCalledWith('/login'); });
+  it('DashboardGrid', () => { render(<DashboardGrid />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('GoalList', () => { render(<GoalList />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('GoalForm', () => { render(<GoalForm />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('LogList', () => { render(<LogList />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('LogForm', () => { render(<LogForm />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('MetricList', () => { render(<MetricList />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('MetricForm', () => { render(<MetricForm />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('SimulationDashboard', () => { render(<SimulationDashboard />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('OnboardingFlow', () => { render(<OnboardingFlow />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('CatalogPage', () => { render(<CatalogPage />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('AdminUsers', () => { render(<AdminUsers />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('ImportGoals', () => { render(<ImportGoals />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('ClonarMetas', () => { render(<ClonarMetas />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('ImportAnchored', () => { render(<ImportAnchored />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('ImportLogsCSV', () => { render(<ImportLogsCSV />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('ProfilePage', () => { render(<ProfilePage />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
+  it('NotificationsPage', () => { render(<NotificationsPage />); expect(mockReplace).not.toHaveBeenCalledWith('/login'); });
 });

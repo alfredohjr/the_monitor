@@ -248,7 +248,7 @@ export default function SimulationDashboard() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return router.push("/login");
+    if (!t) return router.replace("/login");
     setToken(t);
     fetchData(t);
   }, [router, fetchData]);

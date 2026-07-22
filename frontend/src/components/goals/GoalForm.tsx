@@ -27,7 +27,7 @@ export default function GoalForm({ id }: { id?: string }) {
 
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
-    if (!storedToken) return router.push("/login");
+    if (!storedToken) return router.replace("/login");
     setToken(storedToken);
 
     if (id) {

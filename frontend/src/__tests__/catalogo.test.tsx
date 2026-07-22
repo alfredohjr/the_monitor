@@ -2,9 +2,10 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import CatalogPage from '@/components/catalog/CatalogPage';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 jest.mock('next/link', () => {
@@ -46,7 +47,7 @@ describe('CatalogPage — catálogo de métricas do sistema', () => {
     localStorage.clear();
     mockFetch();
     render(<CatalogPage />);
-    expect(mockPush).toHaveBeenCalledWith('/login');
+    expect(mockReplace).toHaveBeenCalledWith('/login');
   });
 
   it('lista todas as métricas do sistema', async () => {

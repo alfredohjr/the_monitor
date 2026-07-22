@@ -19,7 +19,7 @@ export default function ClonarMetas() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return void router.push("/login");
+    if (!t) return void router.replace("/login");
     setToken(t);
     apiFetch(API_BASE + "/api/v1/metrics/").then(r => r.json())
       .then(d => setMetrics(Array.isArray(d) ? d : [])).catch(() => {});
