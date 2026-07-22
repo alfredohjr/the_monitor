@@ -75,7 +75,7 @@ export default function CatalogPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center p-6 sm:p-24 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 bg-[#0a0a0a] text-white">
       <div className="relative z-10 w-full max-w-4xl mt-8">
         <div className="mb-10">
           <Link href="/metrics" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar para Métricas</Link>

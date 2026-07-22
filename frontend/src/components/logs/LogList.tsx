@@ -55,7 +55,7 @@ export default function LogList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[10%] right-[30%] w-[30%] h-[30%] rounded-full bg-green-600/10 blur-[100px]" />
       </div>
