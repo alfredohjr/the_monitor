@@ -363,9 +363,26 @@ def me(session: SessionDep, user: CurrentUser):
         "username": user.username,
         "email": user.email,
         "email_verified": user.email_verified,
+        "display_name": user.display_name,
         "role": highest_role(session, user.id),
         "organizations": orgs,
     }
+
+
+class ProfileUpdate(BaseModel):
+    display_name: str
+
+
+@app.patch('/api/v1/me/')
+def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser):
+    nome = body.display_name.strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Nome é obrigatório")
+    user.display_name = nome
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"id": user.id, "username": user.username, "display_name": user.display_name}
 
 
 # ---------- Organização ativa (escopo dos dados) ----------
@@ -1231,6 +1248,51 @@ def create_organization(body: OrganizationCreate, session: SessionDep, user: Cur
     session.commit()
     session.refresh(org)
     return org
+
+
+class OnboardingRequest(BaseModel):
+    organizacao: str
+    display_name: str | None = None
+
+
+@app.post('/api/v1/onboarding/', status_code=201)
+def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentUser):
+    """Primeiro acesso de quem entrou sem organização (típico do login Google).
+
+    Cria a organização pessoal (o usuário vira admin), grava o nome de exibição
+    e semeia o exemplo para a pessoa já ter o que ver/lançar. Recusa se o usuário
+    já pertence a alguma org — o onboarding é só para quem ainda não tem nenhuma.
+    """
+    ja_tem = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
+    if ja_tem:
+        raise HTTPException(status_code=400, detail="Usuário já pertence a uma organização")
+
+    nome = body.organizacao.strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Nome da organização é obrigatório")
+    duplicada = session.exec(
+        select(Organization).where(Organization.nome == nome, Organization.deleted == False)
+    ).first()
+    if duplicada:
+        raise HTTPException(status_code=400, detail="Nome de organização já está em uso")
+
+    org = Organization(nome=nome)
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+
+    session.add(Membership(user_id=user.id, organization_id=org.id, role="admin"))
+
+    if body.display_name and body.display_name.strip():
+        user.display_name = body.display_name.strip()
+        session.add(user)
+
+    session.commit()
+    session.refresh(org)
+
+    seed_exemplo(user, org, session)
+
+    return {"id": org.id, "nome": org.nome, "role": "admin", "display_name": user.display_name}
 
 
 # ---------- Admin: gestão de usuários da organização ----------
