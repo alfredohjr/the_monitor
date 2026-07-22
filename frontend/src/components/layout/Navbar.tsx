@@ -72,7 +72,10 @@ export default function Navbar() {
 
   return (
     <nav className="w-full flex justify-center pt-6 absolute top-0 z-50 px-4">
-      <div className="glass px-6 py-3 rounded-3xl sm:rounded-full flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-x-6 gap-y-2 text-sm font-medium border border-white/10 shadow-lg sm:items-center w-full max-w-sm sm:max-w-none sm:w-auto">
+      <div
+        data-testid="nav-container"
+        className="px-6 py-3 rounded-3xl sm:rounded-full flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-x-6 gap-y-2 text-sm font-medium border sm:items-center w-full max-w-sm sm:max-w-none sm:w-auto bg-zinc-900 border-white/15 shadow-xl sm:bg-white/[0.03] sm:backdrop-blur-xl sm:border-white/10 sm:shadow-lg"
+      >
         {/* Barra mobile: marca + hambúrguer (no desktop some). A marca evita
             duplicar o texto "Início", que fica só no menu recolhível. */}
         <div className="flex sm:hidden items-center justify-between">
