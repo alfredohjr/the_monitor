@@ -34,10 +34,8 @@ describe('Home page — sem token', () => {
     expect(screen.getByText(/4\. Métrica Raiz/i)).toBeInTheDocument();
   });
 
-  it('displays the app version', () => {
-    render(<Home />);
-    expect(screen.getByText(/v0\.4\.0/i)).toBeInTheDocument();
-  });
+  // A versão saiu do rodapé da Home e virou global (VersionBadge no layout,
+  // #221) — coberta por version-badge.test.tsx.
 
   it('nao redireciona quando nao ha token', () => {
     render(<Home />);
