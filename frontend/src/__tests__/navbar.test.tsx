@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import Navbar from '@/components/layout/Navbar';
 
 jest.mock('next/navigation', () => ({
@@ -99,5 +99,30 @@ describe('Navbar — com login', () => {
     render(<Navbar />);
     expect(screen.getByText('Sair')).toBeInTheDocument();
     expect(screen.queryByText('Entrar')).not.toBeInTheDocument();
+  });
+});
+
+describe('Navbar — menu mobile (#214)', () => {
+  it('tem um botão hambúrguer para abrir o menu no mobile', () => {
+    render(<Navbar />);
+    expect(screen.getByRole('button', { name: /abrir menu/i })).toBeInTheDocument();
+  });
+
+  it('alterna aria-expanded ao clicar no hambúrguer', () => {
+    render(<Navbar />);
+    const botao = screen.getByRole('button', { name: /abrir menu/i });
+    expect(botao).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(botao);
+    // depois de abrir, o rótulo passa a "fechar menu" e aria-expanded vira true
+    const aberto = screen.getByRole('button', { name: /fechar menu/i });
+    expect(aberto).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('o menu recolhível referencia o estado de aberto/fechado', () => {
+    render(<Navbar />);
+    const menu = screen.getByTestId('nav-menu');
+    // fechado no mobile (classe hidden), sempre visível no desktop (sm:flex)
+    expect(menu.className).toMatch(/hidden/);
+    expect(menu.className).toMatch(/sm:flex/);
   });
 });
