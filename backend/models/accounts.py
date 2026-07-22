@@ -10,6 +10,9 @@ class User(SQLModel, table=True):
     hashed_password: str
     email: Optional[str] = Field(default=None, unique=True, index=True)
     email_verified: bool = Field(default=False)
+    # Nome de exibição editável pelo usuário. No login por Google o username é o
+    # e-mail; o display_name deixa a UI mostrar um nome amigável (#206).
+    display_name: Optional[str] = Field(default=None, max_length=150)
 
 
 class EmailVerificationToken(SQLModel, table=True):
