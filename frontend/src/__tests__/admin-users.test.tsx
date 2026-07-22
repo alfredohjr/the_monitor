@@ -3,8 +3,9 @@ import AdminUsers from '@/components/admin/AdminUsers';
 import Navbar from '@/components/layout/Navbar';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => '/',
 }));
 jest.mock('next/link', () => {
@@ -33,7 +34,7 @@ describe('AdminUsers', () => {
     localStorage.clear();
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
     render(<AdminUsers />);
-    expect(mockPush).toHaveBeenCalledWith('/login');
+    expect(mockReplace).toHaveBeenCalledWith('/login');
   });
 
   it('lista os usuários da organização do admin', async () => {

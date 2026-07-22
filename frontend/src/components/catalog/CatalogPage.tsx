@@ -27,7 +27,7 @@ export default function CatalogPage() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) { router.push("/login"); return; }
+    if (!t) { router.replace("/login"); return; }
     setToken(t);
     const headers = { Authorization: `Bearer ${t}` };
     Promise.all([

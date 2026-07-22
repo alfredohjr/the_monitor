@@ -12,7 +12,7 @@ export default function MetricList() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
     const headers = { Authorization: `Bearer ${token}` };

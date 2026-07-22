@@ -15,7 +15,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return router.push("/login");
+    if (!t) return router.replace("/login");
     setToken(t);
     fetchNotifications(t)
       .then((d) => setItems(d))
