@@ -1,4 +1,12 @@
-import { exchangeGoogleCredential } from '@/lib/googleAuth';
+import { exchangeGoogleCredential, googleButtonOptions } from '@/lib/googleAuth';
+
+describe('googleButtonOptions (#220 — cara do site)', () => {
+  it('usa tema escuro e formato arredondado (pill) combinando com o site', () => {
+    expect(googleButtonOptions.theme).toBe('filled_black');
+    expect(googleButtonOptions.shape).toBe('pill');
+    expect(googleButtonOptions.size).toBe('large');
+  });
+});
 
 describe('exchangeGoogleCredential (issue #16)', () => {
   afterEach(() => {
