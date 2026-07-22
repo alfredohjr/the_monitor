@@ -37,7 +37,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return void router.push("/login");
+    if (!t) return void router.replace("/login");
     setToken(t);
     fetch(API_BASE + "/api/v1/me/", { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())

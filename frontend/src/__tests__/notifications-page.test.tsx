@@ -2,8 +2,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   usePathname: () => '/notificacoes',
 }));
 
@@ -48,5 +49,5 @@ test('redireciona para /login sem token', () => {
   localStorage.clear();
   (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
   render(<NotificationsPage />);
-  expect(mockPush).toHaveBeenCalledWith('/login');
+  expect(mockReplace).toHaveBeenCalledWith('/login');
 });
