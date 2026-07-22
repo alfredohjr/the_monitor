@@ -12,7 +12,7 @@ export default function GoalList() {
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    if (!token) return router.push("/login");
+    if (!token) return router.replace("/login");
 
     apiFetch(API_BASE + "/api/v1/goals/", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setItems(Array.isArray(d) ? d : d.results || []));

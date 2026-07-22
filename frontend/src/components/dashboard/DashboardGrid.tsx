@@ -48,7 +48,7 @@ export default function DashboardGrid() {
 
       if (gRes.status === 401 || lRes.status === 401) {
         localStorage.removeItem("access_token");
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
@@ -65,7 +65,7 @@ export default function DashboardGrid() {
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
     if (!storedToken) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
     setToken(storedToken);

@@ -31,7 +31,7 @@ export default function ImportGoals() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return void router.push("/login");
+    if (!t) return void router.replace("/login");
     setToken(t);
     // todas as métricas visíveis (org + catálogo) para mapear o código do modelo
     apiFetch(API_BASE + "/api/v1/metrics/").then(r => r.json())

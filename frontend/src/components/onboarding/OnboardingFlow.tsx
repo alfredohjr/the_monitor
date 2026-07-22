@@ -29,7 +29,7 @@ export default function OnboardingFlow() {
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
-    if (!t) return router.push("/login");
+    if (!t) return router.replace("/login");
     setToken(t);
     if (carregou.current) return;
     carregou.current = true;
