@@ -27,6 +27,8 @@ export default function Navbar() {
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         setRole(d?.role ?? null);
+        // Prefere o nome de exibição (#206); cai no username quando não definido.
+        if (d?.display_name) { setUsername(d.display_name); localStorage.setItem("username", d.display_name); }
         const list: Org[] = d?.organizations ?? [];
         setOrgs(list);
         // Garante que a org ativa é uma que o usuário realmente participa.
@@ -82,7 +84,7 @@ export default function Navbar() {
         {loggedIn ? (
           <div className="flex items-center gap-4">
             <NotificationBell />
-            <span className="text-emerald-400 font-bold">Olá, {username || "usuário"}</span>
+            <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title="Meu perfil">Olá, {username || "usuário"}</Link>
             {orgs.length > 0 && (
               <select
                 aria-label="Organização"
