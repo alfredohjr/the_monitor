@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { APP_VERSION } from "@/lib/version";
 
 export default function Home() {
   const router = useRouter();
@@ -73,9 +72,6 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="absolute bottom-8 text-sm text-zinc-500 whitespace-nowrap z-10 text-center">
-        <span className="text-xs text-zinc-600">v{APP_VERSION}</span>
-      </footer>
     </div>
   );
 }
