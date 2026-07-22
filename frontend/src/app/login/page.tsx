@@ -4,7 +4,7 @@ import { API_BASE } from "@/lib/api";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { exchangeGoogleCredential } from "@/lib/googleAuth";
+import { exchangeGoogleCredential, googleButtonOptions } from "@/lib/googleAuth";
 import { nextRouteAfterLogin } from "@/lib/postLogin";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -50,7 +50,7 @@ export default function LoginPage() {
         client_id: GOOGLE_CLIENT_ID,
         callback: (resp) => handleGoogleCredential(resp.credential),
       });
-      g.accounts.id.renderButton(googleBtnRef.current, { theme: "outline", size: "large", width: 320 });
+      g.accounts.id.renderButton(googleBtnRef.current, { ...googleButtonOptions });
     };
     document.body.appendChild(script);
     return () => {
