@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { exchangeGoogleCredential } from "@/lib/googleAuth";
+import { nextRouteAfterLogin } from "@/lib/postLogin";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -31,7 +32,7 @@ export default function LoginPage() {
       localStorage.setItem("access_token", tokens.access);
       localStorage.setItem("refresh_token", tokens.refresh);
       localStorage.setItem("username", tokens.username);
-      router.push("/dashboard");
+      router.push(await nextRouteAfterLogin(tokens.access));
     } catch {
       setError("Não foi possível entrar com o Google");
     }
@@ -79,7 +80,7 @@ export default function LoginPage() {
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
       localStorage.setItem("username", credentials.username);
-      router.push("/dashboard");
+      router.push(await nextRouteAfterLogin(data.access));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Não foi possível realizar o login");
     } finally {

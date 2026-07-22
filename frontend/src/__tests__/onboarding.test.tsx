@@ -25,6 +25,10 @@ function mockFetch(postOk = true) {
     if (opts?.method === 'POST') {
       return Promise.resolve({ ok: postOk, status: postOk ? 201 : 400, json: async () => ({ id: 99 }) });
     }
+    // Usuário já com organização: o onboarding vai direto ao passo de métricas.
+    if (url.includes('/me/')) {
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({ organizations: [{ id: 1, nome: 'Org', role: 'admin' }] }) });
+    }
     return Promise.resolve({ ok: true, status: 200, json: async () => metricas });
   });
 }
