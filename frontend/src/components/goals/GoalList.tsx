@@ -30,7 +30,7 @@ export default function GoalList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
       <div className="relative z-10 w-full max-w-5xl mx-auto glass p-8 sm:p-12 rounded-3xl border border-white/5 mt-16">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-10 gap-4">
           <div>

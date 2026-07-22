@@ -359,7 +359,7 @@ export default function SimulationDashboard() {
   const prefix = (selectedMetricObj?.tipo === 'decimal' || selectedMetricObj?.tipo === 'currency') ? "R$ " : "";
 
   return (
-    <div className="flex flex-col min-h-screen p-6 sm:p-24 relative bg-[#0a0a0a] text-white overflow-hidden">
+    <div className="flex flex-col min-h-screen p-6 pt-24 sm:p-24 relative bg-[#0a0a0a] text-white overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto">

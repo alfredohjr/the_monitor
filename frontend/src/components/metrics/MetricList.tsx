@@ -38,7 +38,7 @@ export default function MetricList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
       </div>
