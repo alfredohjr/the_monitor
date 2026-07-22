@@ -363,9 +363,26 @@ def me(session: SessionDep, user: CurrentUser):
         "username": user.username,
         "email": user.email,
         "email_verified": user.email_verified,
+        "display_name": user.display_name,
         "role": highest_role(session, user.id),
         "organizations": orgs,
     }
+
+
+class ProfileUpdate(BaseModel):
+    display_name: str
+
+
+@app.patch('/api/v1/me/')
+def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser):
+    nome = body.display_name.strip()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Nome é obrigatório")
+    user.display_name = nome
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"id": user.id, "username": user.username, "display_name": user.display_name}
 
 
 # ---------- Organização ativa (escopo dos dados) ----------
