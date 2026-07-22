@@ -125,4 +125,14 @@ describe('Navbar — menu mobile (#214)', () => {
     expect(menu.className).toMatch(/hidden/);
     expect(menu.className).toMatch(/sm:flex/);
   });
+
+  it('usa fundo sólido (estilo do painel de notificação) no mobile e glass no desktop (#219)', () => {
+    render(<Navbar />);
+    const container = screen.getByTestId('nav-container');
+    // mobile: fundo sólido como o dropdown de notificação
+    expect(container.className).toMatch(/bg-zinc-900/);
+    // desktop: mantém o efeito glass (translúcido + blur)
+    expect(container.className).toMatch(/sm:bg-white/);
+    expect(container.className).toMatch(/sm:backdrop-blur/);
+  });
 });
