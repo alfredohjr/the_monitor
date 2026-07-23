@@ -117,6 +117,11 @@ def test_register_org_nova_torna_admin(client: TestClient, session: Session):
 
 def test_register_org_existente_codigo_correto_entra_como_user(client: TestClient, session: Session):
     client.post("/api/v1/register/", json=payload(username="dona", organizacao="Acme", codigo="segredo"))
+    # #216: entrar numa org existente exige plano pago — marca a Acme como paga.
+    acme = session.exec(select(Organization).where(Organization.nome == "Acme")).first()
+    acme.is_paid = True
+    session.add(acme)
+    session.commit()
     response = client.post("/api/v1/register/", json=payload(username="maria", organizacao="Acme", codigo="segredo"))
     assert response.status_code == 201
 
