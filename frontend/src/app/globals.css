@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+/* Tema claro/escuro (#225). O `dark:` do Tailwind passa a reagir ao
+   data-theme="dark" no <html> (setado por src/lib/theme.ts), em vez do
+   prefers-color-scheme direto — assim o override manual do usuário funciona. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+/* Base do body dirigida pelo tema. As telas ainda fixam bg-[#0a0a0a] e serão
+   convertidas incrementalmente (#225); por ora o body responde ao tema. */
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
 .glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
