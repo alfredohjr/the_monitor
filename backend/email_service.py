@@ -1,6 +1,7 @@
 import logging
 import os
 import smtplib
+import ssl
 from datetime import date
 from email.message import EmailMessage
 
@@ -147,12 +148,22 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
     msg.set_content(html, subtype="html")
 
     try:
-        with smtplib.SMTP(config["host"], config["port"], timeout=SMTP_TIMEOUT) as smtp:
-            if config["tls"]:
-                smtp.starttls()
-            if config["user"]:
-                smtp.login(config["user"], config["password"])
-            smtp.send_message(msg)
+        if config["port"] == 465:
+            # Porta 465 = SSL implícito (TLS já no connect) → SMTP_SSL, NÃO STARTTLS.
+            # Ex.: Titan (smtp.titan.email). STARTTLS aqui trava/falha.
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(config["host"], config["port"], timeout=SMTP_TIMEOUT, context=context) as smtp:
+                if config["user"]:
+                    smtp.login(config["user"], config["password"])
+                smtp.send_message(msg)
+        else:
+            # Porta 587 (padrão) = STARTTLS: conecta em claro e sobe pra TLS.
+            with smtplib.SMTP(config["host"], config["port"], timeout=SMTP_TIMEOUT) as smtp:
+                if config["tls"]:
+                    smtp.starttls()
+                if config["user"]:
+                    smtp.login(config["user"], config["password"])
+                smtp.send_message(msg)
     except Exception:
         logger.exception("Falha ao enviar e-mail para %s (assunto: %s)", to_email, subject)
         return False
