@@ -234,6 +234,9 @@ def register(body: RegisterRequest, session: SessionDep):
         # Org existente: só entra com o código correto, como usuário comum.
         if not org.codigo_acesso or not secrets.compare_digest(org.codigo_acesso, codigo):
             raise HTTPException(status_code=400, detail="Código da organização inválido")
+        # #216: entrar numa org é "adicionar membro" — só orgs pagas aceitam.
+        if not org.is_paid:
+            raise HTTPException(status_code=403, detail="Esta organização não permite novos membros (plano free)")
         role = "user"
 
     # Cadastro por senha começa não-verificado; com e-mail, dispara o link de confirmação.
@@ -357,7 +360,7 @@ def me(session: SessionDep, user: CurrentUser):
     for m in memberships:
         org = session.get(Organization, m.organization_id)
         if org and not org.deleted:
-            orgs.append({"id": org.id, "nome": org.nome, "role": m.role})
+            orgs.append({"id": org.id, "nome": org.nome, "role": m.role, "is_paid": org.is_paid})
     return {
         "id": user.id,
         "username": user.username,
@@ -1338,7 +1341,10 @@ def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user:
       vincula. A pessoa entra depois pelo login com Google usando o mesmo
       e-mail (o backend casa por e-mail).
     """
-    require_org_admin(session, user, org_id)
+    org = require_org_admin(session, user, org_id)
+    # #216: associar membros exige plano pago. Orgs free/pessoais são single-user.
+    if not org.is_paid:
+        raise HTTPException(status_code=403, detail="Adicionar membros exige um plano pago para esta organização")
 
     email = body.email.strip().lower()
     if not email:

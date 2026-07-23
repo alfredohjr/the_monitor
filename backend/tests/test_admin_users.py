@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from models import get_session, User, Membership
+from models import get_session, User, Organization, Membership
 from auth import hash_password, create_access_token
 
 
@@ -43,7 +43,14 @@ def auth(user):
 def make_admin_with_org(client, session, username="admin"):
     admin = make_user(session, username)
     resp = client.post("/api/v1/organizations/", json={"nome": f"Org {username}"}, headers=auth(admin))
-    return admin, resp.json()["id"]
+    org_id = resp.json()["id"]
+    # Gestão de membros é feature de plano pago (#216) — marca a org como paga
+    # para os testes de adicionar/remover membro exercitarem o caminho feliz.
+    org = session.get(Organization, org_id)
+    org.is_paid = True
+    session.add(org)
+    session.commit()
+    return admin, org_id
 
 
 def test_list_users_requires_admin(client, session):

@@ -31,6 +31,10 @@ class Organization(SQLModel, table=True):
     # precisam informá-lo para entrar (como 'user'). None = org sem código (não
     # aceita entrada por auto-cadastro).
     codigo_acesso: Optional[str] = Field(default=None, max_length=100)
+    # Plano da organização (#216). Orgs free/pessoais (ex.: criadas no onboarding
+    # de usuário único) não podem associar novos membros — isso exige um plano
+    # pago. Marcado manualmente/por superadmin. Default: free.
+    is_paid: bool = Field(default=False)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

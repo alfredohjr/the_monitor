@@ -22,6 +22,7 @@ export default function AdminUsers() {
   const [token, setToken] = useState("");
   const [orgId, setOrgId] = useState<number | null>(null);
   const [orgNome, setOrgNome] = useState("");
+  const [orgIsPaid, setOrgIsPaid] = useState(false);
   const [meId, setMeId] = useState<number | null>(null);
   const [notAdmin, setNotAdmin] = useState(false);
   const [users, setUsers] = useState<OrgUser[]>([]);
@@ -47,6 +48,7 @@ export default function AdminUsers() {
         if (!adminOrg) return setNotAdmin(true);
         setOrgId(adminOrg.id);
         setOrgNome(adminOrg.nome);
+        setOrgIsPaid(!!adminOrg.is_paid);
       })
       .catch(() => setNotAdmin(true));
   }, [router]);
@@ -178,16 +180,25 @@ export default function AdminUsers() {
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {message && <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">{message}</div>}
 
-        <form onSubmit={handleCreate} className="grid sm:grid-cols-[1fr_auto] gap-3 mb-2">
-          <input name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
-            placeholder="E-mail do novo membro"
-            className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
-          <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
-        </form>
-        <p className="text-zinc-500 text-xs mb-8">
-          Se o e-mail já tiver conta, ele é vinculado a esta organização. Se não, criamos a conta e a pessoa
-          entra pelo <strong>login com Google</strong> usando o mesmo e-mail.
-        </p>
+        {orgIsPaid ? (
+          <>
+            <form onSubmit={handleCreate} className="grid sm:grid-cols-[1fr_auto] gap-3 mb-2">
+              <input name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                placeholder="E-mail do novo membro"
+                className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+              <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
+            </form>
+            <p className="text-zinc-500 text-xs mb-8">
+              Se o e-mail já tiver conta, ele é vinculado a esta organização. Se não, criamos a conta e a pessoa
+              entra pelo <strong>login com Google</strong> usando o mesmo e-mail.
+            </p>
+          </>
+        ) : (
+          <div data-testid="plano-free-aviso" className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-sm">
+            Adicionar membros exige um <strong>plano pago</strong>. Sua organização está no plano <strong>free</strong>
+            (uso individual). Fale com a gente para liberar mais membros.
+          </div>
+        )}
 
         <table className="w-full text-sm">
           <thead>
