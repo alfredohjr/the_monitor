@@ -27,7 +27,8 @@ function mockApi({ me, users, onPost, onDelete }: any) {
   });
 }
 
-const adminMe = { id: 1, username: 'admin', role: 'admin', organizations: [{ id: 7, nome: 'Acme', role: 'admin' }] };
+const adminMe = { id: 1, username: 'admin', role: 'admin', organizations: [{ id: 7, nome: 'Acme', role: 'admin', is_paid: true }] };
+const adminMeFree = { id: 1, username: 'admin', role: 'admin', organizations: [{ id: 7, nome: 'Acme', role: 'admin', is_paid: false }] };
 
 describe('AdminUsers', () => {
   it('redireciona para /login sem token', () => {
@@ -45,6 +46,20 @@ describe('AdminUsers', () => {
     render(<AdminUsers />);
     expect(await screen.findByText('colab')).toBeInTheDocument();
     expect(screen.getByText('Acme')).toBeInTheDocument();
+  });
+
+  it('org paga: mostra o form de adicionar membro (#216)', async () => {
+    mockApi({ me: adminMe, users: [] });
+    render(<AdminUsers />);
+    expect(await screen.findByPlaceholderText('E-mail do novo membro')).toBeInTheDocument();
+    expect(screen.queryByTestId('plano-free-aviso')).not.toBeInTheDocument();
+  });
+
+  it('org free: esconde o form e mostra aviso de plano (#216)', async () => {
+    mockApi({ me: adminMeFree, users: [] });
+    render(<AdminUsers />);
+    expect(await screen.findByTestId('plano-free-aviso')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('E-mail do novo membro')).not.toBeInTheDocument();
   });
 
   it('adiciona um membro só com e-mail via POST', async () => {
