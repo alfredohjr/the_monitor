@@ -4,9 +4,6 @@ import ThemeToggle from '@/components/layout/ThemeToggle';
 beforeEach(() => {
   localStorage.clear();
   document.documentElement.removeAttribute('data-theme');
-  (window as unknown as { matchMedia: unknown }).matchMedia = jest.fn().mockImplementation((q: string) => ({
-    matches: false, media: q, addEventListener: jest.fn(), removeEventListener: jest.fn(),
-  }));
 });
 
 test('inicia no escuro (default) e aplica no <html>', () => {
