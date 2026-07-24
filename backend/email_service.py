@@ -189,6 +189,23 @@ def send_verification_email(to_email: str, token: str) -> bool:
     return send_email(to_email, "Confirme seu e-mail — The Monitor", html)
 
 
+def send_password_reset_email(to_email: str, token: str) -> bool:
+    """Envia o link de redefinição de senha (#242).
+
+    O link aponta para o frontend (/redefinir-senha), que consome o token via
+    POST /password-reset/confirm/. Vai também pro log, útil se o SMTP falhar.
+    """
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    link = f"{frontend_url}/redefinir-senha?token={token}"
+    html = (
+        f'<p>Recebemos um pedido para redefinir sua senha. Clique no link abaixo (válido por 1h):</p>'
+        f'<p><a href="{link}">{link}</a></p>'
+        f'<p>Se não foi você, ignore este e-mail.</p>'
+    )
+    logger.info("Redefinição de senha para %s | link: %s", to_email, link)
+    return send_email(to_email, "Redefinição de senha — The Monitor", html)
+
+
 def enviar_resumo_para_todos(session: Session) -> None:
     users = session.exec(select(User).where(User.email != None)).all()
     hoje = date.today()

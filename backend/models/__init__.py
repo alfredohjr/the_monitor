@@ -12,7 +12,7 @@ from .database import (
     get_session,
 )
 from .monitor import Item, Historico, News
-from .accounts import User, Organization, Membership, EmailVerificationToken
+from .accounts import User, Organization, Membership, EmailVerificationToken, PasswordResetToken
 from .pointer import Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, UserMetricSubscription, UserMetricAssignment, GoalTemplate, ExternalIndex, ExternalIndexPoint
 from .notifications import Notification
 
@@ -28,6 +28,7 @@ __all__ = [
     "Organization",
     "Membership",
     "EmailVerificationToken",
+    "PasswordResetToken",
     "Metric",
     "Goal",
     "LogEntry",

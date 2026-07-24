@@ -7,11 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
+from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
 from db_migrations import run_migrations
-from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email
+from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email, send_password_reset_email
 from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates, seed_external_indices
 from progress import compute_progress
 from import_metas import distribuir_alvo, ESTRATEGIAS
@@ -306,6 +306,76 @@ def verify_email(body: VerifyEmailRequest, session: SessionDep):
     session.add(tok)
     session.commit()
     return {"verified": True, "username": user.username}
+
+
+# ---------- Recuperação de senha e reenvio de verificação (#242) ----------
+
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+@app.post('/api/v1/verify-email/resend/')
+def resend_verification(body: EmailRequest, session: SessionDep):
+    """Reenvia o link de verificação. Resposta genérica (não vaza cadastro):
+    só dispara o e-mail se a conta existe e ainda não está verificada."""
+    email = body.email.strip().lower()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user and user.email and not user.email_verified:
+        token = EmailVerificationToken(
+            user_id=user.id,
+            token=secrets.token_urlsafe(32),
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+        )
+        session.add(token)
+        session.commit()
+        send_verification_email(user.email, token.token)
+    return {"detail": "Se o e-mail existir e não estiver verificado, enviamos um novo link."}
+
+
+@app.post('/api/v1/password-reset/request/')
+def password_reset_request(body: EmailRequest, session: SessionDep):
+    """'Esqueci minha senha'. SEMPRE responde 200 (não revela se o e-mail existe);
+    se existir, cria um token de uso único (1h) e envia o link."""
+    email = body.email.strip().lower()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user:
+        token = PasswordResetToken(
+            user_id=user.id,
+            token=secrets.token_urlsafe(32),
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+        )
+        session.add(token)
+        session.commit()
+        send_password_reset_email(email, token.token)
+    return {"detail": "Se o e-mail estiver cadastrado, enviamos um link para redefinir a senha."}
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    password: str
+
+
+@app.post('/api/v1/password-reset/confirm/')
+def password_reset_confirm(body: PasswordResetConfirm, session: SessionDep):
+    """Redefine a senha a partir do token. Uso único; invalida o token."""
+    if len(body.password) < 6:
+        raise HTTPException(status_code=400, detail="A senha deve ter ao menos 6 caracteres")
+    tok = session.exec(select(PasswordResetToken).where(PasswordResetToken.token == body.token)).first()
+    if not tok or tok.used_at is not None:
+        raise HTTPException(status_code=400, detail="Token inválido")
+    if tok.expires_at < datetime.datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token expirado")
+
+    user = session.get(User, tok.user_id)
+    if not user:
+        raise HTTPException(status_code=400, detail="Token inválido")
+
+    user.hashed_password = hash_password(body.password)
+    tok.used_at = datetime.datetime.utcnow()
+    session.add(user)
+    session.add(tok)
+    session.commit()
+    return {"reset": True, "username": user.username}
 
 class GoogleLoginRequest(BaseModel):
     credential: str
