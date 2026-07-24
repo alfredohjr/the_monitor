@@ -89,18 +89,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 relative overflow-hidden bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 relative overflow-hidden bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[20%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md glass p-10 rounded-3xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-white/5">
+      <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-block mb-4">
-            <span className="text-2xl font-extrabold tracking-tight text-white mb-2 block">Quantified Self</span>
+            <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 block">Quantified Self</span>
           </Link>
-          <h1 className="text-3xl font-bold text-white mb-2">Acesso Restrito</h1>
-          <p className="text-zinc-400 text-sm">Insira suas credenciais para continuar.</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Acesso Restrito</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">Insira suas credenciais para continuar.</p>
         </div>
 
         {error && (
@@ -111,7 +111,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2 group">
-            <label className="block text-sm font-medium text-zinc-300 transition-colors group-focus-within:text-blue-400">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
               Usuário
             </label>
             <input
@@ -120,13 +120,13 @@ export default function LoginPage() {
               value={credentials.username}
               onChange={handleChange}
               required
-              className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+              className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
               placeholder="Ex: alfredo"
             />
           </div>
 
           <div className="space-y-2 group">
-            <label className="block text-sm font-medium text-zinc-300 transition-colors group-focus-within:text-blue-400">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
               Senha
             </label>
             <input
@@ -135,7 +135,7 @@ export default function LoginPage() {
               value={credentials.password}
               onChange={handleChange}
               required
-              className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+              className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
               placeholder="••••••••"
             />
           </div>
