@@ -24,6 +24,17 @@ class EmailVerificationToken(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class PasswordResetToken(SQLModel, table=True):
+    # Token de redefinição de senha (#242). Mesmo padrão do EmailVerificationToken:
+    # uso único (used_at) e expiração curta (~1h).
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token: str = Field(unique=True, index=True, max_length=64)
+    expires_at: datetime
+    used_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Organization(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     nome: str = Field(max_length=150)
