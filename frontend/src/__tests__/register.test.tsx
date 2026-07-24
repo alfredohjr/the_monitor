@@ -55,4 +55,22 @@ describe('Register page', () => {
     expect(body.organizacao).toBe('Acme');
     expect(body.codigo_organizacao).toBe('chave-acme');
   });
+
+  it('mostra/oculta a senha ao clicar no olho (#241)', () => {
+    const { container } = render(<RegisterPage />);
+    const password = container.querySelector('input[name="password"]') as HTMLInputElement;
+    const confirm = container.querySelector('input[name="confirm"]') as HTMLInputElement;
+    // começa oculto
+    expect(password.type).toBe('password');
+    expect(confirm.type).toBe('password');
+
+    fireEvent.click(screen.getByRole('button', { name: /mostrar senha/i }));
+    // o mesmo toggle revela os dois campos
+    expect(password.type).toBe('text');
+    expect(confirm.type).toBe('text');
+
+    fireEvent.click(screen.getByRole('button', { name: /ocultar senha/i }));
+    expect(password.type).toBe('password');
+    expect(confirm.type).toBe('password');
+  });
 });
