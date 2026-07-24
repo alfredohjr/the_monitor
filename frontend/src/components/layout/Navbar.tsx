@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 import { getActiveOrg, setActiveOrg, clearActiveOrg, API_BASE } from "@/lib/api";
 
 interface Org { id: number; nome: string; role: string }
@@ -74,17 +75,17 @@ export default function Navbar() {
     <nav className="w-full flex justify-center pt-6 absolute top-0 z-50 px-4">
       <div
         data-testid="nav-container"
-        className="px-6 py-3 rounded-3xl sm:rounded-full flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-x-6 gap-y-2 text-sm font-medium border sm:items-center w-full max-w-sm sm:max-w-none sm:w-auto bg-zinc-900 border-white/15 shadow-xl sm:bg-white/[0.03] sm:backdrop-blur-xl sm:border-white/10 sm:shadow-lg"
+        className="px-6 py-3 rounded-3xl sm:rounded-full flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-x-6 gap-y-2 text-sm font-medium border sm:items-center w-full max-w-sm sm:max-w-none sm:w-auto bg-white border-zinc-200 shadow-xl sm:bg-white/70 sm:backdrop-blur-xl sm:border-zinc-200 sm:shadow-lg dark:bg-zinc-900 dark:border-white/15 dark:shadow-xl sm:dark:bg-white/[0.03] sm:dark:border-white/10 sm:dark:shadow-lg"
       >
         {/* Barra mobile: marca + hambúrguer (no desktop some). A marca evita
             duplicar o texto "Início", que fica só no menu recolhível. */}
         <div className="flex sm:hidden items-center justify-between">
-          <Link href="/" className="text-zinc-200 hover:text-white transition font-bold" onClick={() => setMobileOpen(false)}>Quantified Self</Link>
+          <Link href="/" className="text-zinc-800 hover:text-black dark:text-zinc-200 dark:hover:text-white transition font-bold" onClick={() => setMobileOpen(false)}>Quantified Self</Link>
           <button
             onClick={() => setMobileOpen(o => !o)}
             aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={mobileOpen}
-            className="text-zinc-300 hover:text-white transition p-1"
+            className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition p-1"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {mobileOpen
@@ -103,19 +104,20 @@ export default function Navbar() {
           <Link href="/" className="hidden sm:inline text-zinc-300 hover:text-white transition">Início</Link>
           {loggedIn && (
             <>
-              {!isUser && <Link href="/dashboard" className="text-zinc-300 hover:text-white transition">Dashboard</Link>}
+              {!isUser && <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Dashboard</Link>}
               {!isUser && <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition sm:ml-2">Simulação</Link>}
-              <Link href="/logs" className="text-zinc-300 hover:text-white transition">Lançamentos</Link>
-              {!isUser && <Link href="/goals" className="text-zinc-300 hover:text-white transition">Metas</Link>}
-              {!isUser && <Link href="/metrics" className="text-zinc-300 hover:text-white transition">Métricas</Link>}
-              {!isUser && <Link href="/metas/importar" className="text-zinc-300 hover:text-white transition">Importar</Link>}
+              <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Lançamentos</Link>
+              {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Metas</Link>}
+              {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Métricas</Link>}
+              {!isUser && <Link href="/metas/importar" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Importar</Link>}
               {isAdmin && <Link href="/admin" className="text-amber-300 hover:text-amber-200 transition">Admin</Link>}
             </>
           )}
-          <div className="hidden sm:block h-4 w-[1px] bg-white/20 self-center mx-2"></div>
+          <div className="hidden sm:block h-4 w-[1px] bg-zinc-300 dark:bg-white/20 self-center mx-2"></div>
 
           {loggedIn ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <ThemeToggle />
               <NotificationBell />
               <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title="Meu perfil">Olá, {username || "usuário"}</Link>
               {orgs.length > 0 && (
@@ -123,17 +125,20 @@ export default function Navbar() {
                   aria-label="Organização"
                   value={activeOrg ?? ""}
                   onChange={handleOrgChange}
-                  className="bg-white/5 border border-white/10 rounded-lg text-zinc-200 text-xs px-2 py-1 focus:outline-none"
+                  className="bg-zinc-100 border border-zinc-200 text-zinc-700 dark:bg-white/5 dark:border-white/10 dark:text-zinc-200 rounded-lg text-xs px-2 py-1 focus:outline-none"
                 >
                   {orgs.map(o => (
                     <option key={o.id} value={o.id} className="bg-zinc-900">{o.nome}</option>
                   ))}
                 </select>
               )}
-              <button onClick={handleLogout} className="text-left text-zinc-400 hover:text-red-400 transition text-xs">Sair</button>
+              <button onClick={handleLogout} className="text-left text-zinc-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 transition text-xs">Sair</button>
             </div>
           ) : (
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-bold transition">Entrar</Link>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-bold transition">Entrar</Link>
+            </div>
           )}
         </div>
       </div>

@@ -35,12 +35,15 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {/* Anti-flash (#225): define o tema antes da pintura — escolha salva
-            vence; senão o do SO (prefers-color-scheme); default escuro. */}
+        {/* Anti-flash (#225): define o tema antes da pintura. Enquanto o app não
+            suporta o claro em TODAS as telas, o default é ESCURO — só a escolha
+            explícita do usuário (localStorage) aplica o claro, para ninguém cair
+            num meio-estado. A detecção do SO (prefers-color-scheme) volta no
+            último ciclo, quando tudo estiver convertido. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();",
+              "(function(){try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();",
           }}
         />
         <Navbar />

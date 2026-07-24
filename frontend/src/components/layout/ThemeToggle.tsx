@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getInitialTheme, setTheme, type Theme } from "@/lib/theme";
+import { getStoredTheme, setTheme, type Theme } from "@/lib/theme";
 
-// Botão de alternância de tema (#225). Na montagem, sincroniza o estado com o
-// que já foi aplicado no <html> (pelo script inline do layout / getInitialTheme).
+// Botão de alternância de tema (#225). Sincroniza o estado com a preferência
+// salva (default escuro). Enquanto o app não suporta o claro em todas as telas,
+// não usamos o tema do SO aqui — só a escolha explícita do usuário.
 export default function ThemeToggle() {
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    const t = getInitialTheme();
+    const t = getStoredTheme() ?? "dark";
     setThemeState(t);
     setTheme(t); // garante data-theme + persistência alinhados
   }, []);
@@ -24,7 +25,7 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
       title="Alternar tema"
-      className="text-zinc-300 hover:text-white transition"
+      className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition"
     >
       {theme === "dark" ? (
         // sol (ir para claro)

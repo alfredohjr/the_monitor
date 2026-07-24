@@ -129,10 +129,24 @@ describe('Navbar — menu mobile (#214)', () => {
   it('usa fundo sólido (estilo do painel de notificação) no mobile e glass no desktop (#219)', () => {
     render(<Navbar />);
     const container = screen.getByTestId('nav-container');
-    // mobile: fundo sólido como o dropdown de notificação
-    expect(container.className).toMatch(/bg-zinc-900/);
-    // desktop: mantém o efeito glass (translúcido + blur)
-    expect(container.className).toMatch(/sm:bg-white/);
+    // mobile: fundo sólido como o dropdown de notificação (no tema escuro)
+    expect(container.className).toMatch(/dark:bg-zinc-900/);
+    // desktop: mantém o efeito glass (translúcido + blur) no escuro
+    expect(container.className).toMatch(/sm:dark:bg-white/);
     expect(container.className).toMatch(/sm:backdrop-blur/);
+  });
+});
+
+describe('Navbar — tema (#225)', () => {
+  it('monta o botão de alternância de tema (deslogado)', () => {
+    render(<Navbar />);
+    expect(screen.getByRole('button', { name: /tema (claro|escuro)/i })).toBeInTheDocument();
+  });
+
+  it('container é theme-aware (base clara + dark:)', () => {
+    render(<Navbar />);
+    const container = screen.getByTestId('nav-container');
+    expect(container.className).toMatch(/bg-white/);       // base clara
+    expect(container.className).toMatch(/dark:bg-zinc-900/); // escuro preservado
   });
 });
