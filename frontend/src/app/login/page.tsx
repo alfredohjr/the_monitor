@@ -151,6 +151,12 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="mt-4 text-center text-sm">
+          <Link href="/esqueci-senha" className="text-zinc-400 hover:text-blue-300 transition-colors">
+            Esqueci minha senha
+          </Link>
+        </p>
+
         <div className="mt-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="h-px flex-1 bg-white/10" />
