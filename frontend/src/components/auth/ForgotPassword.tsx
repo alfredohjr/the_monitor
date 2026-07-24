@@ -27,9 +27,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-md glass p-10 rounded-3xl border border-white/5">
-        <h1 className="text-2xl font-bold text-white mb-2 text-center">Esqueci minha senha</h1>
+    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 text-center">Esqueci minha senha</h1>
         {sent ? (
           <div className="text-center">
             <p className="text-emerald-400 text-sm mb-6">
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <>
-            <p className="text-zinc-400 text-sm mb-6 text-center">Informe seu e-mail para receber o link de redefinição.</p>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 text-center">Informe seu e-mail para receber o link de redefinição.</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="email"
@@ -48,7 +48,7 @@ export default function ForgotPassword() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="seu@email.com"
-                className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
               <button
                 type="submit"

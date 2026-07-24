@@ -43,9 +43,9 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-md glass p-10 rounded-3xl border border-white/5">
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">Redefinir senha</h1>
+    <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-6 text-center">Redefinir senha</h1>
         {done ? (
           <p className="text-emerald-400 text-sm text-center">Senha redefinida! Redirecionando para o login…</p>
         ) : (
@@ -58,7 +58,7 @@ export default function ResetPassword() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Nova senha"
-                className="w-full px-5 py-4 pr-12 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                className="w-full px-5 py-4 pr-12 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
               <button
                 type="button"
@@ -86,7 +86,7 @@ export default function ResetPassword() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               placeholder="Confirmar nova senha"
-              className="w-full px-5 py-4 bg-white/[0.03] border border-white/10 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             />
             {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
             <button
