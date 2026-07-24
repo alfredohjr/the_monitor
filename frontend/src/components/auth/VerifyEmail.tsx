@@ -40,9 +40,9 @@ export default function VerifyEmail() {
   }, [searchParams]);
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-md glass p-10 rounded-3xl border border-white/5 text-center">
-        <h1 className="text-2xl font-bold text-white mb-4">Confirmação de e-mail</h1>
+    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl text-center">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Confirmação de e-mail</h1>
         <p
           className={`text-sm mb-6 ${
             status === "success" ? "text-emerald-400" : status === "error" ? "text-red-400" : "text-zinc-400"

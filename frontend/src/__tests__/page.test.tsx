@@ -47,6 +47,13 @@ describe('Home page — sem token', () => {
     expect(screen.queryByText(/sistema em construção/i)).not.toBeInTheDocument();
   });
 
+  it('é theme-aware: base clara + dark preservado (#225)', () => {
+    const { container } = render(<Home />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/bg-zinc-50/);        // claro
+    expect(root.className).toMatch(/dark:bg-\[#0a0a0a\]/); // escuro atual preservado
+  });
+
   it('nao exibe texto "alta performance"', () => {
     render(<Home />);
     expect(screen.queryByText(/alta performance/i)).not.toBeInTheDocument();
