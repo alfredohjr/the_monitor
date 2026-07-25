@@ -60,30 +60,30 @@ export default function ProfilePage() {
     }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-[#0a0a0a] text-white">
-      <div className="relative z-10 w-full max-w-md glass p-8 rounded-3xl border border-white/5">
+    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
+      <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 rounded-3xl">
         <h1 className="text-2xl font-extrabold tracking-tight mb-1">Meu perfil</h1>
-        <p className="text-zinc-400 text-sm mb-6">Edite como seu nome aparece no sistema.</p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">Edite como seu nome aparece no sistema.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="display_name" className="block text-sm text-zinc-300 mb-1">Nome de exibição</label>
+            <label htmlFor="display_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">Nome de exibição</label>
             <input
               id="display_name"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Como você quer ser chamado"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
             />
           </div>
 
           <div className="text-sm text-zinc-500 space-y-1">
-            {email && <p>E-mail: <span className="text-zinc-300">{email}</span></p>}
-            <p>Usuário: <span className="text-zinc-300">{username}</span></p>
+            {email && <p>E-mail: <span className="text-zinc-700 dark:text-zinc-300">{email}</span></p>}
+            <p>Usuário: <span className="text-zinc-700 dark:text-zinc-300">{username}</span></p>
           </div>
 
           {erro && <p role="alert" className="text-sm text-red-400">{erro}</p>}

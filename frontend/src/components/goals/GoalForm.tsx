@@ -76,13 +76,13 @@ export default function GoalForm({ id }: { id?: string }) {
     } finally { setLoading(false); }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center justify-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
+    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
         <div className="mb-8">
-          <Link href="/goals" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar pra Lista</Link>
+          <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar pra Lista</Link>
           <h1 className="text-3xl font-extrabold tracking-tight">{id ? "Configurar Desafio" : "Lançar Desafio"}</h1>
         </div>
         {message.text && (
@@ -92,7 +92,7 @@ export default function GoalForm({ id }: { id?: string }) {
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Base Atrelada</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Base Atrelada</label>
             <select name="metric" value={goalData.metric} onChange={handleChange} required className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
               <option value="">Selecione a Métrica Primária</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
@@ -101,7 +101,7 @@ export default function GoalForm({ id }: { id?: string }) {
 
           {selectedMetricObj && (
             <div className="space-y-2 animate-fade-in-up transition-all">
-              <label className="text-sm font-medium text-zinc-300 flex justify-between">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex justify-between">
                 <span>Qual {
                   selectedMetricObj.periodo === 'daily' ? 'Dia' :
                   selectedMetricObj.periodo === 'weekly' ? 'Semana' :
@@ -120,14 +120,14 @@ export default function GoalForm({ id }: { id?: string }) {
                 onChange={handleChange}
                 required
                 style={{ colorScheme: 'dark' }}
-                className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-blue-500"
+                className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl focus:border-blue-500"
               />
             </div>
           )}
 
           <div className="space-y-2">
-            <label htmlFor="alvo" className="text-sm font-medium text-zinc-300">Alvo Requisitado</label>
-            <input id="alvo" aria-label="alvo" type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl" placeholder={placeholderValor(selectedMetricObj?.tipo ?? 'number')} />
+            <label htmlFor="alvo" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Alvo Requisitado</label>
+            <input id="alvo" aria-label="alvo" type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder={placeholderValor(selectedMetricObj?.tipo ?? 'number')} />
           </div>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-blue-600 font-bold py-4 rounded-xl hover:bg-blue-500 transition">
             {loading ? 'Computando...' : (id ? 'Atualizar Desafio' : 'Gravar Desafio')}

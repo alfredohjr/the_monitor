@@ -91,41 +91,41 @@ export default function OnboardingFlow() {
     router.push("/dashboard");
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[20%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
       </div>
-      <div className="relative z-10 w-full max-w-2xl glass p-8 sm:p-12 rounded-3xl border border-white/5">
+      <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl">
         {needsOrg ? (
           <>
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-extrabold tracking-tight mb-2">Bem-vindo! Vamos começar</h1>
-              <p className="text-zinc-400">Crie sua organização para começar a acompanhar suas métricas.</p>
+              <p className="text-zinc-600 dark:text-zinc-400">Crie sua organização para começar a acompanhar suas métricas.</p>
             </div>
             <form onSubmit={handleCriarOrg} className="space-y-5">
               <div>
-                <label htmlFor="display_name" className="block text-sm text-zinc-300 mb-1">Seu nome</label>
+                <label htmlFor="display_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">Seu nome</label>
                 <input
                   id="display_name"
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Como você quer ser chamado"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
+                  className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
                 />
               </div>
               <div>
-                <label htmlFor="org_name" className="block text-sm text-zinc-300 mb-1">Nome da organização</label>
+                <label htmlFor="org_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">Nome da organização</label>
                 <input
                   id="org_name"
                   type="text"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="Ex: Minha Loja"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50"
+                  className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
                 />
               </div>
               {erroOrg && <p role="alert" className="text-sm text-red-400">{erroOrg}</p>}
@@ -142,7 +142,7 @@ export default function OnboardingFlow() {
           <>
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-extrabold tracking-tight mb-2">Primeiros passos</h1>
-              <p className="text-zinc-400">Selecione as métricas que quer acompanhar. Você pode mudar isso depois.</p>
+              <p className="text-zinc-600 dark:text-zinc-400">Selecione as métricas que quer acompanhar. Você pode mudar isso depois.</p>
             </div>
 
             <div className="space-y-3 mb-8">
@@ -155,8 +155,8 @@ export default function OnboardingFlow() {
                     className="mt-1 w-4 h-4 accent-blue-500 shrink-0"
                   />
                   <div>
-                    <p className="font-semibold text-white">{m.nome}</p>
-                    <p className="text-sm text-zinc-400">{m.descricao}</p>
+                    <p className="font-semibold text-zinc-900 dark:text-white">{m.nome}</p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">{m.descricao}</p>
                   </div>
                 </label>
               ))}
@@ -175,7 +175,7 @@ export default function OnboardingFlow() {
               </button>
               <button
                 onClick={() => router.push("/dashboard")}
-                className="flex-1 py-4 bg-white/5 hover:bg-white/10 font-medium rounded-xl transition text-zinc-300"
+                className="flex-1 py-4 bg-white/5 hover:bg-zinc-200 dark:bg-white/10 font-medium rounded-xl transition text-zinc-700 dark:text-zinc-300"
               >
                 Pular
               </button>

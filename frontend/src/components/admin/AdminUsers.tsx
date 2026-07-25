@@ -157,14 +157,14 @@ export default function AdminUsers() {
     if (resp.ok && orgId) loadUsers(orgId, token);
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   if (notAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 bg-[#0a0a0a] text-center">
-        <div className="glass p-10 rounded-3xl border border-white/5 text-white">
+      <div className="flex min-h-screen items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a] text-center">
+        <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-10 rounded-3xl text-zinc-900 dark:text-white">
           <h1 className="text-2xl font-bold mb-3">Acesso restrito</h1>
-          <p className="text-zinc-400 text-sm mb-6">Esta área é exclusiva de administradores de organização.</p>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">Esta área é exclusiva de administradores de organização.</p>
           <Link href="/logs" className="text-blue-400 hover:text-blue-300">Ir para Lançamentos</Link>
         </div>
       </div>
@@ -172,10 +172,10 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-2xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
+    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1">Administração</h1>
-        <p className="text-zinc-400 text-sm mb-8">Usuários de <strong>{orgNome}</strong></p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">Usuários de <strong>{orgNome}</strong></p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {message && <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">{message}</div>}
@@ -185,7 +185,7 @@ export default function AdminUsers() {
             <form onSubmit={handleCreate} className="grid sm:grid-cols-[1fr_auto] gap-3 mb-2">
               <input name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
                 placeholder="E-mail do novo membro"
-                className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                className="px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
               <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
             </form>
             <p className="text-zinc-500 text-xs mb-8">
@@ -202,7 +202,7 @@ export default function AdminUsers() {
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-zinc-400 text-left border-b border-white/10">
+            <tr className="text-zinc-600 dark:text-zinc-400 text-left border-b border-white/10">
               <th className="py-2">Usuário</th><th>E-mail</th><th>Papel</th><th></th>
             </tr>
           </thead>
@@ -211,7 +211,7 @@ export default function AdminUsers() {
               <React.Fragment key={u.id}>
                 <tr className="border-b border-white/5">
                   <td className="py-3">{u.username}</td>
-                  <td className="text-zinc-400">{u.email || "—"}</td>
+                  <td className="text-zinc-600 dark:text-zinc-400">{u.email || "—"}</td>
                   <td>{u.role}</td>
                   <td className="text-right whitespace-nowrap">
                     {u.role !== "admin" && (
@@ -227,7 +227,7 @@ export default function AdminUsers() {
                 {expandedUser === u.id && (
                   <tr className="border-b border-white/5 bg-white/5">
                     <td colSpan={4} className="p-4">
-                      <p className="text-zinc-400 text-xs mb-3">Selecione as métricas que <strong>{u.username}</strong> pode ver e lançar:</p>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mb-3">Selecione as métricas que <strong>{u.username}</strong> pode ver e lançar:</p>
                       {metrics.length === 0 ? (
                         <p className="text-zinc-500 text-xs">Nenhuma métrica nesta organização.</p>
                       ) : (
@@ -239,7 +239,7 @@ export default function AdminUsers() {
                                 {m.nome || m.codigo}
                               </label>
                               {assigned.has(m.id) && (
-                                <div className="flex items-center gap-4 text-zinc-400">
+                                <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
                                   <label className="flex items-center gap-1 cursor-pointer">
                                     <input type="checkbox" aria-label={`Editar ${m.codigo}`} checked={canEdit.has(m.id)} onChange={() => toggleInSet(setCanEdit, m.id)} />
                                     pode editar
