@@ -90,7 +90,7 @@ export default function LogForm({ id }: { id?: string }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
-            <select name="metric" value={metricId} onChange={handleMetricChange} required className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+            <select name="metric" value={metricId} onChange={handleMetricChange} required className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
               <option value="">Selecione a Métrica</option>
               {metricsComMeta.map(m => (
                 <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>
@@ -99,7 +99,7 @@ export default function LogForm({ id }: { id?: string }) {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Desafio Ativado</label>
-            <select name="goal" value={logData.goal} onChange={handleChange} required disabled={!metricId} className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl disabled:opacity-50">
+            <select name="goal" value={logData.goal} onChange={handleChange} required disabled={!metricId} className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl disabled:opacity-50">
               <option value="">{metricId ? "Selecione o período" : "Escolha a métrica primeiro"}</option>
               {goalsDaMetrica.map(g => (
                 <option key={g.id} value={g.id}>{g.periodo_referencia || "Sem período"}</option>

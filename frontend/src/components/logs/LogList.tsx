@@ -84,7 +84,7 @@ export default function LogList() {
                 const metricRef = g && g.periodo_referencia ? ` [${g.periodo_referencia}]` : '';
                 const metricName = m ? (m.nome || m.codigo) : `Meta #${i.goal}`;
                 return (
-                  <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
+                  <tr key={i.id} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 text-zinc-600 dark:text-zinc-400 tabular-nums">{i.data}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{metricName} {metricRef}</td>
                     <td className="py-4 px-2 text-blue-300 font-bold text-lg">{formatValor(i.valor_logado, m?.tipo ?? 'number')}</td>

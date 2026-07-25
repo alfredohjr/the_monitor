@@ -93,7 +93,7 @@ export default function GoalForm({ id }: { id?: string }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Base Atrelada</label>
-            <select name="metric" value={goalData.metric} onChange={handleChange} required className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+            <select name="metric" value={goalData.metric} onChange={handleChange} required className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
               <option value="">Selecione a Métrica Primária</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
             </select>
@@ -119,8 +119,7 @@ export default function GoalForm({ id }: { id?: string }) {
                 value={goalData.periodo_referencia}
                 onChange={handleChange}
                 required
-                style={{ colorScheme: 'dark' }}
-                className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl focus:border-blue-500"
+                className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl focus:border-blue-500 [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
           )}

@@ -189,16 +189,16 @@ export default function DashboardGrid() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap border-t border-white/10 mt-8 pt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap border-t border-zinc-200 dark:border-white/10 mt-8 pt-6">
           <div className="flex items-center gap-4 flex-wrap">
-            <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none w-40 sm:w-auto">
+            <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-4 py-3 rounded-full text-sm outline-none w-40 sm:w-auto">
               <option value="all">Todas as Métricas</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>)}
             </select>
             <div className="flex items-center gap-2">
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-4 py-3 rounded-full text-sm outline-none [color-scheme:light] dark:[color-scheme:dark]" />
               <span className="text-zinc-500">–</span>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#111] border border-white/10 px-4 py-3 rounded-full text-sm outline-none" style={{ colorScheme: 'dark' }} />
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-4 py-3 rounded-full text-sm outline-none [color-scheme:light] dark:[color-scheme:dark]" />
             </div>
           </div>
           <Link href="/logs/new" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-medium transition text-sm text-center">

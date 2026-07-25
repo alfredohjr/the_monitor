@@ -86,7 +86,7 @@ export default function ImportLogsCSV() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
             <select name="metric_id" value={metricId} onChange={e => { setMetricId(e.target.value); setPreview(null); setResult(null); }} required
-              className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+              className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
               <option value="">Selecione a métrica</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
             </select>
@@ -116,12 +116,12 @@ export default function ImportLogsCSV() {
             {resumo.erros.length > 0 && (
               <div className="max-h-48 overflow-y-auto rounded-xl border border-red-500/20 mb-4">
                 <table className="w-full text-sm">
-                  <thead className="text-red-300/70 text-left sticky top-0 bg-[#111]">
+                  <thead className="text-red-300/70 text-left sticky top-0 bg-zinc-100 dark:bg-[#111]">
                     <tr><th className="py-2 px-3">Linha</th><th className="px-3">Motivo</th></tr>
                   </thead>
                   <tbody>
                     {resumo.erros.map(er => (
-                      <tr key={er.linha} className="border-t border-white/5 text-red-300">
+                      <tr key={er.linha} className="border-t border-zinc-200 dark:border-white/5 text-red-300">
                         <td className="py-2 px-3">{er.linha}</td><td className="px-3">{er.motivo}</td>
                       </tr>
                     ))}

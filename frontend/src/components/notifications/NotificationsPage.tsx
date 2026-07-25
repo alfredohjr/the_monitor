@@ -55,7 +55,7 @@ export default function NotificationsPage() {
                   aria-label={n.lida ? n.mensagem : `Marcar como lida: ${n.mensagem}`}
                   className={`w-full text-left px-4 py-3 rounded-2xl border transition ${
                     n.lida
-                      ? "border-white/5 text-zinc-500"
+                      ? "border-zinc-200 dark:border-white/5 text-zinc-500"
                       : "border-blue-500/30 bg-blue-500/5 text-zinc-100 hover:bg-blue-500/10 font-medium"
                   }`}
                 >
