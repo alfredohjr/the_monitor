@@ -8,8 +8,8 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
+  const MockLink = ({ children, href, ...rest }: { children: React.ReactNode; href: string }) => (
+    <a href={href} {...rest}>{children}</a>
   );
   MockLink.displayName = 'MockLink';
   return MockLink;
@@ -57,6 +57,19 @@ describe('Home page — sem token', () => {
   it('nao exibe texto "alta performance"', () => {
     render(<Home />);
     expect(screen.queryByText(/alta performance/i)).not.toBeInTheDocument();
+  });
+
+  it('os cards de área têm fundo escuro no dark mode, não ficam brancos (#270)', () => {
+    render(<Home />);
+    // Cada card é o Link que envolve o título da seção. Sem uma classe de fundo
+    // escura explícita, o `bg-white` da base vencia no dark e o card ficava branco
+    // (o `dark:glass` é CSS puro, não gera variante Tailwind).
+    const titulos = [/1\. Dashboard/i, /2\. Check-in/i, /3\. Criar Desafio/i, /4\. Métrica Raiz/i];
+    for (const t of titulos) {
+      const card = screen.getByText(t).closest('a') as HTMLElement;
+      expect(card.className).toMatch(/bg-white/);            // base clara
+      expect(card.className).toMatch(/dark:bg-white\/\[0\.03\]/); // fundo escuro no dark
+    }
   });
 });
 
