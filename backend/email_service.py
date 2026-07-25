@@ -7,7 +7,7 @@ from email.message import EmailMessage
 
 from sqlmodel import Session, select
 
-from models import Goal, LogEntry, Metric, User
+from models import Goal, LogEntry, Metric, Membership, Organization, User
 
 logger = logging.getLogger(__name__)
 
@@ -206,10 +206,29 @@ def send_password_reset_email(to_email: str, token: str) -> bool:
     return send_email(to_email, "Redefinição de senha — The Monitor", html)
 
 
+def _ids_de_usuarios_pagos(session: Session) -> set[int]:
+    """IDs dos usuários com ao menos uma organização paga (não deletada).
+
+    Uma conta é "free" quando não pertence a nenhuma org paga (#253). Essas contas
+    não recebem e-mails de **notificação** (o resumo diário). E-mails
+    **transacionais** (verificação de e-mail, redefinição de senha) não passam por
+    aqui e continuam sendo enviados normalmente.
+    """
+    rows = session.exec(
+        select(Membership.user_id)
+        .join(Organization, Organization.id == Membership.organization_id)
+        .where(Organization.is_paid == True, Organization.deleted == False)
+    ).all()
+    return set(rows)
+
+
 def enviar_resumo_para_todos(session: Session) -> None:
+    pagos = _ids_de_usuarios_pagos(session)
     users = session.exec(select(User).where(User.email != None)).all()
     hoje = date.today()
     for user in users:
+        if user.id not in pagos:
+            continue  # conta free não recebe notificação (#253)
         resumo = build_resumo(user, session, hoje)
         html = render_html(resumo)
         send_email(user.email, f"Resumo de metas — {hoje}", html)
