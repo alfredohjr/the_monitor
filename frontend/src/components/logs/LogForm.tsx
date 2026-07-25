@@ -73,13 +73,13 @@ export default function LogForm({ id }: { id?: string }) {
     } finally { setLoading(false); }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center justify-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
+    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
         <div className="mb-8">
-          <Link href="/logs" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar ao Resumo</Link>
+          <Link href="/logs" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar ao Resumo</Link>
           <h1 className="text-3xl font-extrabold tracking-tight">{id ? "Corrigir Valor" : "Fazer Check-in"}</h1>
         </div>
         {message.text && (
@@ -89,7 +89,7 @@ export default function LogForm({ id }: { id?: string }) {
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Métrica</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
             <select name="metric" value={metricId} onChange={handleMetricChange} required className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
               <option value="">Selecione a Métrica</option>
               {metricsComMeta.map(m => (
@@ -98,7 +98,7 @@ export default function LogForm({ id }: { id?: string }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Desafio Ativado</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Desafio Ativado</label>
             <select name="goal" value={logData.goal} onChange={handleChange} required disabled={!metricId} className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl disabled:opacity-50">
               <option value="">{metricId ? "Selecione o período" : "Escolha a métrica primeiro"}</option>
               {goalsDaMetrica.map(g => (
@@ -107,8 +107,8 @@ export default function LogForm({ id }: { id?: string }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Quanto atingiu?</label>
-            <input type="text" name="valor_logado" value={logData.valor_logado} onChange={handleChange} required className="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-blue-500" placeholder={placeholderValor(metrics.find(m => String(m.id) === String(metricId))?.tipo ?? 'number')} />
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Quanto atingiu?</label>
+            <input type="text" name="valor_logado" value={logData.valor_logado} onChange={handleChange} required className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl focus:border-blue-500" placeholder={placeholderValor(metrics.find(m => String(m.id) === String(metricId))?.tipo ?? 'number')} />
           </div>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-green-600 font-bold py-4 rounded-xl hover:bg-green-500 transition">
             {loading ? 'Salvando...' : (id ? 'Corrigir Passado' : 'Carimbar Ponto Diário!')}

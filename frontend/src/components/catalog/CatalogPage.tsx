@@ -68,32 +68,32 @@ export default function CatalogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-400">
+      <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a] flex items-center justify-center text-zinc-600 dark:text-zinc-400">
         <span className="animate-pulse">Carregando catálogo...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="relative z-10 w-full max-w-4xl mt-8">
         <div className="mb-10">
-          <Link href="/metrics" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar para Métricas</Link>
+          <Link href="/metrics" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar para Métricas</Link>
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">Catálogo de Métricas</h1>
-          <p className="text-zinc-400">Assine as métricas do sistema que deseja acompanhar nos seus dashboards.</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Assine as métricas do sistema que deseja acompanhar nos seus dashboards.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {metrics.map(m => {
             const assinada = subscribedIds.has(m.id);
             return (
-              <div key={m.id} className="glass border border-white/5 rounded-2xl p-6 flex flex-col gap-3">
+              <div key={m.id} className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 rounded-2xl p-6 flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="font-bold text-lg">{m.nome}</h3>
                     <p className="text-xs text-zinc-500 font-mono mt-1">{m.codigo}</p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-zinc-400 whitespace-nowrap">{m.tipo} · {m.periodo}</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{m.tipo} · {m.periodo}</span>
                 </div>
                 {assinada ? (
                   <button

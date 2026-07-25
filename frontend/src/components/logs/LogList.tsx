@@ -55,22 +55,22 @@ export default function LogList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[10%] right-[30%] w-[30%] h-[30%] rounded-full bg-green-600/10 blur-[100px]" />
       </div>
-      <div className="relative z-10 w-full max-w-5xl mx-auto glass p-8 sm:p-12 rounded-3xl border border-white/5 mt-16">
+      <div className="relative z-10 w-full max-w-5xl mx-auto bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-10 gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Histórico de Lançamentos</h1>
-            <p className="text-zinc-400">Cada suor do dia-a-dia registrado.</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Cada suor do dia-a-dia registrado.</p>
           </div>
           <Link href="/logs/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">+ Diário (Check-in)</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[600px]">
             <thead>
-              <tr className="border-b border-zinc-700 text-zinc-400 text-sm">
+              <tr className="border-b border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm">
                 <th className="pb-3 px-2 w-[120px]">Quando</th>
                 <th className="pb-3 px-2">Referente a Qual Métrica?</th>
                 <th className="pb-3 px-2">O Que Lançou? (Valor)</th>
@@ -85,7 +85,7 @@ export default function LogList() {
                 const metricName = m ? (m.nome || m.codigo) : `Meta #${i.goal}`;
                 return (
                   <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
-                    <td className="py-4 px-2 text-zinc-400 tabular-nums">{i.data}</td>
+                    <td className="py-4 px-2 text-zinc-600 dark:text-zinc-400 tabular-nums">{i.data}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{metricName} {metricRef}</td>
                     <td className="py-4 px-2 text-blue-300 font-bold text-lg">{formatValor(i.valor_logado, m?.tipo ?? 'number')}</td>
                     <td className="py-4 px-2 text-right">
