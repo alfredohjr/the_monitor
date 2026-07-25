@@ -34,6 +34,12 @@ describe('Navbar — sem login', () => {
     expect(screen.getByText('Início')).toBeInTheDocument();
   });
 
+  it('mostra a marca "themonitor" e não "Quantified Self" (#256)', () => {
+    render(<Navbar />);
+    expect(screen.getByText('themonitor')).toBeInTheDocument();
+    expect(screen.queryByText(/quantified self/i)).not.toBeInTheDocument();
+  });
+
   it('oculta o link Dashboard', () => {
     render(<Navbar />);
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
