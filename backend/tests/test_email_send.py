@@ -15,7 +15,7 @@ from sqlalchemy.pool import StaticPool
 
 import email_service
 from email_service import send_email, send_verification_email, enviar_resumo_para_todos
-from models import User
+from models import User, Organization, Membership
 from auth import hash_password
 
 
@@ -199,8 +199,17 @@ def test_enviar_resumo_para_todos_continua_apos_falha(smtp_configurado):
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        session.add(User(username="ana", hashed_password=hash_password("x"), email="ana@example.com"))
-        session.add(User(username="bia", hashed_password=hash_password("x"), email="bia@example.com"))
+        org = Organization(nome="Paga", is_paid=True)
+        session.add(org)
+        session.commit()
+
+        ana = User(username="ana", hashed_password=hash_password("x"), email="ana@example.com")
+        bia = User(username="bia", hashed_password=hash_password("x"), email="bia@example.com")
+        session.add(ana)
+        session.add(bia)
+        session.commit()
+        _vincula(session, ana, org)
+        _vincula(session, bia, org)
         session.commit()
 
         smtp_configurado.falhar_para = {"ana@example.com"}
@@ -209,3 +218,97 @@ def test_enviar_resumo_para_todos_continua_apos_falha(smtp_configurado):
 
     destinatarios = [msg["To"] for msg in smtp_configurado.todas_enviadas()]
     assert destinatarios == ["bia@example.com"], "o loop abortou no primeiro erro"
+
+
+def _vincula(session, user, org):
+    session.add(Membership(user_id=user.id, organization_id=org.id))
+
+
+def test_resumo_diario_nao_vai_para_contas_free(smtp_configurado):
+    """Notificação (resumo diário) só para contas pagas (#253).
+
+    Uma conta é "free" quando não pertence a nenhuma organização paga: usuário
+    sem vínculo nenhum, ou vinculado só a orgs `is_paid=False`. Transacionais
+    (verificação/redefinição) não passam por aqui e não são afetados.
+    """
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        org_paga = Organization(nome="Paga", is_paid=True)
+        org_free = Organization(nome="Free", is_paid=False)
+        session.add(org_paga)
+        session.add(org_free)
+        session.commit()
+
+        paga = User(username="paga", hashed_password=hash_password("x"), email="paga@example.com")
+        so_free = User(username="sofree", hashed_password=hash_password("x"), email="sofree@example.com")
+        sem_org = User(username="semorg", hashed_password=hash_password("x"), email="semorg@example.com")
+        session.add(paga)
+        session.add(so_free)
+        session.add(sem_org)
+        session.commit()
+
+        _vincula(session, paga, org_paga)
+        _vincula(session, so_free, org_free)
+        # sem_org fica sem nenhum vínculo — também é free
+        session.commit()
+
+        enviar_resumo_para_todos(session)
+
+    destinatarios = {msg["To"] for msg in smtp_configurado.todas_enviadas()}
+    assert destinatarios == {"paga@example.com"}
+
+
+def test_resumo_diario_vai_para_conta_com_ao_menos_uma_org_paga(smtp_configurado):
+    """Basta um vínculo pago para receber, mesmo que também esteja em org free."""
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        org_paga = Organization(nome="Paga", is_paid=True)
+        org_free = Organization(nome="Free", is_paid=False)
+        session.add(org_paga)
+        session.add(org_free)
+        session.commit()
+
+        user = User(username="mista", hashed_password=hash_password("x"), email="mista@example.com")
+        session.add(user)
+        session.commit()
+
+        _vincula(session, user, org_paga)
+        _vincula(session, user, org_free)
+        session.commit()
+
+        enviar_resumo_para_todos(session)
+
+    destinatarios = {msg["To"] for msg in smtp_configurado.todas_enviadas()}
+    assert destinatarios == {"mista@example.com"}
+
+
+def test_resumo_diario_ignora_org_paga_deletada(smtp_configurado):
+    """Org paga porém deletada não conta como vínculo pago."""
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        org = Organization(nome="Paga deletada", is_paid=True, deleted=True)
+        session.add(org)
+        session.commit()
+
+        user = User(username="ex", hashed_password=hash_password("x"), email="ex@example.com")
+        session.add(user)
+        session.commit()
+
+        _vincula(session, user, org)
+        session.commit()
+
+        enviar_resumo_para_todos(session)
+
+    assert smtp_configurado.todas_enviadas() == []
