@@ -147,7 +147,7 @@ export default function OnboardingFlow() {
 
             <div className="space-y-3 mb-8">
               {metrics.map(m => (
-                <label key={m.id} className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-colors ${selected.has(m.id) ? 'border-blue-500/50 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}>
+                <label key={m.id} className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-colors ${selected.has(m.id) ? 'border-blue-500/50 bg-blue-500/10' : 'border-zinc-200 dark:border-white/10 hover:border-white/20'}`}>
                   <input
                     type="checkbox"
                     checked={selected.has(m.id)}

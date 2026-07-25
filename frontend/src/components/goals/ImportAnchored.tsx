@@ -108,7 +108,7 @@ export default function ImportAnchored() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
               <select name="metric_id" value={form.metric_id} onChange={handleChange} required
-                className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+                className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
                 <option value="">Selecione a métrica</option>
                 {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
               </select>
@@ -116,7 +116,7 @@ export default function ImportAnchored() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Índice</label>
               <select name="index_code" value={form.index_code} onChange={handleChange} required
-                className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+                className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
                 <option value="">Selecione o índice</option>
                 {indices.map(i => <option key={i.code} value={i.code}>{i.nome}</option>)}
               </select>
@@ -153,14 +153,14 @@ export default function ImportAnchored() {
               <h2 className="font-bold">Prévia — {pontos.length} dia(s)</h2>
               <span className="text-zinc-600 dark:text-zinc-400 text-sm">Alvo corrigido: <strong className="text-zinc-900 dark:text-white">{corrigido}</strong> · Soma: <strong className="text-zinc-900 dark:text-white">{soma}</strong></span>
             </div>
-            <div className="max-h-64 overflow-y-auto rounded-xl border border-white/10">
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-200 dark:border-white/10">
               <table className="w-full text-sm">
-                <thead className="text-zinc-600 dark:text-zinc-400 text-left sticky top-0 bg-[#111]">
+                <thead className="text-zinc-600 dark:text-zinc-400 text-left sticky top-0 bg-zinc-100 dark:bg-[#111]">
                   <tr><th className="py-2 px-3">Data</th><th className="px-3">Alvo</th></tr>
                 </thead>
                 <tbody>
                   {pontos.map(p => (
-                    <tr key={p.data} className="border-t border-white/5">
+                    <tr key={p.data} className="border-t border-zinc-200 dark:border-white/5">
                       <td className="py-2 px-3">{p.data}</td>
                       <td className="px-3">{p.alvo}</td>
                     </tr>

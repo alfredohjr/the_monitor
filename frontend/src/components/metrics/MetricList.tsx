@@ -72,7 +72,7 @@ export default function MetricList() {
               </thead>
               <tbody>
                 {items.map(i => (
-                  <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
+                  <tr key={i.id} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 text-zinc-500">#{i.id}</td>
                     <td className="py-4 px-2 font-mono text-zinc-600 dark:text-zinc-400">{i.codigo}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{i.nome || '-'}</td>

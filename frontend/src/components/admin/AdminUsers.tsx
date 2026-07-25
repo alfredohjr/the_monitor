@@ -194,7 +194,7 @@ export default function AdminUsers() {
             </p>
           </>
         ) : (
-          <div data-testid="plano-free-aviso" className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200 text-sm">
+          <div data-testid="plano-free-aviso" className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-black dark:text-amber-200 text-sm">
             Adicionar membros exige um <strong>plano pago</strong>. Sua organização está no plano <strong>free</strong>
             (uso individual). Fale com a gente para liberar mais membros.
           </div>
@@ -202,14 +202,14 @@ export default function AdminUsers() {
 
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-zinc-600 dark:text-zinc-400 text-left border-b border-white/10">
+            <tr className="text-zinc-600 dark:text-zinc-400 text-left border-b border-zinc-200 dark:border-white/10">
               <th className="py-2">Usuário</th><th>E-mail</th><th>Papel</th><th></th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
               <React.Fragment key={u.id}>
-                <tr className="border-b border-white/5">
+                <tr className="border-b border-zinc-200 dark:border-white/5">
                   <td className="py-3">{u.username}</td>
                   <td className="text-zinc-600 dark:text-zinc-400">{u.email || "—"}</td>
                   <td>{u.role}</td>
@@ -225,7 +225,7 @@ export default function AdminUsers() {
                   </td>
                 </tr>
                 {expandedUser === u.id && (
-                  <tr className="border-b border-white/5 bg-white/5">
+                  <tr className="border-b border-zinc-200 dark:border-white/5 bg-white/5">
                     <td colSpan={4} className="p-4">
                       <p className="text-zinc-600 dark:text-zinc-400 text-xs mb-3">Selecione as métricas que <strong>{u.username}</strong> pode ver e lançar:</p>
                       {metrics.length === 0 ? (
