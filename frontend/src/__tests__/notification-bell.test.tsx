@@ -23,7 +23,9 @@ describe('NotificationBell — legibilidade (#182)', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
     const panel = await screen.findByTestId('notif-panel');
-    expect(panel.className).toContain('bg-zinc-900');
+    // painel: branco no claro, escuro (dark:) preservado
+    expect(panel.className).toContain('dark:bg-zinc-900');
+    expect(panel.className).toContain('bg-white');
     expect(panel.className).not.toContain('glass');
   });
 });

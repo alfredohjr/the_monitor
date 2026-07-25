@@ -95,7 +95,7 @@ export default function ClonarMetas() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
             <select name="metric_id" value={form.metric_id} onChange={handleChange} required
-              className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+              className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
               <option value="">Selecione a métrica</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
             </select>
@@ -135,7 +135,7 @@ export default function ClonarMetas() {
 
         {preview && (
           <div className="mt-8">
-            <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm">
+            <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/5 text-sm">
               <p><strong className="text-zinc-900 dark:text-white">{preview.criadas}</strong> meta(s) serão criada(s).</p>
               <p className="text-zinc-600 dark:text-zinc-400">{preview.ignoradas} já existe(m) no destino (serão ignoradas). Soma dos novos alvos: <strong className="text-zinc-900 dark:text-white">{preview.soma}</strong>.</p>
             </div>

@@ -146,7 +146,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
   const cHoverBar = data.isNew ? 'group-hover:bg-amber-500/20 group-hover:border-amber-400' : 'group-hover:bg-blue-500/20 group-hover:border-blue-400';
   const cShadow = data.isNew ? 'shadow-[0_0_15px_-5px_#f59e0b]' : 'shadow-[0_0_15px_-5px_#3b82f6]';
   const cHandle = data.isNew ? 'bg-amber-400/80 shadow-[0_0_8px_#f59e0b] group-hover:bg-amber-400' : 'bg-blue-400/80 shadow-[0_0_8px_#3b82f6] group-hover:bg-blue-400';
-  const cTooltip = data.isNew ? 'text-amber-300' : 'text-blue-300';
+  const cTooltip = data.isNew ? 'text-zinc-900 dark:text-amber-300' : 'text-blue-300';
   const cTooltipActive = data.isNew ? 'bg-amber-500 text-[#0a0a0a]' : 'bg-blue-600 text-white';
 
   return (
@@ -378,7 +378,7 @@ export default function SimulationDashboard() {
           <div className="flex flex-col md:flex-row items-end gap-4 w-full">
             <div className="flex-1 w-full">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">1. Métrica a trabalhar:</label>
-              <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-[#111] border border-white/10 px-5 py-4 rounded-xl w-full outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+              <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-5 py-4 rounded-xl w-full outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
                 <option value="">Selecione...</option>
                 {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
               </select>
@@ -387,9 +387,9 @@ export default function SimulationDashboard() {
             <div className="flex-1 w-full">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">2. Extensão do Gráfico (Início e Fim)</label>
               <div className="flex gap-2">
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-5 py-4 rounded-xl w-full outline-none" style={{ colorScheme: 'dark' }} />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-5 py-4 rounded-xl w-full outline-none [color-scheme:light] dark:[color-scheme:dark]" />
                 <span className="self-center hidden sm:inline">-</span>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#111] border border-white/10 px-5 py-4 rounded-xl w-full outline-none" style={{ colorScheme: 'dark' }} />
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-5 py-4 rounded-xl w-full outline-none [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
             </div>
 
@@ -397,14 +397,14 @@ export default function SimulationDashboard() {
               <button
                 onClick={saveSimulation}
                 disabled={saving || !hasChanges}
-                className={`px-8 py-4 w-full md:w-auto mt-6 md:mt-0 rounded-xl font-bold transition whitespace-nowrap ${hasChanges ? 'bg-amber-600 hover:bg-amber-500 text-white animate-pulse' : 'bg-transparent border border-white/10 text-zinc-500 opacity-50 cursor-not-allowed'}`}
+                className={`px-8 py-4 w-full md:w-auto mt-6 md:mt-0 rounded-xl font-bold transition whitespace-nowrap ${hasChanges ? 'bg-amber-600 hover:bg-amber-500 text-white animate-pulse' : 'bg-transparent border border-zinc-200 dark:border-white/10 text-zinc-500 opacity-50 cursor-not-allowed'}`}
               >
                 {saving ? "Registrando..." : "Efetivar Geração / Edição"}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-4 border-t border-white/5 w-full">
+          <div className="flex items-center gap-3 pt-4 border-t border-zinc-200 dark:border-white/5 w-full">
             <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
             <label htmlFor="lockHist" className="text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
           </div>
@@ -436,7 +436,7 @@ export default function SimulationDashboard() {
               onClick={handleReplicate}
               disabled={lastEditedId === null}
               title="Replica o último valor editado para todas as barras à direita"
-              className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+              className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-zinc-200 dark:border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
             >
               Replicar último valor →
             </button>

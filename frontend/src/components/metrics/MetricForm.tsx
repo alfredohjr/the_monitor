@@ -67,7 +67,7 @@ export default function MetricForm({ id }: { id?: string }) {
             </div>
             <div className="flex-[2] space-y-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome Amigável</label>
-              <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className="w-full px-5 py-3 bg-[#111] border border-blue-500/30 rounded-xl focus:border-blue-500" placeholder="Ex: Páginas Lidas" />
+              <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-blue-500/30 rounded-xl focus:border-blue-500" placeholder="Ex: Páginas Lidas" />
             </div>
           </div>
           <div className="space-y-2">
@@ -81,7 +81,7 @@ export default function MetricForm({ id }: { id?: string }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Tipo</label>
-              <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+              <select name="tipo" value={formData.tipo} onChange={handleChange} className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
                 <option value="number">Número Inteiro</option>
                 <option value="decimal">Número Decimal</option>
                 <option value="currency">Monetário (R$)</option>
@@ -92,7 +92,7 @@ export default function MetricForm({ id }: { id?: string }) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Frequência</label>
-              <select name="periodo" value={formData.periodo} onChange={handleChange} className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
+              <select name="periodo" value={formData.periodo} onChange={handleChange} className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
                 <option value="daily">Diário</option>
                 <option value="weekly">Semanal</option>
                 <option value="monthly">Mensal</option>

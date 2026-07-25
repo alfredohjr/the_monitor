@@ -61,7 +61,7 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={handleToggle}
-        className="relative text-zinc-300 hover:text-white transition"
+        className="relative text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition"
         aria-label="Notificações"
         title="Notificações"
       >
@@ -76,7 +76,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div data-testid="notif-panel" className="absolute right-0 mt-3 w-72 max-h-96 overflow-y-auto bg-zinc-900 border border-white/15 rounded-2xl shadow-xl z-50 p-2">
+        <div data-testid="notif-panel" className="absolute right-0 mt-3 w-72 max-h-96 overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 rounded-2xl shadow-xl z-50 p-2">
           <p className="text-xs uppercase tracking-wider text-zinc-500 px-3 py-2">Notificações</p>
           {items.length === 0 ? (
             <p className="text-sm text-zinc-500 px-3 py-4 text-center">Nenhuma notificação.</p>
@@ -85,7 +85,7 @@ export default function NotificationBell() {
               <button
                 key={n.id}
                 onClick={() => handleRead(n.id)}
-                className={`w-full text-left px-3 py-2 rounded-xl text-sm transition hover:bg-white/5 ${n.lida ? "text-zinc-500" : "text-zinc-200 font-medium"}`}
+                className={`w-full text-left px-3 py-2 rounded-xl text-sm transition hover:bg-zinc-100 dark:hover:bg-white/5 ${n.lida ? "text-zinc-500" : "text-zinc-200 font-medium"}`}
               >
                 <span className="flex items-center gap-2">
                   {!n.lida && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
@@ -97,7 +97,7 @@ export default function NotificationBell() {
           <Link
             href="/notificacoes"
             onClick={() => setOpen(false)}
-            className="block text-center text-xs text-blue-400 hover:text-blue-300 transition px-3 py-2 mt-1 border-t border-white/10"
+            className="block text-center text-xs text-blue-400 hover:text-blue-300 transition px-3 py-2 mt-1 border-t border-zinc-200 dark:border-white/10"
           >
             Ver todas →
           </Link>

@@ -58,7 +58,7 @@ export default function GoalList() {
                 const m = metrics.find(x => x.id === i.metric);
                 const desc = m ? (m.nome || m.codigo) : `ID#${i.metric}`;
                 return (
-                  <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
+                  <tr key={i.id} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 font-medium text-blue-300">{desc}</td>
                     <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300 font-bold">{i.periodo_referencia || 'N/A'}</td>
                     <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300 font-bold">{formatValor(i.alvo, m?.tipo ?? 'number')}</td>
