@@ -102,4 +102,12 @@ describe('MetricList — layout mobile (#215)', () => {
     // navbar é absolute/top-0; a tela precisa de padding-top suficiente no mobile
     expect(root.className).toMatch(/pt-24/);
   });
+
+  it('é theme-aware: fundo claro por padrão + escuro preservado (#252)', () => {
+    mockFetch([]);
+    const { container } = render(<MetricList />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/bg-zinc-50/);          // claro (default light quando o toggle liga)
+    expect(root.className).toMatch(/dark:bg-\[#0a0a0a\]/);  // escuro atual preservado
+  });
 });

@@ -30,23 +30,23 @@ export default function GoalList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
-      <div className="relative z-10 w-full max-w-5xl mx-auto glass p-8 sm:p-12 rounded-3xl border border-white/5 mt-16">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
+      <div className="relative z-10 w-full max-w-5xl mx-auto bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-10 gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Suas Metas (Goals) Ativas</h1>
-            <p className="text-zinc-400">Pedaços de esforço fracionados no tempo.</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Pedaços de esforço fracionados no tempo.</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Link href="/metas/ancorar" className="px-6 py-3 bg-white/10 rounded-xl font-bold hover:bg-white/20 truncate text-center">Ancorar em índice</Link>
-            <Link href="/metas/clonar" className="px-6 py-3 bg-white/10 rounded-xl font-bold hover:bg-white/20 truncate text-center">Clonar metas</Link>
+            <Link href="/metas/ancorar" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">Ancorar em índice</Link>
+            <Link href="/metas/clonar" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">Clonar metas</Link>
             <Link href="/goals/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">+ Lançar Desafio</Link>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[600px]">
             <thead>
-              <tr className="border-b border-zinc-700 text-zinc-400 text-sm">
+              <tr className="border-b border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm">
                 <th className="pb-3 px-2">Código</th>
                 <th className="pb-3 px-2">Período Alvo</th>
                 <th className="pb-3 px-2">Alvo Almejado</th>
@@ -60,8 +60,8 @@ export default function GoalList() {
                 return (
                   <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 font-medium text-blue-300">{desc}</td>
-                    <td className="py-4 px-2 text-zinc-300 font-bold">{i.periodo_referencia || 'N/A'}</td>
-                    <td className="py-4 px-2 text-zinc-300 font-bold">{formatValor(i.alvo, m?.tipo ?? 'number')}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300 font-bold">{i.periodo_referencia || 'N/A'}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300 font-bold">{formatValor(i.alvo, m?.tipo ?? 'number')}</td>
                     <td className="py-4 px-2 text-right">
                       <Link href={`/goals/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>
                       <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Apagar</button>

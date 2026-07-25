@@ -33,13 +33,13 @@ export default function NotificationsPage() {
     }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-screen items-center p-6 pt-28 bg-[#0a0a0a] text-white">
-      <div className="relative z-10 w-full max-w-2xl glass p-6 sm:p-8 rounded-3xl border border-white/5">
+    <div className="flex flex-col min-h-screen items-center p-6 pt-28 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
+      <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 sm:p-8 rounded-3xl">
         <h1 className="text-2xl font-extrabold tracking-tight mb-1">Notificações</h1>
-        <p className="text-zinc-400 text-sm mb-6">Seu histórico completo de notificações.</p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">Seu histórico completo de notificações.</p>
 
         {loading ? (
           <p className="text-zinc-500 py-8 text-center">Carregando…</p>

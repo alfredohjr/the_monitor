@@ -359,7 +359,7 @@ export default function SimulationDashboard() {
   const prefix = (selectedMetricObj?.tipo === 'decimal' || selectedMetricObj?.tipo === 'currency') ? "R$ " : "";
 
   return (
-    <div className="flex flex-col min-h-screen p-6 pt-24 sm:p-24 relative bg-[#0a0a0a] text-white overflow-hidden">
+    <div className="flex flex-col min-h-screen p-6 pt-24 sm:p-24 relative bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto">
@@ -370,14 +370,14 @@ export default function SimulationDashboard() {
               <span>GERADOR AUTOMÁTICO</span>
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight mb-2">Simulador Universal</h1>
-            <p className="text-zinc-400">Crie metas para o futuro antecipadamente ou reajuste o passado.</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Crie metas para o futuro antecipadamente ou reajuste o passado.</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 mb-8 w-full glass p-6 rounded-2xl border border-white/5">
+        <div className="flex flex-col gap-6 mb-8 w-full bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl">
           <div className="flex flex-col md:flex-row items-end gap-4 w-full">
             <div className="flex-1 w-full">
-              <label className="text-sm font-medium text-zinc-300 block mb-2">1. Métrica a trabalhar:</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">1. Métrica a trabalhar:</label>
               <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-[#111] border border-white/10 px-5 py-4 rounded-xl w-full outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
                 <option value="">Selecione...</option>
                 {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
@@ -385,7 +385,7 @@ export default function SimulationDashboard() {
             </div>
 
             <div className="flex-1 w-full">
-              <label className="text-sm font-medium text-zinc-300 block mb-2">2. Extensão do Gráfico (Início e Fim)</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">2. Extensão do Gráfico (Início e Fim)</label>
               <div className="flex gap-2">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#111] border border-white/10 px-5 py-4 rounded-xl w-full outline-none" style={{ colorScheme: 'dark' }} />
                 <span className="self-center hidden sm:inline">-</span>
@@ -406,22 +406,22 @@ export default function SimulationDashboard() {
 
           <div className="flex items-center gap-3 pt-4 border-t border-white/5 w-full">
             <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
-            <label htmlFor="lockHist" className="text-sm text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
+            <label htmlFor="lockHist" className="text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
           </div>
         </div>
 
         {selectedMetric && simData.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full mb-8 animate-fade-in-up">
-            <div className="glass p-6 rounded-2xl border border-white/5 shadow-lg flex flex-col justify-center">
-              <span className="text-zinc-400 text-sm font-medium mb-1">Linha Base (Padrão)</span>
-              <span className="text-3xl font-bold text-zinc-300">{prefix}{formatNumber(sumBaseline)}</span>
+            <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center">
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Linha Base (Padrão)</span>
+              <span className="text-3xl font-bold text-zinc-700 dark:text-zinc-300">{prefix}{formatNumber(sumBaseline)}</span>
             </div>
-            <div className="glass p-6 rounded-2xl border border-white/5 shadow-lg flex flex-col justify-center">
-              <span className="text-zinc-400 text-sm font-medium mb-1">Projeção Desenhada</span>
+            <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center">
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Projeção Desenhada</span>
               <span className="text-3xl font-bold text-blue-400">{prefix}{formatNumber(sumAdjusted)}</span>
             </div>
-            <div className="glass p-6 rounded-2xl border border-white/5 shadow-lg flex flex-col justify-center relative overflow-hidden">
-              <span className="text-zinc-400 text-sm font-medium mb-1">Excedente em Relação à Origem (%)</span>
+            <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center relative overflow-hidden">
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Excedente em Relação à Origem (%)</span>
               <span className={`text-3xl font-bold z-10 ${sumAdjusted > sumBaseline ? 'text-emerald-400' : sumAdjusted < sumBaseline ? 'text-amber-400' : 'text-zinc-400'}`}>
                 {formatNumber(Number(percentage))}%
               </span>
@@ -444,7 +444,7 @@ export default function SimulationDashboard() {
         )}
 
         {selectedMetric && (
-          <div className="w-full h-[500px] glass p-8 rounded-3xl border border-white/5 relative flex animate-fade-in-up shadow-2xl">
+          <div className="w-full h-[500px] bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 rounded-3xl relative flex animate-fade-in-up shadow-2xl">
             <div className="absolute left-4 py-8 h-full flex flex-col justify-between text-[10px] font-mono text-zinc-600 pr-4 pb-12 select-none border-r border-zinc-900 pointer-events-none">
               <span>{prefix}{formatNumber(maxVal)}</span>
               <span>{prefix}{formatNumber(maxVal * 0.75)}</span>
@@ -488,7 +488,7 @@ export default function SimulationDashboard() {
         )}
 
         {loading && (
-          <div className="text-center text-zinc-400 mt-12">
+          <div className="text-center text-zinc-600 dark:text-zinc-400 mt-12">
             <span className="animate-pulse">Carregando dados...</span>
           </div>
         )}

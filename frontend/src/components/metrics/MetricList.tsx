@@ -38,7 +38,7 @@ export default function MetricList() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen p-6 pt-24 bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen p-6 pt-24 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
       </div>
@@ -46,19 +46,19 @@ export default function MetricList() {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Métricas</h1>
-            <p className="text-zinc-400">Suas unidades base do sistema.</p>
+            <p className="text-zinc-600 dark:text-zinc-400">Suas unidades base do sistema.</p>
           </div>
           <div className="flex gap-3">
             <Link href="/metrics/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 whitespace-nowrap truncate text-center">+ Nova Métrica</Link>
           </div>
         </div>
 
-        <div className="glass p-8 rounded-3xl border border-white/5">
-          <h2 className="text-lg font-bold text-zinc-300 mb-6">Minhas Métricas</h2>
+        <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 rounded-3xl">
+          <h2 className="text-lg font-bold text-zinc-700 dark:text-zinc-300 mb-6">Minhas Métricas</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[800px]">
               <thead>
-                <tr className="border-b border-zinc-700 text-zinc-400 text-sm">
+                <tr className="border-b border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm">
                   <th className="pb-3 px-2">ID</th>
                   <th className="pb-3 px-2 w-32">Código</th>
                   <th className="pb-3 px-2 text-blue-300">Nome de Exibição</th>
@@ -74,12 +74,12 @@ export default function MetricList() {
                 {items.map(i => (
                   <tr key={i.id} className="border-b border-zinc-800 last:border-0 hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 text-zinc-500">#{i.id}</td>
-                    <td className="py-4 px-2 font-mono text-zinc-400">{i.codigo}</td>
+                    <td className="py-4 px-2 font-mono text-zinc-600 dark:text-zinc-400">{i.codigo}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{i.nome || '-'}</td>
-                    <td className="py-4 px-2 text-zinc-300">{i.descricao}</td>
-                    <td className="py-4 px-2 text-zinc-300">{i.tipo}</td>
-                    <td className="py-4 px-2 text-zinc-300">{i.periodo}</td>
-                    <td className="py-4 px-2 text-zinc-400" data-testid={`valor-padrao-${i.id}`}>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.descricao}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.tipo}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.periodo}</td>
+                    <td className="py-4 px-2 text-zinc-600 dark:text-zinc-400" data-testid={`valor-padrao-${i.id}`}>
                       {i.valor_padrao != null ? formatValor(i.valor_padrao, i.tipo) : '—'}
                     </td>
                     <td className="py-4 px-2 text-center">

@@ -102,14 +102,14 @@ export default function ImportGoals() {
     }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-2xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
-        <Link href="/goals" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar pra Metas</Link>
+    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
+        <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar pra Metas</Link>
         <h1 className="text-3xl font-extrabold tracking-tight mb-1">Importar metas</h1>
-        <p className="text-zinc-400 text-sm mb-2">Distribui um alvo total em metas diárias segundo uma curva.</p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-2">Distribui um alvo total em metas diárias segundo uma curva.</p>
         <p className="text-zinc-500 text-xs mb-8">Já tem o histórico em planilha? <Link href="/lancamentos/importar" className="text-blue-400 hover:text-blue-300">Importar lançamentos por CSV →</Link></p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
@@ -121,11 +121,11 @@ export default function ImportGoals() {
 
         {templates.length > 0 && (
           <div className="mb-6">
-            <p className="text-sm text-zinc-400 mb-2">Começar de um modelo:</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">Começar de um modelo:</p>
             <div className="flex flex-wrap gap-2">
               {templates.map(t => (
                 <button key={t.id} type="button" onClick={() => usarModelo(t)} title={t.metric_codigo}
-                  className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition">
+                  className="text-xs px-3 py-1.5 rounded-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 hover:bg-zinc-200 dark:bg-white/10 transition">
                   {t.nome}
                 </button>
               ))}
@@ -135,7 +135,7 @@ export default function ImportGoals() {
 
         <form onSubmit={handlePreview} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Métrica</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
             <select name="metric_id" value={form.metric_id} onChange={handleChange} required
               className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
               <option value="">Selecione a métrica</option>
@@ -145,24 +145,24 @@ export default function ImportGoals() {
 
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Alvo total</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Alvo total</label>
               <input name="alvo_total" type="number" step="any" value={form.alvo_total} onChange={handleChange} required
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" placeholder="Ex.: 1000" />
+                className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder="Ex.: 1000" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Início</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Início</label>
               <input name="inicio" type="date" value={form.inicio} onChange={handleChange} required
-                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Fim</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Fim</label>
               <input name="fim" type="date" value={form.fim} onChange={handleChange} required
-                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Curva de distribuição</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Curva de distribuição</label>
             <select name="estrategia" value={form.estrategia} onChange={handleChange}
               className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
               {ESTRATEGIAS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
@@ -170,7 +170,7 @@ export default function ImportGoals() {
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full bg-white/10 font-bold py-3 rounded-xl hover:bg-white/20 transition">
+            className="w-full bg-zinc-200 dark:bg-white/10 font-bold py-3 rounded-xl hover:bg-zinc-300 dark:bg-white/20 transition">
             {loading ? "Calculando..." : "Pré-visualizar"}
           </button>
         </form>
@@ -179,11 +179,11 @@ export default function ImportGoals() {
           <div className="mt-8">
             <div className="flex justify-between items-center mb-3">
               <h2 className="font-bold">Prévia — {pontos.length} dia(s)</h2>
-              <span className="text-zinc-400 text-sm">Soma: <strong className="text-white">{soma}</strong></span>
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm">Soma: <strong className="text-zinc-900 dark:text-white">{soma}</strong></span>
             </div>
             <div className="max-h-64 overflow-y-auto rounded-xl border border-white/10">
               <table className="w-full text-sm">
-                <thead className="text-zinc-400 text-left sticky top-0 bg-[#111]">
+                <thead className="text-zinc-600 dark:text-zinc-400 text-left sticky top-0 bg-[#111]">
                   <tr><th className="py-2 px-3">Data</th><th className="px-3">Alvo</th></tr>
                 </thead>
                 <tbody>
