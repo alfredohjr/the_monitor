@@ -17,7 +17,7 @@ export default function CookieConsent() {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl glass border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 shadow-2xl">
+      <div className="mx-auto max-w-3xl glass border border-zinc-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 shadow-2xl">
         <p className="text-sm text-zinc-300 flex-1">
           Usamos cookies para manter você logado e melhorar sua experiência. Ao continuar, você concorda com o uso de cookies.
         </p>

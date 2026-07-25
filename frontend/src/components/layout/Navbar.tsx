@@ -105,12 +105,12 @@ export default function Navbar() {
           {loggedIn && (
             <>
               {!isUser && <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Dashboard</Link>}
-              {!isUser && <Link href="/simulacao" className="text-zinc-300 hover:text-blue-400 transition sm:ml-2">Simulação</Link>}
+              {!isUser && <Link href="/simulacao" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition sm:ml-2">Simulação</Link>}
               <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Lançamentos</Link>
               {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Metas</Link>}
               {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Métricas</Link>}
               {!isUser && <Link href="/metas/importar" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Importar</Link>}
-              {isAdmin && <Link href="/admin" className="text-amber-300 hover:text-amber-200 transition">Admin</Link>}
+              {isAdmin && <Link href="/admin" className="text-zinc-900 dark:text-amber-300 hover:text-black dark:text-amber-200 transition">Admin</Link>}
             </>
           )}
           <div className="hidden sm:block h-4 w-[1px] bg-zinc-300 dark:bg-white/20 self-center mx-2"></div>
@@ -128,7 +128,7 @@ export default function Navbar() {
                   className="bg-zinc-100 border border-zinc-200 text-zinc-700 dark:bg-white/5 dark:border-white/10 dark:text-zinc-200 rounded-lg text-xs px-2 py-1 focus:outline-none"
                 >
                   {orgs.map(o => (
-                    <option key={o.id} value={o.id} className="bg-zinc-900">{o.nome}</option>
+                    <option key={o.id} value={o.id} className="bg-white dark:bg-zinc-900">{o.nome}</option>
                   ))}
                 </select>
               )}
