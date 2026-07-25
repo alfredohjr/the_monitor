@@ -48,6 +48,15 @@ describe('AdminUsers', () => {
     expect(screen.getByText('Acme')).toBeInTheDocument();
   });
 
+  it('tabela tem wrapper com scroll horizontal p/ não estourar no mobile (#255/#261)', async () => {
+    mockApi({ me: adminMe, users: [
+      { id: 2, username: 'usuario-com-nome-bem-longo@exemplo.com', email: 'email-bastante-longo@exemplo.com.br', role: 'user' },
+    ]});
+    render(<AdminUsers />);
+    const scroll = await screen.findByTestId('admin-tabela-scroll');
+    expect(scroll.className).toMatch(/overflow-x-auto/);
+  });
+
   it('org paga: mostra o form de adicionar membro (#216)', async () => {
     mockApi({ me: adminMe, users: [] });
     render(<AdminUsers />);
