@@ -75,14 +75,14 @@ export default function ClonarMetas() {
     }
   };
 
-  if (!token) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  if (!token) return <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a]" />;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-[#0a0a0a]">
-      <div className="relative z-10 w-full max-w-2xl glass p-8 sm:p-12 rounded-3xl mt-16 text-white border border-white/5">
-        <Link href="/goals" className="text-sm text-zinc-400 hover:text-white mb-2 inline-block">← Voltar pra Metas</Link>
+    <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
+      <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
+        <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar pra Metas</Link>
         <h1 className="text-3xl font-extrabold tracking-tight mb-1">Clonar metas</h1>
-        <p className="text-zinc-400 text-sm mb-8">Replica as metas diárias de um período anterior para um novo, deslocando as datas e (opcionalmente) escalando o alvo.</p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">Replica as metas diárias de um período anterior para um novo, deslocando as datas e (opcionalmente) escalando o alvo.</p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {result && (
@@ -93,7 +93,7 @@ export default function ClonarMetas() {
 
         <form onSubmit={handlePreview} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Métrica</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
             <select name="metric_id" value={form.metric_id} onChange={handleChange} required
               className="w-full px-5 py-3 bg-[#111] border border-white/10 rounded-xl">
               <option value="">Selecione a métrica</option>
@@ -103,32 +103,32 @@ export default function ClonarMetas() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Origem — início</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Origem — início</label>
               <input name="origem_inicio" type="date" value={form.origem_inicio} onChange={handleChange} required
-                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Origem — fim</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Origem — fim</label>
               <input name="origem_fim" type="date" value={form.origem_fim} onChange={handleChange} required
-                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Destino — início</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Destino — início</label>
               <input name="destino_inicio" type="date" value={form.destino_inicio} onChange={handleChange} required
-                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" />
+                style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300">Escala do alvo (1 = igual)</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Escala do alvo (1 = igual)</label>
               <input name="escala" type="number" step="any" value={form.escala} onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl" placeholder="Ex.: 1.1 = +10%" />
+                className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder="Ex.: 1.1 = +10%" />
             </div>
           </div>
 
           <button type="submit" disabled={loading}
-            className="w-full bg-white/10 font-bold py-3 rounded-xl hover:bg-white/20 transition">
+            className="w-full bg-zinc-200 dark:bg-white/10 font-bold py-3 rounded-xl hover:bg-zinc-300 dark:bg-white/20 transition">
             {loading ? "Calculando..." : "Pré-visualizar"}
           </button>
         </form>
@@ -136,8 +136,8 @@ export default function ClonarMetas() {
         {preview && (
           <div className="mt-8">
             <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm">
-              <p><strong className="text-white">{preview.criadas}</strong> meta(s) serão criada(s).</p>
-              <p className="text-zinc-400">{preview.ignoradas} já existe(m) no destino (serão ignoradas). Soma dos novos alvos: <strong className="text-white">{preview.soma}</strong>.</p>
+              <p><strong className="text-zinc-900 dark:text-white">{preview.criadas}</strong> meta(s) serão criada(s).</p>
+              <p className="text-zinc-600 dark:text-zinc-400">{preview.ignoradas} já existe(m) no destino (serão ignoradas). Soma dos novos alvos: <strong className="text-zinc-900 dark:text-white">{preview.soma}</strong>.</p>
             </div>
             <button onClick={handleConfirm} disabled={loading}
               className="w-full mt-4 bg-blue-600 font-bold py-3 rounded-xl hover:bg-blue-500 transition">

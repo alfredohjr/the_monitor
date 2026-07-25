@@ -155,35 +155,35 @@ export default function DashboardGrid() {
 
   if (loading || !token) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-400">
+      <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a] flex items-center justify-center text-zinc-600 dark:text-zinc-400">
         <span className="animate-pulse">Sincronizando estatísticas com o Banco...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 relative overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 relative overflow-hidden bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mb-10 mt-8">
           <h1 className="text-4xl font-extrabold tracking-tight mb-2">Painel de Evolução</h1>
-          <p className="text-zinc-400">Acompanhe seus dados reais, volume de lançamentos e cadência de progresso.</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Acompanhe seus dados reais, volume de lançamentos e cadência de progresso.</p>
         </div>
 
         {hasMeta && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up">
-              <h3 className="text-zinc-400 text-sm font-medium mb-1">Meta do Período</h3>
+            <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up">
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Meta do Período</h3>
               <p data-testid="kpi-meta-total" className="text-4xl font-bold text-amber-400">{formatValor(String(metaTotal), kpiTipo)}</p>
             </div>
-            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              <h3 className="text-zinc-400 text-sm font-medium mb-1">Realizado</h3>
+            <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Realizado</h3>
               <p data-testid="kpi-realizado-total" className="text-4xl font-bold text-blue-400">{formatValor(String(realizadoTotal), kpiTipo)}</p>
             </div>
-            <div className="p-6 rounded-3xl glass border border-white/5 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-              <h3 className="text-zinc-400 text-sm font-medium mb-1">% Realizada</h3>
+            <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">% Realizada</h3>
               <p data-testid="kpi-percentual" className={`text-4xl font-bold ${pctRealizada >= 100 ? 'text-emerald-400' : pctRealizada >= 50 ? 'text-blue-300' : 'text-orange-400'}`}>{pctRealizada}%</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function DashboardGrid() {
           </Link>
         </div>
 
-        <div className="mt-8 p-6 sm:p-8 rounded-3xl glass border border-white/5 h-[400px] flex flex-col animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+        <div className="mt-8 p-6 sm:p-8 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 h-[400px] flex flex-col animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           <h3 className="text-xl font-bold mb-6">
             {selectedMetric === "all"
               ? "Frequência de Check-ins (Histórico Geral)"
