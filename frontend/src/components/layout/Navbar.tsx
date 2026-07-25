@@ -80,7 +80,7 @@ export default function Navbar() {
         {/* Barra mobile: marca + hambúrguer (no desktop some). A marca evita
             duplicar o texto "Início", que fica só no menu recolhível. */}
         <div className="flex sm:hidden items-center justify-between">
-          <Link href="/" className="text-zinc-800 hover:text-black dark:text-zinc-200 dark:hover:text-white transition font-bold" onClick={() => setMobileOpen(false)}>Quantified Self</Link>
+          <Link href="/" className="text-zinc-800 hover:text-black dark:text-zinc-200 dark:hover:text-white transition font-bold" onClick={() => setMobileOpen(false)}>themonitor</Link>
           <button
             onClick={() => setMobileOpen(o => !o)}
             aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}

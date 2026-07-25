@@ -68,7 +68,7 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-block mb-4">
-            <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 block">Quantified Self</span>
+            <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 block">themonitor</span>
           </Link>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Criar Conta</h1>
           <p className="text-zinc-600 dark:text-zinc-400 text-sm">Preencha os dados para se cadastrar.</p>
