@@ -24,4 +24,41 @@ export const metrics = {
   // que é o que faz a ação não ser trivialmente reversível.
   deleteConfirm:
     "Are you sure you want to delete? This will remove the metric's view and its associated goals.",
+
+  // --- FormulÃ¡rio (#287). Chaves prÃ³prias, com prefixo `form`, mesmo quando o
+  // texto coincide com um cabeÃ§alho da tabela: rÃ³tulo de campo e cabeÃ§alho de
+  // coluna podem divergir (um precisa caber, o outro precisa explicar).
+  backToList: "← Back to List",
+  formEditTitle: "Editing Metric",
+  formNewTitle: "New Metric",
+  formCode: "Code",
+  formFriendlyName: "Friendly Name",
+  formFriendlyNamePlaceholder: "e.g. Pages Read",
+  formDescription: "Description",
+  formDefaultValue: "Default Value",
+  formType: "Type",
+  typeNumber: "Whole Number",
+  typeDecimal: "Decimal Number",
+  // O "(R$)" fica correto enquanto a moeda for fixa. Quando o #309 tornar a
+  // moeda um atributo da organizaÃ§Ã£o, este rÃ³tulo precisa acompanhar.
+  typeCurrency: "Currency (R$)",
+  typePercent: "Percentage (%)",
+  typeString: "Text",
+  typeBoolean: "Boolean",
+  formFrequency: "Frequency",
+  freqDaily: "Daily",
+  freqWeekly: "Weekly",
+  freqMonthly: "Monthly",
+  freqYearly: "Yearly",
+  isDefaultAria: "Default metric",
+  isDefaultLabel: "Set as default metric",
+  saving: "Saving…",
+  updateMetric: "Update Metric",
+  saveNewMetric: "Save New Metric",
+  loadError: "Could not load the metric.",
+  updateError: "Update failed.",
+  createError: "Creation failed. The code may already exist.",
+  updatedOk: "Metric updated!",
+  createdOk: "Metric created successfully!",
+  unknownError: "Unknown error",
 };
