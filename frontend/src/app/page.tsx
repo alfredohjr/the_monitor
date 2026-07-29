@@ -2,9 +2,11 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useT();
 
   useEffect(() => {
     if (localStorage.getItem("access_token")) {
@@ -21,11 +23,11 @@ export default function Home() {
 
       <main className="relative z-10 w-full max-w-6xl flex flex-col items-center text-center mt-12">
         <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-6 leading-tight">
-          O Controle Total do Seu <span className="text-gradient">Progresso</span>
+          {t("landing.heroTitle")} <span className="text-gradient">{t("landing.heroTitleAccent")}</span>
         </h1>
 
         <p className="max-w-2xl text-lg sm:text-xl text-zinc-600 dark:text-zinc-400 mb-16 leading-relaxed">
-          O seu centro de controle para medir métricas, estabelecer desafios e registrar suas vitórias. Acesse as áreas abaixo.
+          {t("landing.subtitle")}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl text-left">
@@ -35,8 +37,8 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">1. Dashboard</h2>
-            <p className="text-zinc-600 dark:text-zinc-400">Acompanhe as estatísticas completas, veja os gráficos de evolução da semana e a taxa de sucesso das metas.</p>
+            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("landing.dashboardTitle")}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("landing.dashboardText")}</p>
           </Link>
 
           <Link href="/logs" className="group flex flex-col p-8 bg-white border-zinc-200 dark:bg-white/[0.03] dark:glass rounded-3xl border dark:border-white/5 hover:border-green-500/50 hover:bg-zinc-50 dark:hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1">
@@ -45,8 +47,8 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">2. Check-in Diário (Logs)</h2>
-            <p className="text-zinc-600 dark:text-zinc-400">Acabou de realizar algo? Lance aqui esse valor selecionando a meta e o dia para computar.</p>
+            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("landing.logsTitle")}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("landing.logsText")}</p>
           </Link>
 
           <Link href="/goals" className="group flex flex-col p-8 bg-white border-zinc-200 dark:bg-white/[0.03] dark:glass rounded-3xl border dark:border-white/5 hover:border-purple-500/50 hover:bg-zinc-50 dark:hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1">
@@ -55,8 +57,8 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">3. Criar Desafio (Goals)</h2>
-            <p className="text-zinc-600 dark:text-zinc-400">Associe uma de suas métricas padrão a um período fixo e determine qual é o seu Alvo.</p>
+            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("landing.goalsTitle")}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("landing.goalsText")}</p>
           </Link>
 
           <Link href="/metrics" className="group flex flex-col p-8 bg-white border-zinc-200 dark:bg-white/[0.03] dark:glass rounded-3xl border dark:border-white/5 hover:border-orange-500/50 hover:bg-zinc-50 dark:hover:bg-white/[0.06] transition-all duration-300 hover:-translate-y-1">
@@ -66,8 +68,8 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">4. Métrica Raiz (Metrics)</h2>
-            <p className="text-zinc-600 dark:text-zinc-400">O que você quer medir? Adicione a unidade antes de estipularmos um desafio em cima.</p>
+            <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">{t("landing.metricsTitle")}</h2>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("landing.metricsText")}</p>
           </Link>
         </div>
       </main>
