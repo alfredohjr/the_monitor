@@ -14,4 +14,9 @@ export const comum = {
   search: "Buscar",
   genericError: "Erro inesperado",
   requiredField: "Campo obrigatório",
+  // Placeholders do campo de valor, compartilhados por GoalForm e LogForm
+  // (via `placeholderValor`). O "(R$)" acompanha o #309.
+  placeholderCurrency: "Ex: 500.00 (R$)",
+  placeholderPercent: "Ex: 75 (%)",
+  placeholderGeneric: "Ex: 5.5, TRUE, 500",
 };
