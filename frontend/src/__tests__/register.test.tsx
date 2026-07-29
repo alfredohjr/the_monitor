@@ -47,7 +47,7 @@ describe('Register page', () => {
     fireEvent.change(container.querySelector('input[name="password"]')!, { target: { value: 'senha123' } });
     fireEvent.change(container.querySelector('input[name="confirm"]')!, { target: { value: 'senha123' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Criar Conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
@@ -64,13 +64,28 @@ describe('Register page', () => {
     expect(password.type).toBe('password');
     expect(confirm.type).toBe('password');
 
-    fireEvent.click(screen.getByRole('button', { name: /mostrar senha/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show password/i }));
     // o mesmo toggle revela os dois campos
     expect(password.type).toBe('text');
     expect(confirm.type).toBe('text');
 
-    fireEvent.click(screen.getByRole('button', { name: /ocultar senha/i }));
+    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
     expect(password.type).toBe('password');
     expect(confirm.type).toBe('password');
+  });
+});
+
+describe('Register — idioma (#283)', () => {
+  it('renderiza em inglês por padrão', () => {
+    render(<RegisterPage />);
+    expect(screen.getByRole('button', { name: /Create Account/i })).toBeInTheDocument();
+    expect(screen.getByText('Organization code')).toBeInTheDocument();
+  });
+
+  it('renderiza em pt-BR quando o locale está salvo', () => {
+    localStorage.setItem('locale', 'pt-BR');
+    render(<RegisterPage />);
+    expect(screen.getByRole('button', { name: /Criar Conta/i })).toBeInTheDocument();
+    expect(screen.getByText('Código da organização')).toBeInTheDocument();
   });
 });

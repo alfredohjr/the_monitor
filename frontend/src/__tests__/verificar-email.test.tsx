@@ -58,9 +58,9 @@ describe('Register — confirmação por e-mail', () => {
     fireEvent.change(container.querySelector('input[name="codigo"]')!, { target: { value: 'chave-acme' } });
     fireEvent.change(container.querySelector('input[name="password"]')!, { target: { value: 'senha123' } });
     fireEvent.change(container.querySelector('input[name="confirm"]')!, { target: { value: 'senha123' } });
-    fireEvent.click(screen.getByRole('button', { name: /Criar Conta/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
 
-    await waitFor(() => expect(screen.getByText(/link de confirmação/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/confirmation link/i)).toBeInTheDocument());
     expect(mockPush).not.toHaveBeenCalledWith('/onboarding');
   });
 });
