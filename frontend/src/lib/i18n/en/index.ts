@@ -4,6 +4,7 @@
 import { auth } from "./auth";
 import { comum } from "./comum";
 import { goals } from "./goals";
+import { goalsAnchor } from "./goalsAnchor";
 import { goalsImport } from "./goalsImport";
 import { landing } from "./landing";
 import { layout } from "./layout";
@@ -17,6 +18,7 @@ export const en = {
   auth,
   comum,
   goals,
+  goalsAnchor,
   goalsImport,
   landing,
   layout,
