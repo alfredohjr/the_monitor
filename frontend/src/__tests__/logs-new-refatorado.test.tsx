@@ -50,7 +50,7 @@ describe('LogForm — refatoração /logs/new', () => {
     mockDados();
     render(<LogForm />);
     await screen.findByRole('option', { name: /Vendas/ });
-    expect(screen.queryByText(/Quando/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/when/i)).not.toBeInTheDocument();
     expect(document.querySelector('input[name="data"]')).toBeNull();
   });
 
@@ -87,8 +87,8 @@ describe('LogForm — refatoração /logs/new', () => {
     fireEvent.change(screen.getAllByRole('combobox')[0], { target: { value: '20' } });
     await waitFor(() => expect(screen.getByRole('option', { name: '2026-07' })).toBeInTheDocument());
     fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: '11' } });
-    fireEvent.change(screen.getByPlaceholderText(/ex:|R\$/i), { target: { value: '500' } });
-    fireEvent.click(screen.getByRole('button', { name: /check-in|carimbar/i }));
+    fireEvent.change(screen.getByPlaceholderText(/e\.g\.|ex:|R\$/i), { target: { value: '500' } });
+    fireEvent.click(screen.getByRole('button', { name: /check in|stamp/i }));
 
     await waitFor(() => expect(post).toHaveBeenCalled());
     const body = JSON.parse((post.mock.calls[0][1] as RequestInit).body as string);

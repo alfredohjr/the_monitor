@@ -8,6 +8,7 @@ import { goalsClone } from "./goalsClone";
 import { goalsImport } from "./goalsImport";
 import { landing } from "./landing";
 import { layout } from "./layout";
+import { logs } from "./logs";
 import { login } from "./login";
 import { metrics } from "./metrics";
 import { onboarding } from "./onboarding";
@@ -23,6 +24,7 @@ export const ptBR = {
   goalsImport,
   landing,
   layout,
+  logs,
   login,
   metrics,
   onboarding,

@@ -4,6 +4,7 @@ import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatValor } from "@/lib/formatValor";
+import { useT } from "@/lib/i18n/useT";
 
 interface LogPermissions {
   is_admin: boolean;
@@ -17,6 +18,7 @@ export default function LogList() {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [perms, setPerms] = useState<LogPermissions>({ is_admin: false, user_id: null, metrics: {} });
   const router = useRouter();
+  const { t } = useT();
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -47,7 +49,7 @@ export default function LogList() {
 
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem("access_token");
-    if (!confirm("Deletar apontamento do dia?")) return;
+    if (!confirm(t("logs.deleteConfirm"))) return;
     try {
       await apiFetch(`${API_BASE}/api/v1/logs/${id}/`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       setItems(items.filter(i => i.id !== id));
@@ -62,19 +64,19 @@ export default function LogList() {
       <div className="relative z-10 w-full max-w-5xl mx-auto bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-10 gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Histórico de Lançamentos</h1>
-            <p className="text-zinc-600 dark:text-zinc-400">Cada suor do dia-a-dia registrado.</p>
+            <h1 className="text-3xl font-extrabold tracking-tight">{t("logs.title")}</h1>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("logs.subtitle")}</p>
           </div>
-          <Link href="/logs/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">+ Diário (Check-in)</Link>
+          <Link href="/logs/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">{t("logs.newCheckin")}</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[600px]">
             <thead>
               <tr className="border-b border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm">
-                <th className="pb-3 px-2 w-[120px]">Quando</th>
-                <th className="pb-3 px-2">Referente a Qual Métrica?</th>
-                <th className="pb-3 px-2">O Que Lançou? (Valor)</th>
-                <th className="pb-3 px-2 text-right">Ação</th>
+                <th className="pb-3 px-2 w-[120px]">{t("logs.colWhen")}</th>
+                <th className="pb-3 px-2">{t("logs.colMetric")}</th>
+                <th className="pb-3 px-2">{t("logs.colValue")}</th>
+                <th className="pb-3 px-2 text-right">{t("logs.colAction")}</th>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +84,7 @@ export default function LogList() {
                 const g = goals.find(x => x.id === i.goal);
                 const m = g ? metrics.find(x => x.id === g.metric) : null;
                 const metricRef = g && g.periodo_referencia ? ` [${g.periodo_referencia}]` : '';
-                const metricName = m ? (m.nome || m.codigo) : `Meta #${i.goal}`;
+                const metricName = m ? (m.nome || m.codigo) : t("logs.goalFallback", { id: i.goal });
                 return (
                   <tr key={i.id} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
                     <td className="py-4 px-2 text-zinc-600 dark:text-zinc-400 tabular-nums">{i.data}</td>
@@ -93,8 +95,8 @@ export default function LogList() {
                         const p = permsFor(i);
                         return (
                           <>
-                            {p.canEdit && <Link href={`/logs/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">Editar</Link>}
-                            {p.canDelete && <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">Desfazer</button>}
+                            {p.canEdit && <Link href={`/logs/${i.id}`} className="text-blue-400 font-semibold mr-4 hover:text-blue-300">{t("comum.edit")}</Link>}
+                            {p.canDelete && <button onClick={() => handleDelete(i.id)} className="text-red-400 font-semibold hover:text-red-300">{t("logs.undo")}</button>}
                             {!p.canEdit && !p.canDelete && <span className="text-zinc-600 text-xs">—</span>}
                           </>
                         );
@@ -104,7 +106,7 @@ export default function LogList() {
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={4} className="py-8 text-center text-zinc-500 italic">Nenhum check-in submetido ainda.</td></tr>
+                <tr><td colSpan={4} className="py-8 text-center text-zinc-500 italic">{t("logs.empty")}</td></tr>
               )}
             </tbody>
           </table>
