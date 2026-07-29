@@ -2,9 +2,11 @@
 // import e uma entrada no objeto — duas linhas por área, de propósito: é a menor
 // superfície de conflito possível entre PRs que rodam em sequência.
 import { comum } from "./comum";
+import { layout } from "./layout";
 import { navbar } from "./navbar";
 
 export const en = {
   comum,
+  layout,
   navbar,
 };

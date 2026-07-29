@@ -1,15 +1,19 @@
 // Botão flutuante de contato via WhatsApp (#208). Fixo no canto, visível em
 // todas as telas (montado no layout raiz).
+"use client";
+import { useT } from "@/lib/i18n/useT";
+
 const WHATSAPP_URL = "https://wa.me/5541992742046";
 
 export default function WhatsAppButton() {
+  const { t } = useT();
   return (
     <a
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Fale conosco no WhatsApp"
-      title="Fale conosco no WhatsApp"
+      aria-label={t("layout.whatsappContact")}
+      title={t("layout.whatsappContact")}
       className="fixed bottom-5 right-5 z-50 flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] shadow-lg hover:scale-110 hover:bg-[#20bd5a] transition-transform"
     >
       <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white" aria-hidden="true">
