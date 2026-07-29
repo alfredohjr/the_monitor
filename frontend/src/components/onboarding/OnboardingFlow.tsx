@@ -2,9 +2,11 @@
 import { API_BASE, setActiveOrg } from "@/lib/api";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 
 export default function OnboardingFlow() {
   const router = useRouter();
+  const { t } = useT();
   const [metrics, setMetrics] = useState<any[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ export default function OnboardingFlow() {
     e.preventDefault();
     setErroOrg("");
     const nome = orgName.trim();
-    if (!nome) { setErroOrg("Dê um nome à sua organização"); return; }
+    if (!nome) { setErroOrg(t("onboarding.orgNameRequired")); return; }
     setLoading(true);
     try {
       const r = await fetch(API_BASE + "/api/v1/onboarding/", {
@@ -65,7 +67,7 @@ export default function OnboardingFlow() {
       });
       const d = await r.json().catch(() => null);
       if (!r.ok) {
-        setErroOrg(typeof d?.detail === "string" ? d.detail : "Não foi possível criar a organização.");
+        setErroOrg(typeof d?.detail === "string" ? d.detail : t("onboarding.createOrgFailed"));
         return;
       }
       if (d?.id) setActiveOrg(d.id);
@@ -73,7 +75,7 @@ export default function OnboardingFlow() {
       setNeedsOrg(false);
       loadMetrics(token);
     } catch {
-      setErroOrg("Não foi possível criar a organização.");
+      setErroOrg(t("onboarding.createOrgFailed"));
     } finally {
       setLoading(false);
     }
@@ -102,29 +104,29 @@ export default function OnboardingFlow() {
         {needsOrg ? (
           <>
             <div className="mb-8 text-center">
-              <h1 className="text-3xl font-extrabold tracking-tight mb-2">Bem-vindo! Vamos começar</h1>
-              <p className="text-zinc-600 dark:text-zinc-400">Crie sua organização para começar a acompanhar suas métricas.</p>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-2">{t("onboarding.welcomeTitle")}</h1>
+              <p className="text-zinc-600 dark:text-zinc-400">{t("onboarding.welcomeSubtitle")}</p>
             </div>
             <form onSubmit={handleCriarOrg} className="space-y-5">
               <div>
-                <label htmlFor="display_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">Seu nome</label>
+                <label htmlFor="display_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">{t("onboarding.yourNameLabel")}</label>
                 <input
                   id="display_name"
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Como você quer ser chamado"
+                  placeholder={t("onboarding.yourNamePlaceholder")}
                   className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
                 />
               </div>
               <div>
-                <label htmlFor="org_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">Nome da organização</label>
+                <label htmlFor="org_name" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">{t("onboarding.orgNameLabel")}</label>
                 <input
                   id="org_name"
                   type="text"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
-                  placeholder="Ex: Minha Loja"
+                  placeholder={t("onboarding.orgNamePlaceholder")}
                   className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
                 />
               </div>
@@ -134,15 +136,15 @@ export default function OnboardingFlow() {
                 disabled={loading}
                 className="w-full py-4 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition disabled:opacity-50"
               >
-                {loading ? "Criando..." : "Criar organização"}
+                {loading ? t("onboarding.creatingOrg") : t("onboarding.createOrg")}
               </button>
             </form>
           </>
         ) : (
           <>
             <div className="mb-8 text-center">
-              <h1 className="text-3xl font-extrabold tracking-tight mb-2">Primeiros passos</h1>
-              <p className="text-zinc-600 dark:text-zinc-400">Selecione as métricas que quer acompanhar. Você pode mudar isso depois.</p>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-2">{t("onboarding.stepsTitle")}</h1>
+              <p className="text-zinc-600 dark:text-zinc-400">{t("onboarding.stepsSubtitle")}</p>
             </div>
 
             <div className="space-y-3 mb-8">
@@ -161,7 +163,7 @@ export default function OnboardingFlow() {
                 </label>
               ))}
               {metrics.length === 0 && (
-                <p className="text-center text-zinc-500 py-4">Nenhuma métrica padrão disponível.</p>
+                <p className="text-center text-zinc-500 py-4">{t("onboarding.noDefaultMetrics")}</p>
               )}
             </div>
 
@@ -171,13 +173,13 @@ export default function OnboardingFlow() {
                 disabled={loading}
                 className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition disabled:opacity-50"
               >
-                {loading ? "Configurando..." : "Começar"}
+                {loading ? t("onboarding.settingUp") : t("onboarding.start")}
               </button>
               <button
                 onClick={() => router.push("/dashboard")}
                 className="flex-1 py-4 bg-white/5 hover:bg-zinc-200 dark:bg-white/10 font-medium rounded-xl transition text-zinc-700 dark:text-zinc-300"
               >
-                Pular
+                {t("onboarding.skip")}
               </button>
             </div>
           </>
