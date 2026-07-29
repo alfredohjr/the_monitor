@@ -6,6 +6,7 @@ import { comum } from "./comum";
 import { landing } from "./landing";
 import { layout } from "./layout";
 import { login } from "./login";
+import { metrics } from "./metrics";
 import { onboarding } from "./onboarding";
 import { register } from "./register";
 import { navbar } from "./navbar";
@@ -16,6 +17,7 @@ export const en = {
   landing,
   layout,
   login,
+  metrics,
   onboarding,
   register,
   navbar,

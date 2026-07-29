@@ -38,7 +38,7 @@ describe('MetricList — próprias + assinadas', () => {
   it('não renderiza métrica do sistema NÃO assinada', async () => {
     mockFetch([{ id: 1, codigo: 'PAD', nome: 'SistemaNaoAssinada', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: true }], []);
     render(<MetricList />);
-    await screen.findByText(/minhas métricas/i);
+    await screen.findByText(/my metrics/i);
     expect(screen.queryByText('SistemaNaoAssinada')).not.toBeInTheDocument();
   });
 
@@ -49,29 +49,32 @@ describe('MetricList — próprias + assinadas', () => {
     );
     render(<MetricList />);
     expect(await screen.findByText('SistemaAssinada')).toBeInTheDocument();
-    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
-    expect(screen.queryByText('Apagar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
   });
 
   it('renderiza métrica própria (is_default=false) com botões Editar e Apagar', async () => {
     mockFetch([{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }], []);
     render(<MetricList />);
     await screen.findByText('Minha');
-    expect(screen.getByText('Editar')).toBeInTheDocument();
-    expect(screen.getByText('Apagar')).toBeInTheDocument();
+    expect(screen.getByText('Edit')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
   });
 
   it('esconde o botão "Catálogo do Sistema"', async () => {
     mockFetch([{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }], []);
     render(<MetricList />);
     await screen.findByText('Minha');
-    expect(screen.queryByText(/catálogo do sistema/i)).not.toBeInTheDocument();
+    // Guarda de regressão: cobre os DOIS idiomas de propósito. Com a tela em
+    // inglês, um matcher só em português passaria a valer trivialmente e o botão
+    // poderia voltar sem ninguém notar.
+    expect(screen.queryByText(/catálogo do sistema|system catalog/i)).not.toBeInTheDocument();
   });
 
   it('exibe a seção "Minhas Métricas"', async () => {
     mockFetch([{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false }], []);
     render(<MetricList />);
-    expect(await screen.findByText(/minhas métricas/i)).toBeInTheDocument();
+    expect(await screen.findByText(/my metrics/i)).toBeInTheDocument();
   });
 });
 
@@ -109,5 +112,20 @@ describe('MetricList — layout mobile (#215)', () => {
     const root = container.firstChild as HTMLElement;
     expect(root.className).toMatch(/bg-zinc-50/);          // claro (default light quando o toggle liga)
     expect(root.className).toMatch(/dark:bg-\[#0a0a0a\]/);  // escuro atual preservado
+  });
+});
+
+describe('MetricList — idioma (#286)', () => {
+  it('renderiza a lista em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/subscriptions/')) return Promise.resolve({ ok: true, status: 200, json: async () => [] });
+      return Promise.resolve({ ok: true, status: 200, json: async () => [
+        { id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'desc', tipo: 'number', periodo: 'daily', is_default: false },
+      ] });
+    });
+    render(<MetricList />);
+    expect(await screen.findByText(/minhas métricas/i)).toBeInTheDocument();
+    expect(screen.getByText('Editar')).toBeInTheDocument();
   });
 });
