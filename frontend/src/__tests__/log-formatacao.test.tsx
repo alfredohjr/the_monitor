@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import LogList from '@/components/logs/LogList';
 import LogForm from '@/components/logs/LogForm';
 import { formatValor, placeholderValor } from '@/lib/formatValor';
@@ -80,22 +80,19 @@ describe('LogList — formatação por tipo', () => {
   it('exibe valor com R$ para tipo currency', async () => {
     mockFetch('currency', '500');
     render(<LogList />);
-    await waitFor(() => expect(screen.queryByText(/nenhum check-in/i)).not.toBeInTheDocument());
-    expect(screen.getByText(/R\$.*500|500.*R\$/)).toBeInTheDocument();
+    expect(await screen.findByText(/R\$.*500|500.*R\$/)).toBeInTheDocument();
   });
 
   it('exibe valor com % para tipo percent', async () => {
     mockFetch('percent', '75');
     render(<LogList />);
-    await waitFor(() => expect(screen.queryByText(/nenhum check-in/i)).not.toBeInTheDocument());
-    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(await screen.findByText('75%')).toBeInTheDocument();
   });
 
   it('exibe valor sem formatação para tipo number', async () => {
     mockFetch('number', '42');
     render(<LogList />);
-    await waitFor(() => expect(screen.queryByText(/nenhum check-in/i)).not.toBeInTheDocument());
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(await screen.findByText('42')).toBeInTheDocument();
   });
 });
 
@@ -122,5 +119,23 @@ describe('LogForm — select de meta sem valor alvo', () => {
     expect(option).toBeInTheDocument();
     expect(option.textContent).not.toMatch(/Alvo/i);
     expect(option.textContent).not.toContain('150');
+  });
+});
+
+describe('Lançamentos — idioma (#292)', () => {
+  it('LogList renderiza em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    render(<LogList />);
+    expect(await screen.findByText('Histórico de Lançamentos')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum check-in submetido ainda.')).toBeInTheDocument();
+  });
+
+  it('LogForm renderiza em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    render(<LogForm />);
+    expect(await screen.findByText('Fazer Check-in')).toBeInTheDocument();
+    expect(screen.getByText('Quanto atingiu?')).toBeInTheDocument();
   });
 });

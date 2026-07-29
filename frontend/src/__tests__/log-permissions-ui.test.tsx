@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import LogList from '@/components/logs/LogList';
 
 const mockPush = jest.fn();
@@ -27,31 +27,39 @@ describe('LogList — botões condicionais à permissão (#164)', () => {
   it('admin vê Editar e Desfazer', async () => {
     mock({ is_admin: true, user_id: 1, metrics: {} });
     render(<LogList />);
-    expect(await screen.findByText('Editar')).toBeInTheDocument();
-    expect(screen.getByText('Desfazer')).toBeInTheDocument();
+    expect(await screen.findByText('Edit')).toBeInTheDocument();
+    expect(screen.getByText('Undo')).toBeInTheDocument();
   });
 
   it('lançador sem flags não vê botões', async () => {
     mock({ is_admin: false, user_id: 5, metrics: { '20': { can_edit: false, can_delete: false } } });
     render(<LogList />);
-    await waitFor(() => expect(screen.queryByText(/nenhum check-in/i)).not.toBeInTheDocument());
-    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
-    expect(screen.queryByText('Desfazer')).not.toBeInTheDocument();
+    // Âncora POSITIVA: espera a linha existir de fato. Antes esperava-se o estado
+    // vazio sumir, e com isso a asserção seguinte (também negativa) passava
+    // trivialmente numa tabela vazia — o teste diria "sem botões" mesmo se os
+    // botões estivessem lá.
+    expect(await screen.findByText('Métrica')).toBeInTheDocument();
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument();
   });
 
   it('lançador com can_edit no próprio lançamento vê só Editar', async () => {
     mock({ is_admin: false, user_id: 5, metrics: { '20': { can_edit: true, can_delete: false } } });
     render(<LogList />);
-    expect(await screen.findByText('Editar')).toBeInTheDocument();
-    expect(screen.queryByText('Desfazer')).not.toBeInTheDocument();
+    expect(await screen.findByText('Edit')).toBeInTheDocument();
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument();
   });
 
   it('lançador com flag mas lançamento de OUTRO não vê botões', async () => {
     // autor do log é 5, mas o usuário logado é 9
     mock({ is_admin: false, user_id: 9, metrics: { '20': { can_edit: true, can_delete: true } } });
     render(<LogList />);
-    await waitFor(() => expect(screen.queryByText(/nenhum check-in/i)).not.toBeInTheDocument());
-    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
-    expect(screen.queryByText('Desfazer')).not.toBeInTheDocument();
+    // Âncora POSITIVA: espera a linha existir de fato. Antes esperava-se o estado
+    // vazio sumir, e com isso a asserção seguinte (também negativa) passava
+    // trivialmente numa tabela vazia — o teste diria "sem botões" mesmo se os
+    // botões estivessem lá.
+    expect(await screen.findByText('Métrica')).toBeInTheDocument();
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Undo')).not.toBeInTheDocument();
   });
 });
