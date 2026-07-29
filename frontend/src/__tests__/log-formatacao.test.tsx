@@ -105,7 +105,7 @@ describe('LogForm — placeholder por tipo', () => {
   it('mostra placeholder padrão sem meta selecionada', () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] });
     render(<LogForm />);
-    const input = screen.getByPlaceholderText(/ex:/i);
+    const input = screen.getByPlaceholderText(/e\.g\.|ex:/i);
     expect(input).toBeInTheDocument();
   });
 });
