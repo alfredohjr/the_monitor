@@ -23,15 +23,15 @@ afterEach(() => {
 describe('Home page — sem token', () => {
   it('renders the main heading', () => {
     render(<Home />);
-    expect(screen.getByText(/O Controle Total do Seu/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total Control of Your/i)).toBeInTheDocument();
   });
 
   it('renders navigation links to the main sections', () => {
     render(<Home />);
     expect(screen.getByText(/1\. Dashboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/2\. Check-in/i)).toBeInTheDocument();
-    expect(screen.getByText(/3\. Criar Desafio/i)).toBeInTheDocument();
-    expect(screen.getByText(/4\. Métrica Raiz/i)).toBeInTheDocument();
+    expect(screen.getByText(/2\. Daily Check-in/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\. Create a Challenge/i)).toBeInTheDocument();
+    expect(screen.getByText(/4\. Root Metric/i)).toBeInTheDocument();
   });
 
   // A versão saiu do rodapé da Home e virou global (VersionBadge no layout,
@@ -64,7 +64,7 @@ describe('Home page — sem token', () => {
     // Cada card é o Link que envolve o título da seção. Sem uma classe de fundo
     // escura explícita, o `bg-white` da base vencia no dark e o card ficava branco
     // (o `dark:glass` é CSS puro, não gera variante Tailwind).
-    const titulos = [/1\. Dashboard/i, /2\. Check-in/i, /3\. Criar Desafio/i, /4\. Métrica Raiz/i];
+    const titulos = [/1\. Dashboard/i, /2\. Daily Check-in/i, /3\. Create a Challenge/i, /4\. Root Metric/i];
     for (const t of titulos) {
       const card = screen.getByText(t).closest('a') as HTMLElement;
       expect(card.className).toMatch(/bg-white/);            // base clara
@@ -78,5 +78,14 @@ describe('Home page — com token', () => {
     localStorage.setItem('access_token', 'fake-token');
     render(<Home />);
     expect(mockPush).toHaveBeenCalledWith('/dashboard');
+  });
+});
+
+describe('Home page — idioma (#281)', () => {
+  it('renderiza em pt-BR quando o locale está salvo', () => {
+    localStorage.setItem('locale', 'pt-BR');
+    render(<Home />);
+    expect(screen.getByText(/O Controle Total do Seu/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\. Criar Desafio/i)).toBeInTheDocument();
   });
 });
