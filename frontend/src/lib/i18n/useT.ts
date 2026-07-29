@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getInitialLocale, t as traduzirChave, LOCALE_PADRAO, type Locale } from ".";
 import { useI18nOpcional } from "./I18nProvider";
 
@@ -24,8 +24,10 @@ export function useT(): { t: (chave: string) => string; locale: Locale } {
 
   const locale = ctx?.locale ?? localeSolto;
 
-  return {
-    locale,
-    t: (chave: string) => traduzirChave(chave, locale),
-  };
+  // Memoizado por locale: um `t` novo a cada render entra em dep array de
+  // useCallback/useEffect dos componentes e faz o efeito reexecutar sempre.
+  // Na tela de login isso injetava um <script> do Google a cada render (#282).
+  const t = useCallback((chave: string) => traduzirChave(chave, locale), [locale]);
+
+  return { locale, t };
 }

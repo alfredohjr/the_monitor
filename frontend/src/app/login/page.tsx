@@ -4,6 +4,7 @@ import { API_BASE } from "@/lib/api";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 import { exchangeGoogleCredential, googleButtonOptions } from "@/lib/googleAuth";
 import { nextRouteAfterLogin } from "@/lib/postLogin";
 
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const googleBtnRef = useRef<HTMLDivElement>(null);
+  const { t } = useT();
 
   const handleGoogleCredential = useCallback(async (credential: string) => {
     setError("");
@@ -34,9 +36,9 @@ export default function LoginPage() {
       localStorage.setItem("username", tokens.username);
       router.push(await nextRouteAfterLogin(tokens.access));
     } catch {
-      setError("Não foi possível entrar com o Google");
+      setError(t("login.googleFailed"));
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
@@ -74,7 +76,7 @@ export default function LoginPage() {
         body: JSON.stringify(credentials),
       });
 
-      if (!response.ok) throw new Error("Credenciais inválidas ou erro no servidor");
+      if (!response.ok) throw new Error(t("login.invalidCredentials"));
 
       const data = await response.json();
       localStorage.setItem("access_token", data.access);
@@ -82,7 +84,7 @@ export default function LoginPage() {
       localStorage.setItem("username", credentials.username);
       router.push(await nextRouteAfterLogin(data.access));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Não foi possível realizar o login");
+      setError(err instanceof Error ? err.message : t("login.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -99,8 +101,8 @@ export default function LoginPage() {
           <Link href="/" className="inline-block mb-4">
             <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 block">themonitor</span>
           </Link>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Acesso Restrito</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm">Insira suas credenciais para continuar.</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">{t("login.title")}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">{t("login.subtitle")}</p>
         </div>
 
         {error && (
@@ -112,7 +114,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Usuário
+              {t("login.usernameLabel")}
             </label>
             <input
               type="text"
@@ -121,13 +123,13 @@ export default function LoginPage() {
               onChange={handleChange}
               required
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-              placeholder="Ex: alfredo"
+              placeholder={t("login.usernamePlaceholder")}
             />
           </div>
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Senha
+              {t("login.passwordLabel")}
             </label>
             <input
               type="password"
@@ -147,34 +149,34 @@ export default function LoginPage() {
               loading ? "bg-blue-600/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500 hover:-translate-y-0.5"
             }`}
           >
-            {loading ? "Entrando..." : "Entrar no Sistema"}
+            {loading ? t("login.submitting") : t("login.submit")}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm">
           <Link href="/esqueci-senha" className="text-zinc-400 hover:text-blue-300 transition-colors">
-            Esqueci minha senha
+            {t("login.forgotPassword")}
           </Link>
         </p>
 
         <div className="mt-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">ou</span>
+            <span className="text-xs text-zinc-500 uppercase tracking-wider">{t("login.or")}</span>
             <span className="h-px flex-1 bg-white/10" />
           </div>
           <div ref={googleBtnRef} className="flex justify-center" />
           {!GOOGLE_CLIENT_ID && (
             <p className="text-center text-xs text-zinc-600 mt-2">
-              Login com Google indisponível (configure NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+              {t("login.googleUnavailable")}
             </p>
           )}
         </div>
 
         <p className="mt-6 text-center text-sm text-zinc-500">
-          Não tem conta?{" "}
+          {t("login.noAccount")}{" "}
           <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Criar conta
+            {t("login.createAccount")}
           </Link>
         </p>
       </div>

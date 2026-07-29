@@ -4,11 +4,13 @@
 import { comum } from "./comum";
 import { landing } from "./landing";
 import { layout } from "./layout";
+import { login } from "./login";
 import { navbar } from "./navbar";
 
 export const en = {
   comum,
   landing,
   layout,
+  login,
   navbar,
 };
