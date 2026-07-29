@@ -1,24 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getInitialLocale, t as traduzirChave, LOCALE_PADRAO, type Locale } from ".";
+import { useI18nOpcional } from "./I18nProvider";
 
 /**
  * Hook de tradução para componentes de cliente.
  *
- * O locale mora no localStorage, que não existe no servidor: o primeiro render
- * sai no padrão (`en`) e o `useEffect` corrige no cliente — mesmo caminho que o
- * `ThemeToggle` já usa, e que evita mismatch de hidratação.
+ * Sob o `I18nProvider` (#278), o locale vem do context e trocar o idioma
+ * re-renderiza os consumidores já montados na hora.
  *
- * Enquanto não existe o provider (#278), a troca de idioma só se reflete nos
- * componentes montados depois dela. O #278 substitui o miolo por context e o
- * re-render passa a ser imediato, sem mudar esta assinatura.
+ * Fora do provider, cai no comportamento do #277: lê o localStorage na montagem.
+ * Isso existe porque durante a migração das telas nem todo componente está sob o
+ * provider — e as duas fontes concordam, já que ambas leem o mesmo storage.
  */
 export function useT(): { t: (chave: string) => string; locale: Locale } {
-  const [locale, setLocaleState] = useState<Locale>(LOCALE_PADRAO);
+  const ctx = useI18nOpcional();
 
+  // Chamado incondicionalmente (regra dos hooks); só é usado fora do provider.
+  const [localeSolto, setLocaleSolto] = useState<Locale>(LOCALE_PADRAO);
   useEffect(() => {
-    setLocaleState(getInitialLocale());
+    setLocaleSolto(getInitialLocale());
   }, []);
+
+  const locale = ctx?.locale ?? localeSolto;
 
   return {
     locale,
