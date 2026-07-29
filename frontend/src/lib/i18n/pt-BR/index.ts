@@ -3,6 +3,7 @@
 import { auth } from "./auth";
 import { comum } from "./comum";
 import { goals } from "./goals";
+import { goalsImport } from "./goalsImport";
 import { landing } from "./landing";
 import { layout } from "./layout";
 import { login } from "./login";
@@ -15,6 +16,7 @@ export const ptBR = {
   auth,
   comum,
   goals,
+  goalsImport,
   landing,
   layout,
   login,

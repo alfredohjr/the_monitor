@@ -55,9 +55,9 @@ describe('ImportGoals', () => {
     const { container } = render(<ImportGoals />);
     expect(await screen.findByRole('option', { name: 'Receita (daily)' })).toBeInTheDocument();
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
+    fireEvent.click(screen.getByText('Preview'));
 
-    expect(await screen.findByText(/Prévia — 4 dia/)).toBeInTheDocument();
+    expect(await screen.findByText(/Preview — 4 day/)).toBeInTheDocument();
     expect(screen.getByText('2026-08-03')).toBeInTheDocument();
     // soma exibida
     expect(screen.getByText('100')).toBeInTheDocument();
@@ -67,10 +67,10 @@ describe('ImportGoals', () => {
     const { container } = render(<ImportGoals />);
     await screen.findByRole('option', { name: 'Receita (daily)' });
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
-    fireEvent.click(await screen.findByText('Confirmar importação'));
+    fireEvent.click(screen.getByText('Preview'));
+    fireEvent.click(await screen.findByText('Confirm import'));
 
-    expect(await screen.findByText(/4 meta\(s\) criada\(s\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/4 goal\(s\) created/)).toBeInTheDocument();
   });
 });
 
@@ -92,5 +92,20 @@ describe('ImportGoals — prefill por modelo (#143)', () => {
     expect((container.querySelector('select[name="metric_id"]') as HTMLSelectElement).value).toBe('1');
     expect((container.querySelector('input[name="alvo_total"]') as HTMLInputElement).value).toBe('500');
     expect((container.querySelector('select[name="estrategia"]') as HTMLSelectElement).value).toBe('rampa_crescente');
+  });
+});
+
+describe('ImportGoals — idioma (#289)', () => {
+  it('renderiza em pt-BR e interpola a prévia no idioma certo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/goal-templates/')) return Promise.resolve({ ok: true, json: async () => [] });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, json: async () => [{ id: 1, codigo: 'REC', nome: 'Receita', periodo: 'daily' }] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+    render(<ImportGoals />);
+    expect(await screen.findByText('Importar metas')).toBeInTheDocument();
+    expect(screen.getByText('Curva de distribuição')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Linear (igual todo dia)' })).toBeInTheDocument();
   });
 });
