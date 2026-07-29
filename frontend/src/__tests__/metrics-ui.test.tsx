@@ -84,7 +84,7 @@ describe('MetricForm — campo is_default', () => {
       ok: true, status: 200, json: async () => [],
     });
     render(<MetricForm />);
-    expect(screen.getByRole('checkbox', { name: /padrão/i })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /default metric/i })).toBeInTheDocument();
   });
 
   it('checkbox começa desmarcado para nova métrica', () => {
@@ -92,7 +92,7 @@ describe('MetricForm — campo is_default', () => {
       ok: true, status: 200, json: async () => [],
     });
     render(<MetricForm />);
-    const checkbox = screen.getByRole('checkbox', { name: /padrão/i }) as HTMLInputElement;
+    const checkbox = screen.getByRole('checkbox', { name: /default metric/i }) as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
   });
 });
@@ -127,5 +127,23 @@ describe('MetricList — idioma (#286)', () => {
     render(<MetricList />);
     expect(await screen.findByText(/minhas métricas/i)).toBeInTheDocument();
     expect(screen.getByText('Editar')).toBeInTheDocument();
+  });
+});
+
+describe('MetricForm — idioma (#287)', () => {
+  it('renderiza o formulário em pt-BR quando o locale está salvo', () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    render(<MetricForm />);
+    expect(screen.getByText('Nova Métrica')).toBeInTheDocument();
+    expect(screen.getByText('Nome Amigável')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Diário' })).toBeInTheDocument();
+  });
+
+  it('renderiza o formulário em inglês por padrão', () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    render(<MetricForm />);
+    expect(screen.getByText('New Metric')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Daily' })).toBeInTheDocument();
   });
 });
