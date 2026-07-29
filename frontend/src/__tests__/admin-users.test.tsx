@@ -164,9 +164,9 @@ describe('Navbar — RBAC por papel', () => {
     mockMe('user');
     render(<Navbar />);
     await waitFor(() => expect(screen.queryByText('Dashboard')).not.toBeInTheDocument());
-    expect(screen.getByText('Lançamentos')).toBeInTheDocument();
-    expect(screen.queryByText('Metas')).not.toBeInTheDocument();
-    expect(screen.queryByText('Métricas')).not.toBeInTheDocument();
+    expect(screen.getByText('Entries')).toBeInTheDocument();
+    expect(screen.queryByText('Goals')).not.toBeInTheDocument();
+    expect(screen.queryByText('Metrics')).not.toBeInTheDocument();
     expect(screen.queryByText('Admin')).not.toBeInTheDocument();
   });
 

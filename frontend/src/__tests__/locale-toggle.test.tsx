@@ -79,3 +79,4 @@ test('alterna de volta para o inglês', () => {
   expect(localStorage.getItem('locale')).toBe('en');
   expect(screen.getByRole('button')).toHaveTextContent('PT');
 });
+

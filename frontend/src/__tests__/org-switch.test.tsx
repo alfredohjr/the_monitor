@@ -37,7 +37,7 @@ describe('Navbar — switch de organização', () => {
   it('mostra as organizações do usuário no seletor', async () => {
     mockMe(twoOrgs);
     render(<Navbar />);
-    const select = await screen.findByLabelText('Organização');
+    const select = await screen.findByLabelText('Organization');
     expect(select).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Acme' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Beta' })).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('Navbar — switch de organização', () => {
   it('define a primeira org como ativa quando nenhuma está selecionada', async () => {
     mockMe(twoOrgs);
     render(<Navbar />);
-    await screen.findByLabelText('Organização');
+    await screen.findByLabelText('Organization');
     await waitFor(() => expect(getActiveOrg()).toBe(7));
   });
 
@@ -56,7 +56,7 @@ describe('Navbar — switch de organização', () => {
     Object.defineProperty(window, 'location', { value: { reload }, writable: true });
     mockMe(twoOrgs);
     render(<Navbar />);
-    const select = await screen.findByLabelText('Organização');
+    const select = await screen.findByLabelText('Organization');
     fireEvent.change(select, { target: { value: '9' } });
     expect(getActiveOrg()).toBe(9);
     expect(reload).toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe('Navbar — switch de organização', () => {
   it('não mostra o seletor sem organizações', async () => {
     mockMe({ id: 1, username: 'ana', role: 'user', organizations: [] });
     render(<Navbar />);
-    await waitFor(() => expect(screen.getByText(/Olá/)).toBeInTheDocument());
-    expect(screen.queryByLabelText('Organização')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Hi/)).toBeInTheDocument());
+    expect(screen.queryByLabelText('Organization')).not.toBeInTheDocument();
   });
 });

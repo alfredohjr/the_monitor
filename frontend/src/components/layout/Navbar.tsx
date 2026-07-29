@@ -6,6 +6,7 @@ import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
 import { getActiveOrg, setActiveOrg, clearActiveOrg, API_BASE } from "@/lib/api";
+import { useT } from "@/lib/i18n/useT";
 
 interface Org { id: number; nome: string; role: string }
 
@@ -19,6 +20,7 @@ export default function Navbar() {
   // Menu recolhível no mobile (#214): a pílula tinha itens demais e "encavalava"
   // ao quebrar linha. No mobile eles ficam atrás de um hambúrguer.
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useT();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -84,7 +86,7 @@ export default function Navbar() {
           <Link href="/" className="text-zinc-800 hover:text-black dark:text-zinc-200 dark:hover:text-white transition font-bold" onClick={() => setMobileOpen(false)}>themonitor</Link>
           <button
             onClick={() => setMobileOpen(o => !o)}
-            aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
+            aria-label={mobileOpen ? t("navbar.closeMenu") : t("navbar.openMenu")}
             aria-expanded={mobileOpen}
             className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition p-1"
           >
@@ -102,16 +104,16 @@ export default function Navbar() {
           className={`${mobileOpen ? "flex" : "hidden"} sm:flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-x-6 gap-y-2 sm:items-center`}
         >
           {/* "Início" também aqui para o desktop; no mobile já aparece na barra acima */}
-          <Link href="/" className="hidden sm:inline text-zinc-300 hover:text-white transition">Início</Link>
+          <Link href="/" className="hidden sm:inline text-zinc-300 hover:text-white transition">{t("navbar.home")}</Link>
           {loggedIn && (
             <>
-              {!isUser && <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Dashboard</Link>}
-              {!isUser && <Link href="/simulacao" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition sm:ml-2">Simulação</Link>}
-              <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Lançamentos</Link>
-              {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Metas</Link>}
-              {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Métricas</Link>}
-              {!isUser && <Link href="/metas/importar" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">Importar</Link>}
-              {isAdmin && <Link href="/admin" className="text-zinc-900 dark:text-amber-300 hover:text-black dark:text-amber-200 transition">Admin</Link>}
+              {!isUser && <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.dashboard")}</Link>}
+              {!isUser && <Link href="/simulacao" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition sm:ml-2">{t("navbar.simulation")}</Link>}
+              <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.logs")}</Link>
+              {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.goals")}</Link>}
+              {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.metrics")}</Link>}
+              {!isUser && <Link href="/metas/importar" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.import")}</Link>}
+              {isAdmin && <Link href="/admin" className="text-zinc-900 dark:text-amber-300 hover:text-black dark:text-amber-200 transition">{t("navbar.admin")}</Link>}
             </>
           )}
           <div className="hidden sm:block h-4 w-[1px] bg-zinc-300 dark:bg-white/20 self-center mx-2"></div>
@@ -121,10 +123,10 @@ export default function Navbar() {
               <ThemeToggle />
               <LocaleToggle />
               <NotificationBell />
-              <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title="Meu perfil">Olá, {username || "usuário"}</Link>
+              <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title={t("navbar.myProfile")}>{t("navbar.greeting")}, {username || t("navbar.defaultUser")}</Link>
               {orgs.length > 0 && (
                 <select
-                  aria-label="Organização"
+                  aria-label={t("navbar.organization")}
                   value={activeOrg ?? ""}
                   onChange={handleOrgChange}
                   className="bg-zinc-100 border border-zinc-200 text-zinc-700 dark:bg-white/5 dark:border-white/10 dark:text-zinc-200 rounded-lg text-xs px-2 py-1 focus:outline-none"
@@ -134,13 +136,13 @@ export default function Navbar() {
                   ))}
                 </select>
               )}
-              <button onClick={handleLogout} className="text-left text-zinc-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 transition text-xs">Sair</button>
+              <button onClick={handleLogout} className="text-left text-zinc-500 hover:text-red-500 dark:text-zinc-400 dark:hover:text-red-400 transition text-xs">{t("navbar.logout")}</button>
             </div>
           ) : (
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <LocaleToggle />
-              <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-bold transition">Entrar</Link>
+              <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-bold transition">{t("navbar.login")}</Link>
             </div>
           )}
         </div>

@@ -26,12 +26,12 @@ afterEach(() => {
 describe('Navbar — sem login', () => {
   it('mostra o link Entrar', () => {
     render(<Navbar />);
-    expect(screen.getByText('Entrar')).toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
   });
 
   it('mostra o link Início', () => {
     render(<Navbar />);
-    expect(screen.getByText('Início')).toBeInTheDocument();
+    expect(screen.getByText('Home')).toBeInTheDocument();
   });
 
   it('mostra a marca "themonitor" e não "Quantified Self" (#256)', () => {
@@ -47,27 +47,27 @@ describe('Navbar — sem login', () => {
 
   it('oculta o link Simulação', () => {
     render(<Navbar />);
-    expect(screen.queryByText('Simulação')).not.toBeInTheDocument();
+    expect(screen.queryByText('Simulation')).not.toBeInTheDocument();
   });
 
   it('oculta o link Lançamentos', () => {
     render(<Navbar />);
-    expect(screen.queryByText('Lançamentos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Entries')).not.toBeInTheDocument();
   });
 
   it('oculta o link Metas', () => {
     render(<Navbar />);
-    expect(screen.queryByText('Metas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Goals')).not.toBeInTheDocument();
   });
 
   it('oculta o link Métricas', () => {
     render(<Navbar />);
-    expect(screen.queryByText('Métricas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Metrics')).not.toBeInTheDocument();
   });
 
   it('nao mostra o botao Sair', () => {
     render(<Navbar />);
-    expect(screen.queryByText('Sair')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign out')).not.toBeInTheDocument();
   });
 });
 
@@ -83,44 +83,44 @@ describe('Navbar — com login', () => {
 
   it('mostra o link Simulação', () => {
     render(<Navbar />);
-    expect(screen.getByText('Simulação')).toBeInTheDocument();
+    expect(screen.getByText('Simulation')).toBeInTheDocument();
   });
 
   it('mostra o link Lançamentos', () => {
     render(<Navbar />);
-    expect(screen.getByText('Lançamentos')).toBeInTheDocument();
+    expect(screen.getByText('Entries')).toBeInTheDocument();
   });
 
   it('mostra o link Metas', () => {
     render(<Navbar />);
-    expect(screen.getByText('Metas')).toBeInTheDocument();
+    expect(screen.getByText('Goals')).toBeInTheDocument();
   });
 
   it('mostra o link Métricas', () => {
     render(<Navbar />);
-    expect(screen.getByText('Métricas')).toBeInTheDocument();
+    expect(screen.getByText('Metrics')).toBeInTheDocument();
   });
 
   it('mostra o botao Sair e nao mostra Entrar', () => {
     render(<Navbar />);
-    expect(screen.getByText('Sair')).toBeInTheDocument();
-    expect(screen.queryByText('Entrar')).not.toBeInTheDocument();
+    expect(screen.getByText('Sign out')).toBeInTheDocument();
+    expect(screen.queryByText('Sign in')).not.toBeInTheDocument();
   });
 });
 
 describe('Navbar — menu mobile (#214)', () => {
   it('tem um botão hambúrguer para abrir o menu no mobile', () => {
     render(<Navbar />);
-    expect(screen.getByRole('button', { name: /abrir menu/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
   });
 
   it('alterna aria-expanded ao clicar no hambúrguer', () => {
     render(<Navbar />);
-    const botao = screen.getByRole('button', { name: /abrir menu/i });
+    const botao = screen.getByRole('button', { name: /open menu/i });
     expect(botao).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(botao);
     // depois de abrir, o rótulo passa a "fechar menu" e aria-expanded vira true
-    const aberto = screen.getByRole('button', { name: /fechar menu/i });
+    const aberto = screen.getByRole('button', { name: /close menu/i });
     expect(aberto).toHaveAttribute('aria-expanded', 'true');
   });
 
@@ -146,7 +146,7 @@ describe('Navbar — menu mobile (#214)', () => {
 describe('Navbar — tema (#225)', () => {
   it('monta o botão de alternância de tema (deslogado)', () => {
     render(<Navbar />);
-    expect(screen.getByRole('button', { name: /tema (claro|escuro)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /switch to (light|dark) theme/i })).toBeInTheDocument();
   });
 
   it('container é theme-aware (base clara + dark:)', () => {
@@ -154,5 +154,20 @@ describe('Navbar — tema (#225)', () => {
     const container = screen.getByTestId('nav-container');
     expect(container.className).toMatch(/bg-white/);       // base clara
     expect(container.className).toMatch(/dark:bg-zinc-900/); // escuro preservado
+  });
+});
+
+describe('Navbar — idioma (#280)', () => {
+  it('renderiza em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    render(<Navbar />);
+    expect(await screen.findByText('Início')).toBeInTheDocument();
+    expect(screen.getByText('Entrar')).toBeInTheDocument();
+  });
+
+  it('renderiza em inglês por padrão', async () => {
+    render(<Navbar />);
+    expect(await screen.findByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('Sign in')).toBeInTheDocument();
   });
 });
