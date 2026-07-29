@@ -52,3 +52,28 @@ export function useLocale(): I18nContexto {
 export function useI18nOpcional(): I18nContexto | null {
   return useContext(I18nContext);
 }
+
+/**
+ * Como `useLocale`, mas funciona fora do provider — aí o estado é local e a troca
+ * ainda persiste e aplica o `<html lang>`, só não propaga para outros componentes.
+ *
+ * Existe pelo mesmo motivo que o `useT` é tolerante: durante a migração das telas
+ * (#280–#298) um componente pode ser montado solto, e explodir nesse caso quebra
+ * quem ainda não foi convertido.
+ */
+export function useLocaleTolerante(): I18nContexto {
+  const ctx = useContext(I18nContext);
+
+  // Hooks chamados incondicionalmente; só usados quando não há provider.
+  const [localeSolto, setLocaleSolto] = useState<Locale>(LOCALE_PADRAO);
+  useEffect(() => {
+    if (!ctx) setLocaleSolto(getInitialLocale());
+  }, [ctx]);
+
+  const setLocaleSoltoPersistindo = useCallback((novo: Locale) => {
+    setLocaleSolto(novo);
+    persistirLocale(novo);
+  }, []);
+
+  return ctx ?? { locale: localeSolto, setLocale: setLocaleSoltoPersistindo };
+}
