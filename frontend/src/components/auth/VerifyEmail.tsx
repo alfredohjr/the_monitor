@@ -2,20 +2,22 @@
 import { API_BASE } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/useT";
 import { useSearchParams } from "next/navigation";
 
 type Status = "loading" | "success" | "error";
 
 export default function VerifyEmail() {
   const searchParams = useSearchParams();
+  const { t } = useT();
   const [status, setStatus] = useState<Status>("loading");
-  const [message, setMessage] = useState("Verificando seu e-mail...");
+  const [message, setMessage] = useState(t("auth.verifying"));
 
   useEffect(() => {
     const token = searchParams.get("token");
     if (!token) {
       setStatus("error");
-      setMessage("Link inválido: token ausente.");
+      setMessage(t("auth.missingToken"));
       return;
     }
     fetch(API_BASE + "/api/v1/verify-email/", {
@@ -26,23 +28,23 @@ export default function VerifyEmail() {
       .then(async (r) => {
         if (r.ok) {
           setStatus("success");
-          setMessage("E-mail verificado! Você já pode entrar.");
+          setMessage(t("auth.verifyOk"));
         } else {
           const data = await r.json().catch(() => ({}));
           setStatus("error");
-          setMessage(data.detail ?? "Não foi possível verificar o e-mail.");
+          setMessage(data.detail ?? t("auth.verifyFailed"));
         }
       })
       .catch(() => {
         setStatus("error");
-        setMessage("Não foi possível verificar o e-mail.");
+        setMessage(t("auth.verifyFailed"));
       });
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl text-center">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Confirmação de e-mail</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">{t("auth.verifyTitle")}</h1>
         <p
           className={`text-sm mb-6 ${
             status === "success" ? "text-emerald-400" : status === "error" ? "text-red-400" : "text-zinc-400"
@@ -52,12 +54,12 @@ export default function VerifyEmail() {
         </p>
         {status === "success" && (
           <Link href="/login" className="text-blue-400 hover:text-blue-300 font-bold transition">
-            Ir para o login
+            {t("auth.goToLogin")}
           </Link>
         )}
         {status === "error" && (
           <Link href="/register" className="text-blue-400 hover:text-blue-300 transition">
-            Voltar ao cadastro
+            {t("auth.backToRegister")}
           </Link>
         )}
       </div>

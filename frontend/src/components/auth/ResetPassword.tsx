@@ -2,6 +2,7 @@
 import { API_BASE, mensagemDeErro } from "@/lib/api";
 import { useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/useT";
 import { useSearchParams, useRouter } from "next/navigation";
 
 export default function ResetPassword() {
@@ -12,15 +13,16 @@ export default function ResetPassword() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     const token = searchParams.get("token");
-    if (!token) return setError("Link inválido: token ausente.");
-    if (password.length < 6) return setError("A senha deve ter ao menos 6 caracteres.");
-    if (password !== confirm) return setError("As senhas não coincidem.");
+    if (!token) return setError(t("auth.missingToken"));
+    if (password.length < 6) return setError(t("auth.passwordTooShort"));
+    if (password !== confirm) return setError(t("auth.passwordsDoNotMatch"));
     setLoading(true);
     try {
       const r = await fetch(API_BASE + "/api/v1/password-reset/confirm/", {
@@ -30,13 +32,13 @@ export default function ResetPassword() {
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setError(mensagemDeErro(d.detail, "Não foi possível redefinir a senha. O link pode ter expirado."));
+        setError(mensagemDeErro(d.detail, t("auth.resetExpired")));
         return;
       }
       setDone(true);
       setTimeout(() => router.push("/login"), 1800);
     } catch {
-      setError("Não foi possível redefinir a senha.");
+      setError(t("auth.resetFailed"));
     } finally {
       setLoading(false);
     }
@@ -45,9 +47,9 @@ export default function ResetPassword() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-6 text-center">Redefinir senha</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-6 text-center">{t("auth.resetTitle")}</h1>
         {done ? (
-          <p className="text-emerald-400 text-sm text-center">Senha redefinida! Redirecionando para o login…</p>
+          <p className="text-emerald-400 text-sm text-center">{t("auth.resetDone")}</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
@@ -57,13 +59,13 @@ export default function ResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Nova senha"
+                placeholder={t("auth.newPasswordPlaceholder")}
                 className="w-full px-5 py-4 pr-12 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
               <button
                 type="button"
                 onClick={() => setShow((v) => !v)}
-                aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={show ? t("auth.hidePassword") : t("auth.showPassword")}
                 aria-pressed={show}
                 className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-400 hover:text-zinc-200 transition"
               >
@@ -85,7 +87,7 @@ export default function ResetPassword() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
-              placeholder="Confirmar nova senha"
+              placeholder={t("auth.confirmPasswordPlaceholder")}
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             />
             {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
@@ -94,7 +96,7 @@ export default function ResetPassword() {
               disabled={loading}
               className="w-full py-4 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition disabled:opacity-50 text-white"
             >
-              {loading ? "Redefinindo..." : "Redefinir senha"}
+              {loading ? t("auth.resetting") : t("auth.resetSubmit")}
             </button>
           </form>
         )}

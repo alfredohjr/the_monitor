@@ -2,10 +2,12 @@
 import { API_BASE } from "@/lib/api";
 import { useState } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/useT";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,17 +31,17 @@ export default function ForgotPassword() {
   return (
     <div className="flex flex-col min-h-screen items-center justify-center px-6 pt-28 pb-20 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 dark:bg-white/[0.03] dark:glass dark:border-white/5 p-10 rounded-3xl">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 text-center">Esqueci minha senha</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 text-center">{t("auth.forgotTitle")}</h1>
         {sent ? (
           <div className="text-center">
             <p className="text-emerald-400 text-sm mb-6">
-              Se o e-mail estiver cadastrado, enviamos um link para redefinir a senha. Confira sua caixa de entrada.
+              {t("auth.forgotSent")}
             </p>
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 text-sm">Voltar para o login</Link>
+            <Link href="/login" className="text-blue-400 hover:text-blue-300 text-sm">{t("auth.backToLogin")}</Link>
           </div>
         ) : (
           <>
-            <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 text-center">Informe seu e-mail para receber o link de redefinição.</p>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6 text-center">{t("auth.forgotSubtitle")}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="email"
@@ -47,7 +49,7 @@ export default function ForgotPassword() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="seu@email.com"
+                placeholder={t("auth.emailPlaceholder")}
                 className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
               <button
@@ -55,11 +57,11 @@ export default function ForgotPassword() {
                 disabled={loading}
                 className="w-full py-4 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition disabled:opacity-50 text-white"
               >
-                {loading ? "Enviando..." : "Enviar link"}
+                {loading ? t("auth.sending") : t("auth.sendLink")}
               </button>
             </form>
             <p className="mt-6 text-center text-sm text-zinc-500">
-              <Link href="/login" className="text-blue-400 hover:text-blue-300">Voltar para o login</Link>
+              <Link href="/login" className="text-blue-400 hover:text-blue-300">{t("auth.backToLogin")}</Link>
             </p>
           </>
         )}
