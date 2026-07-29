@@ -47,8 +47,8 @@ describe('ImportAnchored', () => {
     const { container } = render(<ImportAnchored />);
     expect(await screen.findByRole('option', { name: 'IPCA (inflação)' })).toBeInTheDocument();
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
-    expect(await screen.findByText(/Prévia — 2 dia/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Preview'));
+    expect(await screen.findByText(/Preview — 2 day/)).toBeInTheDocument();
     // alvo corrigido 110 aparece (no rótulo "Alvo corrigido" e na soma)
     expect(screen.getAllByText('110').length).toBeGreaterThan(0);
   });
@@ -57,8 +57,26 @@ describe('ImportAnchored', () => {
     const { container } = render(<ImportAnchored />);
     await screen.findByRole('option', { name: 'IPCA (inflação)' });
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
-    fireEvent.click(await screen.findByText('Confirmar importação'));
-    expect(await screen.findByText(/2 meta\(s\) criada\(s\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Preview'));
+    fireEvent.click(await screen.findByText('Confirm import'));
+    expect(await screen.findByText(/2 goal\(s\) created/)).toBeInTheDocument();
+  });
+});
+
+describe('ImportAnchored — idioma (#290)', () => {
+  it('renderiza em pt-BR, misturando chaves próprias e reusadas de goalsImport', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/external-indices/')) return Promise.resolve({ ok: true, json: async () => [{ code: 'ipca', nome: 'IPCA (inflação)' }] });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, json: async () => [{ id: 1, codigo: 'REC', nome: 'Receita', periodo: 'daily' }] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+    render(<ImportAnchored />);
+    // própria
+    expect(await screen.findByText('Metas ancoradas em índice')).toBeInTheDocument();
+    expect(screen.getByText('Alvo base')).toBeInTheDocument();
+    // reusada de goalsImport
+    expect(screen.getByText('← Voltar pra Metas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pré-visualizar' })).toBeInTheDocument();
   });
 });
