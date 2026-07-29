@@ -57,7 +57,7 @@ describe('OnboardingFlow — renderização', () => {
   it('exibe título de onboarding', async () => {
     mockFetch();
     render(<OnboardingFlow />);
-    expect(await screen.findByText(/bem-vindo|primeiros passos|configurar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/welcome|first steps/i)).toBeInTheDocument();
   });
 
   it('lista as métricas padrão como checkboxes', async () => {
@@ -72,14 +72,14 @@ describe('OnboardingFlow — renderização', () => {
   it('exibe botão "Começar"', async () => {
     mockFetch();
     render(<OnboardingFlow />);
-    expect(await screen.findByRole('button', { name: /começar/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /start/i })).toBeInTheDocument();
   });
 
   it('exibe link ou botão "Pular"', async () => {
     mockFetch();
     render(<OnboardingFlow />);
     await screen.findByText('Receita do Dia');
-    expect(screen.getByText(/pular/i)).toBeInTheDocument();
+    expect(screen.getByText(/skip/i)).toBeInTheDocument();
   });
 });
 
@@ -87,8 +87,8 @@ describe('OnboardingFlow — interação', () => {
   it('Pular redireciona para /dashboard sem criar subscrições', async () => {
     mockFetch();
     render(<OnboardingFlow />);
-    await screen.findByText(/pular/i);
-    fireEvent.click(screen.getByText(/pular/i));
+    await screen.findByText(/skip/i);
+    fireEvent.click(screen.getByText(/skip/i));
     expect(mockPush).toHaveBeenCalledWith('/dashboard');
     const fetchMock = (global as { fetch: jest.Mock }).fetch;
     const postCalls = fetchMock.mock.calls.filter((c: any[]) => c[1]?.method === 'POST');
@@ -101,7 +101,7 @@ describe('OnboardingFlow — interação', () => {
     await screen.findByText('Receita do Dia');
     const checkboxes = screen.getAllByRole('checkbox');
     fireEvent.click(checkboxes[0]);
-    fireEvent.click(screen.getByRole('button', { name: /começar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/dashboard'));
     const fetchMock = (global as { fetch: jest.Mock }).fetch;
     const postCalls = fetchMock.mock.calls.filter((c: any[]) => c[1]?.method === 'POST');
@@ -116,7 +116,7 @@ describe('OnboardingFlow — interação', () => {
     mockFetch();
     render(<OnboardingFlow />);
     await screen.findByText('Receita do Dia');
-    fireEvent.click(screen.getByRole('button', { name: /começar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/dashboard'));
     const fetchMock = (global as { fetch: jest.Mock }).fetch;
     const postCalls = fetchMock.mock.calls.filter((c: any[]) => c[1]?.method === 'POST');

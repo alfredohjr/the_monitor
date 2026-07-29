@@ -21,7 +21,7 @@ test('usuário sem org vê o passo de criar organização', async () => {
     return Promise.resolve({ ok: true, json: async () => [] });
   });
   render(<OnboardingFlow />);
-  await screen.findByLabelText(/nome da organização/i);
+  await screen.findByLabelText(/organization name/i);
 });
 
 test('cria a org via POST /onboarding e avança para métricas', async () => {
@@ -37,13 +37,13 @@ test('cria a org via POST /onboarding e avança para métricas', async () => {
   });
 
   render(<OnboardingFlow />);
-  fireEvent.change(await screen.findByLabelText(/seu nome/i), { target: { value: 'Alfredo' } });
-  fireEvent.change(screen.getByLabelText(/nome da organização/i), { target: { value: 'Minha Loja' } });
-  fireEvent.click(screen.getByRole('button', { name: /criar organização/i }));
+  fireEvent.change(await screen.findByLabelText(/your name/i), { target: { value: 'Alfredo' } });
+  fireEvent.change(screen.getByLabelText(/organization name/i), { target: { value: 'Minha Loja' } });
+  fireEvent.click(screen.getByRole('button', { name: /create organization/i }));
 
   await waitFor(() => expect(onboard).toHaveBeenCalledWith({ organizacao: 'Minha Loja', display_name: 'Alfredo' }));
   // avança para o passo de métricas
-  await screen.findByText(/primeiros passos/i);
+  await screen.findByText(/first steps/i);
   expect(localStorage.getItem('active_org_id')).toBe('7');
 });
 
@@ -55,7 +55,7 @@ test('org vazia mostra erro e não chama a API', async () => {
     return Promise.resolve({ ok: true, json: async () => [] });
   });
   render(<OnboardingFlow />);
-  fireEvent.click(await screen.findByRole('button', { name: /criar organização/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /create organization/i }));
   await screen.findByRole('alert');
   expect(onboard).not.toHaveBeenCalled();
 });
@@ -66,6 +66,17 @@ test('usuário com org pula direto para o passo de métricas', async () => {
     return Promise.resolve({ ok: true, json: async () => [] });
   });
   render(<OnboardingFlow />);
-  await screen.findByText(/primeiros passos/i);
-  expect(screen.queryByLabelText(/nome da organização/i)).toBeNull();
+  await screen.findByText(/first steps/i);
+  expect(screen.queryByLabelText(/organization name/i)).toBeNull();
+});
+
+test('renderiza o passo da organização em pt-BR quando o locale está salvo', async () => {
+  localStorage.setItem('locale', 'pt-BR');
+  (global as { fetch: unknown }).fetch = jest.fn((url: string) => {
+    if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => ({ organizations: [], display_name: '' }) });
+    return Promise.resolve({ ok: true, json: async () => [] });
+  });
+  render(<OnboardingFlow />);
+  expect(await screen.findByLabelText(/nome da organização/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /criar organização/i })).toBeInTheDocument();
 });
