@@ -19,6 +19,9 @@ const STORAGE_KEY = "locale";
 /** Catálogo: área → chave → texto. */
 export type Catalogo = Record<string, Record<string, string>>;
 
+/** Valores para interpolar em `{nome}` dentro do texto traduzido. */
+export type Vars = Record<string, string | number>;
+
 export const CATALOGOS: Record<Locale, Catalogo> = {
   en,
   "pt-BR": ptBR,
@@ -66,6 +69,7 @@ export function traduzir(
   catalogos: Record<Locale, Catalogo>,
   chave: string,
   locale: Locale,
+  vars?: Vars,
 ): string {
   const corte = chave.indexOf(".");
   if (corte <= 0 || corte === chave.length - 1) return chave;
@@ -73,10 +77,27 @@ export function traduzir(
   const area = chave.slice(0, corte);
   const nome = chave.slice(corte + 1);
 
-  return (
+  const texto =
     catalogos[locale]?.[area]?.[nome] ??
     catalogos[LOCALE_PADRAO]?.[area]?.[nome] ??
-    chave
+    chave;
+
+  return vars ? interpolar(texto, vars) : texto;
+}
+
+/**
+ * Substitui `{nome}` pelos valores passados.
+ *
+ * Existe para NÃO montar frase por concatenação de pedaços: `"Imported: " + n +
+ * " goal(s) created"` amarra a ordem das palavras de um idioma só. Com a frase
+ * inteira no catálogo, cada idioma decide onde o número entra.
+ *
+ * Placeholder sem valor correspondente fica visível de propósito: sumir da tela
+ * é bug silencioso, `{criadas}` aparecendo é bug que alguém reporta.
+ */
+export function interpolar(texto: string, vars: Vars): string {
+  return texto.replace(/\{(\w+)\}/g, (todo, nome: string) =>
+    nome in vars ? String(vars[nome]) : todo,
   );
 }
 
@@ -84,6 +105,6 @@ export function traduzir(
  * Traduz uma chave no locale ativo. `locale` explícito ignora o ativo — útil no
  * servidor, onde não há localStorage, e em teste.
  */
-export function t(chave: string, locale?: Locale): string {
-  return traduzir(CATALOGOS, chave, locale ?? getInitialLocale());
+export function t(chave: string, locale?: Locale, vars?: Vars): string {
+  return traduzir(CATALOGOS, chave, locale ?? getInitialLocale(), vars);
 }

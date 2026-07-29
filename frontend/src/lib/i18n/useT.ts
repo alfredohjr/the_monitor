@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { getInitialLocale, t as traduzirChave, LOCALE_PADRAO, type Locale } from ".";
+import { getInitialLocale, t as traduzirChave, LOCALE_PADRAO, type Locale, type Vars } from ".";
 import { useI18nOpcional } from "./I18nProvider";
 
 /**
@@ -13,7 +13,7 @@ import { useI18nOpcional } from "./I18nProvider";
  * Isso existe porque durante a migração das telas nem todo componente está sob o
  * provider — e as duas fontes concordam, já que ambas leem o mesmo storage.
  */
-export function useT(): { t: (chave: string) => string; locale: Locale } {
+export function useT(): { t: (chave: string, vars?: Vars) => string; locale: Locale } {
   const ctx = useI18nOpcional();
 
   // Chamado incondicionalmente (regra dos hooks); só é usado fora do provider.
@@ -27,7 +27,10 @@ export function useT(): { t: (chave: string) => string; locale: Locale } {
   // Memoizado por locale: um `t` novo a cada render entra em dep array de
   // useCallback/useEffect dos componentes e faz o efeito reexecutar sempre.
   // Na tela de login isso injetava um <script> do Google a cada render (#282).
-  const t = useCallback((chave: string) => traduzirChave(chave, locale), [locale]);
+  const t = useCallback(
+    (chave: string, vars?: Vars) => traduzirChave(chave, locale, vars),
+    [locale],
+  );
 
   return { locale, t };
 }

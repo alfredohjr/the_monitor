@@ -81,3 +81,36 @@ test('catálogos en e pt-BR têm exatamente as mesmas chaves', () => {
       .sort();
   expect(chaves(CATALOGOS['pt-BR'])).toEqual(chaves(CATALOGOS.en));
 });
+
+// --- Interpolação (#289) ---------------------------------------------------
+// Existe para não montar frase por concatenação: "Imported: " + n + " created"
+// amarra a ordem das palavras de um idioma só.
+
+const FIX_VARS = {
+  en: {
+    a: {
+      msg: 'Imported: {criadas} created, {ignoradas} skipped.',
+      rep: '{n} de {n}',
+      falta: 'Olá {faltando}',
+      literal: 'literal {chave}',
+    },
+  },
+  'pt-BR': { a: {} },
+} as unknown as Record<Locale, Record<string, Record<string, string>>>;
+
+test('traduzir interpola {nome} com os valores passados', () => {
+  expect(traduzir(FIX_VARS, 'a.msg', 'en', { criadas: 3, ignoradas: 1 }))
+    .toBe('Imported: 3 created, 1 skipped.');
+});
+
+test('traduzir interpola o mesmo placeholder mais de uma vez', () => {
+  expect(traduzir(FIX_VARS, 'a.rep', 'en', { n: 7 })).toBe('7 de 7');
+});
+
+test('placeholder sem valor fica visível (bug reportável, não silencioso)', () => {
+  expect(traduzir(FIX_VARS, 'a.falta', 'en', { outro: 1 })).toBe('Olá {faltando}');
+});
+
+test('sem vars, chaves no texto não são tocadas', () => {
+  expect(traduzir(FIX_VARS, 'a.literal', 'en')).toBe('literal {chave}');
+});
