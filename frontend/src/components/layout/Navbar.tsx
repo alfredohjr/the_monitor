@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
+import LocaleToggle from "./LocaleToggle";
 import { getActiveOrg, setActiveOrg, clearActiveOrg, API_BASE } from "@/lib/api";
 
 interface Org { id: number; nome: string; role: string }
@@ -118,6 +119,7 @@ export default function Navbar() {
           {loggedIn ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <ThemeToggle />
+              <LocaleToggle />
               <NotificationBell />
               <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title="Meu perfil">Olá, {username || "usuário"}</Link>
               {orgs.length > 0 && (
@@ -137,6 +139,7 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-4">
               <ThemeToggle />
+              <LocaleToggle />
               <Link href="/login" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-bold transition">Entrar</Link>
             </div>
           )}
