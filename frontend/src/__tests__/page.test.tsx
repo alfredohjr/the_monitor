@@ -44,7 +44,9 @@ describe('Home page — sem token', () => {
 
   it('nao exibe texto "sistema em construção"', () => {
     render(<Home />);
-    expect(screen.queryByText(/sistema em construção/i)).not.toBeInTheDocument();
+    // Cobre os dois idiomas: com a tela em inglês (#281) um matcher só em
+    // português passaria a valer trivialmente e o texto poderia voltar sem alarme.
+    expect(screen.queryByText(/sistema em construção|under construction/i)).not.toBeInTheDocument();
   });
 
   it('é theme-aware: base clara + dark preservado (#225)', () => {
@@ -56,7 +58,7 @@ describe('Home page — sem token', () => {
 
   it('nao exibe texto "alta performance"', () => {
     render(<Home />);
-    expect(screen.queryByText(/alta performance/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/alta performance|high performance/i)).not.toBeInTheDocument();
   });
 
   it('os cards de área têm fundo escuro no dark mode, não ficam brancos (#270)', () => {
