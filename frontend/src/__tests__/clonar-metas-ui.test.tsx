@@ -46,21 +46,21 @@ describe('ClonarMetas', () => {
     const { container } = render(<ClonarMetas />);
     expect(await screen.findByRole('option', { name: 'Receita (daily)' })).toBeInTheDocument();
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
+    fireEvent.click(screen.getByText('Preview'));
 
     // texto quebrado por <strong>: casa o parágrafo pelo textContent
-    expect(await screen.findByText((_, el) => el?.textContent === '4 meta(s) serão criada(s).')).toBeInTheDocument();
-    expect(screen.getByText(/1 j[aá] existe/)).toBeInTheDocument();
+    expect(await screen.findByText((_, el) => el?.textContent === '4 goal(s) will be created.')).toBeInTheDocument();
+    expect(screen.getByText(/1 already exist/)).toBeInTheDocument();
   });
 
   it('confirma a clonagem e mostra o resultado', async () => {
     const { container } = render(<ClonarMetas />);
     await screen.findByRole('option', { name: 'Receita (daily)' });
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
-    fireEvent.click(await screen.findByText('Confirmar clonagem'));
+    fireEvent.click(screen.getByText('Preview'));
+    fireEvent.click(await screen.findByText('Confirm cloning'));
 
-    expect(await screen.findByText(/4 meta\(s\) criada\(s\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/4 goal\(s\) created/)).toBeInTheDocument();
   });
 
   it('envia escala no corpo da requisição', async () => {
@@ -68,11 +68,29 @@ describe('ClonarMetas', () => {
     await screen.findByRole('option', { name: 'Receita (daily)' });
     preencher(container);
     fireEvent.change(container.querySelector('input[name="escala"]')!, { target: { value: '1.1' } });
-    fireEvent.click(screen.getByText('Pré-visualizar'));
+    fireEvent.click(screen.getByText('Preview'));
 
-    await screen.findByText(/ser[aã]o criada/);
+    await screen.findByText(/will be created/);
     const calls = (global.fetch as jest.Mock).mock.calls;
     const cloneCall = calls.find((c) => String(c[0]).includes('/goals/clone'));
     expect(JSON.parse(cloneCall[1].body).escala).toBe(1.1);
+  });
+});
+
+describe('ClonarMetas — idioma (#291)', () => {
+  it('renderiza em pt-BR e interpola a prévia como frase única', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (url.includes('/goals/clone')) {
+        const body = JSON.parse((opts!.body as string) || '{}');
+        return Promise.resolve({ ok: true, json: async () => ({ criadas: body.dry_run ? 4 : 4, ignoradas: 1, soma: 400 }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => [{ id: 1, codigo: 'REC', nome: 'Receita', periodo: 'daily' }] });
+    });
+    render(<ClonarMetas />);
+    expect(await screen.findByText('Clonar metas')).toBeInTheDocument();
+    expect(screen.getByText('Origem — início')).toBeInTheDocument();
+    // reusada de goalsImport
+    expect(screen.getByText('← Voltar pra Metas')).toBeInTheDocument();
   });
 });

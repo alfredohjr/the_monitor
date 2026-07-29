@@ -5,6 +5,7 @@ import { auth } from "./auth";
 import { comum } from "./comum";
 import { goals } from "./goals";
 import { goalsAnchor } from "./goalsAnchor";
+import { goalsClone } from "./goalsClone";
 import { goalsImport } from "./goalsImport";
 import { landing } from "./landing";
 import { layout } from "./layout";
@@ -19,6 +20,7 @@ export const en = {
   comum,
   goals,
   goalsAnchor,
+  goalsClone,
   goalsImport,
   landing,
   layout,

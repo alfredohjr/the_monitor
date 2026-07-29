@@ -3,12 +3,14 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch, API_BASE } from "@/lib/api";
+import { useT } from "@/lib/i18n/useT";
 
 interface Metric { id: number; codigo: string; nome?: string; periodo: string }
 interface CloneResult { criadas: number; ignoradas: number; soma: number }
 
 export default function ClonarMetas() {
   const router = useRouter();
+  const { t } = useT();
   const [token, setToken] = useState("");
   const [form, setForm] = useState({ metric_id: "", origem_inicio: "", origem_fim: "", destino_inicio: "", escala: "1" });
   const [preview, setPreview] = useState<CloneResult | null>(null);
@@ -48,7 +50,7 @@ export default function ClonarMetas() {
         }),
       });
       const d = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(d.detail || "Não foi possível clonar");
+      if (!resp.ok) throw new Error(d.detail || t("goalsClone.cloneFailed"));
       return d;
     } finally {
       setLoading(false);
@@ -61,7 +63,7 @@ export default function ClonarMetas() {
     try {
       setPreview(await chamar(true));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro");
+      setError(err instanceof Error ? err.message : t("goalsImport.genericError"));
       setPreview(null);
     }
   };
@@ -71,7 +73,7 @@ export default function ClonarMetas() {
       setResult(await chamar(false));
       setPreview(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro");
+      setError(err instanceof Error ? err.message : t("goalsImport.genericError"));
     }
   };
 
@@ -80,35 +82,35 @@ export default function ClonarMetas() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
-        <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar pra Metas</Link>
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1">Clonar metas</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">Replica as metas diárias de um período anterior para um novo, deslocando as datas e (opcionalmente) escalando o alvo.</p>
+        <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">{t("goalsImport.backToGoals")}</Link>
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1">{t("goalsClone.title")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">{t("goalsClone.subtitle")}</p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {result && (
           <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">
-            Clonado: {result.criadas} meta(s) criada(s), {result.ignoradas} já existente(s). Soma: {result.soma}.
+            {t("goalsClone.cloned", { criadas: result.criadas, ignoradas: result.ignoradas, soma: result.soma })}
           </div>
         )}
 
         <form onSubmit={handlePreview} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsImport.metricLabel")}</label>
             <select name="metric_id" value={form.metric_id} onChange={handleChange} required
               className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
-              <option value="">Selecione a métrica</option>
+              <option value="">{t("goalsImport.selectMetric")}</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
             </select>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Origem — início</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsClone.sourceStart")}</label>
               <input name="origem_inicio" type="date" value={form.origem_inicio} onChange={handleChange} required
                 style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Origem — fim</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsClone.sourceEnd")}</label>
               <input name="origem_fim" type="date" value={form.origem_fim} onChange={handleChange} required
                 style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
@@ -116,32 +118,32 @@ export default function ClonarMetas() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Destino — início</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsClone.targetStart")}</label>
               <input name="destino_inicio" type="date" value={form.destino_inicio} onChange={handleChange} required
                 style={{ colorScheme: "dark" }} className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Escala do alvo (1 = igual)</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsClone.scaleLabel")}</label>
               <input name="escala" type="number" step="any" value={form.escala} onChange={handleChange}
-                className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder="Ex.: 1.1 = +10%" />
+                className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder={t("goalsClone.scalePlaceholder")} />
             </div>
           </div>
 
           <button type="submit" disabled={loading}
             className="w-full bg-zinc-200 dark:bg-white/10 font-bold py-3 rounded-xl hover:bg-zinc-300 dark:bg-white/20 transition">
-            {loading ? "Calculando..." : "Pré-visualizar"}
+            {loading ? t("goalsImport.calculating") : t("goalsImport.preview")}
           </button>
         </form>
 
         {preview && (
           <div className="mt-8">
             <div className="p-4 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/5 text-sm">
-              <p><strong className="text-zinc-900 dark:text-white">{preview.criadas}</strong> meta(s) serão criada(s).</p>
-              <p className="text-zinc-600 dark:text-zinc-400">{preview.ignoradas} já existe(m) no destino (serão ignoradas). Soma dos novos alvos: <strong className="text-zinc-900 dark:text-white">{preview.soma}</strong>.</p>
+              <p className="font-medium text-zinc-900 dark:text-white">{t("goalsClone.previewWillCreate", { criadas: preview.criadas })}</p>
+              <p className="text-zinc-600 dark:text-zinc-400">{t("goalsClone.previewSkipped", { ignoradas: preview.ignoradas, soma: preview.soma })}</p>
             </div>
             <button onClick={handleConfirm} disabled={loading}
               className="w-full mt-4 bg-blue-600 font-bold py-3 rounded-xl hover:bg-blue-500 transition">
-              {loading ? "Gravando..." : "Confirmar clonagem"}
+              {loading ? t("goalsImport.saving") : t("goalsClone.confirmClone")}
             </button>
           </div>
         )}
