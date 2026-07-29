@@ -4,6 +4,7 @@ import { API_BASE, mensagemDeErro } from "@/lib/api";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ username: "", email: "", organizacao: "", codigo: "", password: "", confirm: "" });
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   // #241: olho para mostrar/ocultar as senhas (o mesmo toggle controla os dois campos).
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { t } = useT();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,7 +25,7 @@ export default function RegisterPage() {
     setError("");
 
     if (form.password !== form.confirm) {
-      setError("As senhas não coincidem");
+      setError(t("register.passwordsDoNotMatch"));
       return;
     }
 
@@ -43,17 +45,17 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(mensagemDeErro(data.detail, "Erro ao criar conta"));
+        throw new Error(mensagemDeErro(data.detail, t("register.createAccountError")));
       }
 
       if (form.email) {
         // Cadastro com e-mail exige confirmação antes do primeiro login.
-        setSuccess("Conta criada! Enviamos um link de confirmação para o seu e-mail. Verifique antes de entrar.");
+        setSuccess(t("register.emailConfirmationSent"));
       } else {
         router.push("/login");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Não foi possível criar a conta");
+      setError(err instanceof Error ? err.message : t("register.createAccountFailed"));
     } finally {
       setLoading(false);
     }
@@ -70,8 +72,8 @@ export default function RegisterPage() {
           <Link href="/" className="inline-block mb-4">
             <span className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 block">themonitor</span>
           </Link>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Criar Conta</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm">Preencha os dados para se cadastrar.</p>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">{t("register.title")}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">{t("register.subtitle")}</p>
         </div>
 
         {error && (
@@ -89,7 +91,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Usuário
+              {t("register.usernameLabel")}
             </label>
             <input
               type="text"
@@ -98,13 +100,13 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-              placeholder="Ex: alfredo"
+              placeholder={t("register.usernamePlaceholder")}
             />
           </div>
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Email
+              {t("register.emailLabel")}
             </label>
             <input
               type="email"
@@ -112,13 +114,13 @@ export default function RegisterPage() {
               value={form.email}
               onChange={handleChange}
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-              placeholder="voce@exemplo.com"
+              placeholder={t("register.emailPlaceholder")}
             />
           </div>
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Organização
+              {t("register.organizationLabel")}
             </label>
             <input
               type="text"
@@ -127,16 +129,16 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-              placeholder="Ex: Minha Empresa"
+              placeholder={t("register.organizationPlaceholder")}
             />
             <p className="text-xs text-zinc-500">
-              Se a organização ainda não existe, você a cria e vira o admin. Se já existe, informe o código de acesso para entrar.
+              {t("register.organizationHint")}
             </p>
           </div>
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Código da organização
+              {t("register.orgCodeLabel")}
             </label>
             <input
               type="text"
@@ -145,13 +147,13 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               className="w-full px-5 py-4 bg-white border border-zinc-300 rounded-xl text-zinc-900 placeholder-zinc-400 dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-              placeholder="Defina (org nova) ou informe (org existente)"
+              placeholder={t("register.orgCodePlaceholder")}
             />
           </div>
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Senha
+              {t("register.passwordLabel")}
             </label>
             <div className="relative">
               <input
@@ -166,7 +168,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                aria-label={showPassword ? t("register.hidePassword") : t("register.showPassword")}
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-400 hover:text-zinc-200 transition"
               >
@@ -186,7 +188,7 @@ export default function RegisterPage() {
 
           <div className="space-y-2 group">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors group-focus-within:text-blue-400">
-              Confirmar Senha
+              {t("register.confirmPasswordLabel")}
             </label>
             <input
               type={showPassword ? "text" : "password"}
@@ -206,14 +208,14 @@ export default function RegisterPage() {
               loading ? "bg-blue-600/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500 hover:-translate-y-0.5"
             }`}
           >
-            {loading ? "Criando conta..." : "Criar Conta"}
+            {loading ? t("register.submitting") : t("register.submit")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-zinc-500">
-          Já tem conta?{" "}
+          {t("register.haveAccount")}{" "}
           <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
-            Fazer login
+            {t("register.signIn")}
           </Link>
         </p>
       </div>

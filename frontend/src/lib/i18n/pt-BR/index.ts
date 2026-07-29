@@ -4,6 +4,7 @@ import { comum } from "./comum";
 import { landing } from "./landing";
 import { layout } from "./layout";
 import { login } from "./login";
+import { register } from "./register";
 import { navbar } from "./navbar";
 
 export const ptBR = {
@@ -11,5 +12,6 @@ export const ptBR = {
   landing,
   layout,
   login,
+  register,
   navbar,
 };
