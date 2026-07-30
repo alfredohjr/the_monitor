@@ -3,6 +3,7 @@
 // superfície de conflito possível entre PRs que rodam em sequência.
 import { auth } from "./auth";
 import { comum } from "./comum";
+import { dashboard } from "./dashboard";
 import { goals } from "./goals";
 import { goalsAnchor } from "./goalsAnchor";
 import { goalsClone } from "./goalsClone";
@@ -20,6 +21,7 @@ import { navbar } from "./navbar";
 export const en = {
   auth,
   comum,
+  dashboard,
   goals,
   goalsAnchor,
   goalsClone,

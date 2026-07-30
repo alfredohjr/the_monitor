@@ -69,12 +69,12 @@ describe('DashboardGrid — tipos numéricos reconhecidos', () => {
   it('trata currency como numérico (título do gráfico muda para "Evolução dos Valores")', async () => {
     mockWithMetricTipo('currency');
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.getByText(/Evolução dos Valores/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Value Evolution|Evolução dos Valores/i)).toBeInTheDocument());
   });
 
   it('trata percent como numérico (título do gráfico muda para "Evolução dos Valores")', async () => {
     mockWithMetricTipo('percent');
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.getByText(/Evolução dos Valores/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Value Evolution|Evolução dos Valores/i)).toBeInTheDocument());
   });
 });

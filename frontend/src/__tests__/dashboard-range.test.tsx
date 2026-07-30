@@ -56,7 +56,7 @@ describe('Dashboard — KPIs vindos do /progress', () => {
       return ok([]);
     });
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect(screen.queryByTestId('kpi-meta-total')).not.toBeInTheDocument();
   });
 
