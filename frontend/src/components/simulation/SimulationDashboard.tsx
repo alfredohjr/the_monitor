@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { apiFetch, API_BASE } from "@/lib/api";
+import { useT } from "@/lib/i18n/useT";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
@@ -44,6 +45,7 @@ interface DraggableBarProps {
   onChange: (val: number) => void;
   prefix?: string;
   isLocked?: boolean;
+  newLabel?: string;
 }
 
 function getWeekPattern(d: Date) {
@@ -92,7 +94,7 @@ function formatNumber(val: number) {
   return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }: DraggableBarProps) => {
+const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false, newLabel = "" }: DraggableBarProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState("");
@@ -183,7 +185,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
         >
           {!isLocked && <div className={`absolute -top-1 w-full h-2 rounded-full pointer-events-none ${cHandle}`}></div>}
           <div className={`absolute -top-12 left-1/2 -translate-x-1/2 text-xs font-bold px-2 py-1 rounded transition-opacity pointer-events-none select-none z-50 whitespace-nowrap ${isDragging ? `opacity-100 ${cTooltipActive}` : `opacity-0 group-hover:opacity-100 ${cTooltip} bg-black/80`}`}>
-            {isLocked && "🔒 "}{data.isNew && "Nov"} {prefix}{formatNumber(data.alvo)}
+            {isLocked && "🔒 "}{data.isNew && newLabel} {prefix}{formatNumber(data.alvo)}
           </div>
         </div>
         <div
@@ -204,6 +206,7 @@ const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false }:
 };
 
 export default function SimulationDashboard() {
+  const { t } = useT();
   const router = useRouter();
   const [rawMetrics, setRawMetrics] = useState<MetricConfig[]>([]);
   const [allGoals, setAllGoals] = useState<GoalRecord[]>([]);
@@ -339,10 +342,10 @@ export default function SimulationDashboard() {
         })
       );
       await Promise.all([...postPromises, ...putPromises]);
-      alert("Simulação injetada no Banco Físico.");
+      alert(t("simulation.committed"));
       await fetchData(token);
     } catch {
-      alert("Erro ao comitar a simulação.");
+      alert(t("simulation.commitFailed"));
     } finally {
       setSaving(false);
     }
@@ -367,25 +370,25 @@ export default function SimulationDashboard() {
           <div>
             <div className="inline-flex items-center space-x-2 text-blue-400 mb-2 font-mono text-sm tracking-widest">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>GERADOR AUTOMÁTICO</span>
+              <span>{t("simulation.badge")}</span>
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Simulador Universal</h1>
-            <p className="text-zinc-600 dark:text-zinc-400">Crie metas para o futuro antecipadamente ou reajuste o passado.</p>
+            <h1 className="text-4xl font-extrabold tracking-tight mb-2">{t("simulation.title")}</h1>
+            <p className="text-zinc-600 dark:text-zinc-400">{t("simulation.subtitle")}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-6 mb-8 w-full bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl">
           <div className="flex flex-col md:flex-row items-end gap-4 w-full">
             <div className="flex-1 w-full">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">1. Métrica a trabalhar:</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">{t("simulation.step1Metric")}</label>
               <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-5 py-4 rounded-xl w-full outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
-                <option value="">Selecione...</option>
+                <option value="">{t("simulation.select")}</option>
                 {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
               </select>
             </div>
 
             <div className="flex-1 w-full">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">2. Extensão do Gráfico (Início e Fim)</label>
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 block mb-2">{t("simulation.step2Range")}</label>
               <div className="flex gap-2">
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-5 py-4 rounded-xl w-full outline-none [color-scheme:light] dark:[color-scheme:dark]" />
                 <span className="self-center hidden sm:inline">-</span>
@@ -399,29 +402,29 @@ export default function SimulationDashboard() {
                 disabled={saving || !hasChanges}
                 className={`px-8 py-4 w-full md:w-auto mt-6 md:mt-0 rounded-xl font-bold transition whitespace-nowrap ${hasChanges ? 'bg-amber-600 hover:bg-amber-500 text-white animate-pulse' : 'bg-transparent border border-zinc-200 dark:border-white/10 text-zinc-500 opacity-50 cursor-not-allowed'}`}
               >
-                {saving ? "Registrando..." : "Efetivar Geração / Edição"}
+                {saving ? t("simulation.saving") : t("simulation.commit")}
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-3 pt-4 border-t border-zinc-200 dark:border-white/5 w-full">
             <input type="checkbox" id="lockHist" checked={lockHistorical} onChange={(e) => setLockHistorical(e.target.checked)} className="w-5 h-5 rounded cursor-pointer accent-blue-500" />
-            <label htmlFor="lockHist" className="text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">Bloquear edição de metas vigentes e/ou do passado.</label>
+            <label htmlFor="lockHist" className="text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer select-none font-medium hover:text-zinc-200 transition">{t("simulation.lockHistorical")}</label>
           </div>
         </div>
 
         {selectedMetric && simData.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full mb-8 animate-fade-in-up">
             <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center">
-              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Linha Base (Padrão)</span>
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("simulation.kpiBaseline")}</span>
               <span className="text-3xl font-bold text-zinc-700 dark:text-zinc-300">{prefix}{formatNumber(sumBaseline)}</span>
             </div>
             <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center">
-              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Projeção Desenhada</span>
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("simulation.kpiProjection")}</span>
               <span className="text-3xl font-bold text-blue-400">{prefix}{formatNumber(sumAdjusted)}</span>
             </div>
             <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 rounded-2xl shadow-lg flex flex-col justify-center relative overflow-hidden">
-              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Excedente em Relação à Origem (%)</span>
+              <span className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("simulation.kpiSurplus")}</span>
               <span className={`text-3xl font-bold z-10 ${sumAdjusted > sumBaseline ? 'text-emerald-400' : sumAdjusted < sumBaseline ? 'text-amber-400' : 'text-zinc-400'}`}>
                 {formatNumber(Number(percentage))}%
               </span>
@@ -435,10 +438,10 @@ export default function SimulationDashboard() {
               type="button"
               onClick={handleReplicate}
               disabled={lastEditedId === null}
-              title="Replica o último valor editado para todas as barras à direita"
+              title={t("simulation.replicateTitle")}
               className={`px-5 py-3 rounded-xl font-semibold text-sm whitespace-nowrap transition ${lastEditedId === null ? 'bg-transparent border border-zinc-200 dark:border-white/10 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
             >
-              Replicar último valor →
+              {t("simulation.replicate")}
             </button>
           </div>
         )}
@@ -468,6 +471,7 @@ export default function SimulationDashboard() {
                   data={d}
                   maxVal={maxVal}
                   prefix={prefix}
+                  newLabel={t("simulation.newBadge")}
                   isLocked={lockHistorical && d.isLockedRegion}
                   onChange={(nv: number) => handleDragChange(d.goalId, nv)}
                 />
@@ -477,11 +481,11 @@ export default function SimulationDashboard() {
             <div className="absolute top-4 right-8 flex gap-4 text-xs font-mono">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 block border-2 border-dashed border-amber-500 bg-amber-500/20 rounded-full"></span>
-                <span className="text-amber-400">Meta Virtual Inédita</span>
+                <span className="text-amber-400">{t("simulation.legendNew")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 block border border-blue-400 bg-blue-500/20 rounded-full"></span>
-                <span className="text-blue-300">Meta Já Oficial</span>
+                <span className="text-blue-300">{t("simulation.legendOfficial")}</span>
               </div>
             </div>
           </div>
@@ -489,7 +493,7 @@ export default function SimulationDashboard() {
 
         {loading && (
           <div className="text-center text-zinc-600 dark:text-zinc-400 mt-12">
-            <span className="animate-pulse">Carregando dados...</span>
+            <span className="animate-pulse">{t("simulation.loading")}</span>
           </div>
         )}
       </div>

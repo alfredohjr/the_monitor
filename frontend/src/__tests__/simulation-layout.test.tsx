@@ -39,7 +39,7 @@ describe('Simulação — datas padrão (mês atual)', () => {
   it('sugere início no dia 1 e fim no último dia do mês corrente', async () => {
     mockFetch([]);
     const { container } = render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
     const now = new Date();
     const y = now.getFullYear();
@@ -62,13 +62,32 @@ describe('Simulação — botão "Replicar último valor" perto do gráfico', ()
       { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily' },
     ]);
     render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument());
-    expect(screen.queryByRole('button', { name: /replicar último valor/i })).not.toBeInTheDocument();
+    // Âncora positiva antes de negar: garante que a tela terminou de montar.
+    // Só esperar o "carregando" sumir deixava a negação valer numa tela vazia.
+    expect(await screen.findByRole('combobox')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /replicate last value/i })).not.toBeInTheDocument();
   });
 
   it('aparece quando o gráfico está visível (métrica selecionada)', async () => {
     mockFetch([{ id: 7, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
     render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.getByRole('button', { name: /replicar último valor/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /replicate last value/i })).toBeInTheDocument());
+  });
+});
+
+describe('Simulação — idioma (#295)', () => {
+  it('renderiza em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    mockFetch([]);
+    render(<SimulationDashboard />);
+    expect(await screen.findByText('Simulador Universal')).toBeInTheDocument();
+    expect(screen.getByText('1. Métrica a trabalhar:')).toBeInTheDocument();
+    expect(screen.getByText('GERADOR AUTOMÁTICO')).toBeInTheDocument();
+  });
+
+  it('renderiza em inglês por padrão, com o texto de carregando que os waitFor usam', () => {
+    mockFetch([]);
+    render(<SimulationDashboard />);
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 });
