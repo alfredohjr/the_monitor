@@ -10,6 +10,7 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
+from messages import LOCALE_PADRAO, LocaleDep, t
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email, send_password_reset_email
 from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates, seed_external_indices
@@ -210,21 +211,21 @@ class UserResponse(BaseModel):
     email: str | None = None
 
 @app.post('/api/v1/register/', response_model=UserResponse, status_code=201)
-def register(body: RegisterRequest, session: SessionDep):
+def register(body: RegisterRequest, session: SessionDep, lang: LocaleDep):
     existing = session.exec(select(User).where(User.username == body.username)).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username já cadastrado")
+        raise HTTPException(status_code=400, detail=t("erro.username_ja_cadastrado", lang))
     if body.email:
         email_taken = session.exec(select(User).where(User.email == body.email)).first()
         if email_taken:
-            raise HTTPException(status_code=400, detail="Email já cadastrado")
+            raise HTTPException(status_code=400, detail=t("erro.email_ja_cadastrado", lang))
 
     nome_org = body.organizacao.strip()
     codigo = body.codigo_organizacao.strip()
     if not nome_org:
-        raise HTTPException(status_code=400, detail="Organização é obrigatória")
+        raise HTTPException(status_code=400, detail=t("erro.organizacao_obrigatoria", lang))
     if not codigo:
-        raise HTTPException(status_code=400, detail="Código da organização é obrigatório")
+        raise HTTPException(status_code=400, detail=t("erro.codigo_org_obrigatorio", lang))
 
     # Resolve a org ANTES de criar o usuário: numa org existente com código
     # errado, o cadastro é recusado sem deixar usuário órfão.
@@ -237,10 +238,10 @@ def register(body: RegisterRequest, session: SessionDep):
     else:
         # Org existente: só entra com o código correto, como usuário comum.
         if not org.codigo_acesso or not secrets.compare_digest(org.codigo_acesso, codigo):
-            raise HTTPException(status_code=400, detail="Código da organização inválido")
+            raise HTTPException(status_code=400, detail=t("erro.codigo_org_invalido", lang))
         # #216: entrar numa org é "adicionar membro" — só orgs pagas aceitam.
         if not org.is_paid:
-            raise HTTPException(status_code=403, detail="Esta organização não permite novos membros (plano free)")
+            raise HTTPException(status_code=403, detail=t("erro.org_free_sem_membros", lang))
         role = "user"
 
     # Cadastro por senha começa não-verificado; com e-mail, dispara o link de confirmação.
@@ -278,12 +279,12 @@ def register(body: RegisterRequest, session: SessionDep):
     return user
 
 @app.post('/api/v1/token/', response_model=TokenResponse)
-def get_token(body: LoginRequest, session: SessionDep):
+def get_token(body: LoginRequest, session: SessionDep, lang: LocaleDep):
     user = session.exec(select(User).where(User.username == body.username)).first()
     if not user or not verify_password(body.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("erro.credenciais_invalidas", lang))
     if user.email and not user.email_verified:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="E-mail não verificado. Confira sua caixa de entrada.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t("erro.email_nao_verificado", lang))
     return TokenResponse(
         access=create_access_token(user.username),
         refresh=create_refresh_token(user.username),
@@ -293,16 +294,16 @@ class VerifyEmailRequest(BaseModel):
     token: str
 
 @app.post('/api/v1/verify-email/')
-def verify_email(body: VerifyEmailRequest, session: SessionDep):
+def verify_email(body: VerifyEmailRequest, session: SessionDep, lang: LocaleDep):
     tok = session.exec(select(EmailVerificationToken).where(EmailVerificationToken.token == body.token)).first()
     if not tok or tok.used_at is not None:
-        raise HTTPException(status_code=400, detail="Token inválido")
+        raise HTTPException(status_code=400, detail=t("erro.token_invalido", lang))
     if tok.expires_at < datetime.datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Token expirado")
+        raise HTTPException(status_code=400, detail=t("erro.token_expirado", lang))
 
     user = session.get(User, tok.user_id)
     if not user:
-        raise HTTPException(status_code=400, detail="Token inválido")
+        raise HTTPException(status_code=400, detail=t("erro.token_invalido", lang))
 
     user.email_verified = True
     tok.used_at = datetime.datetime.utcnow()
@@ -360,19 +361,19 @@ class PasswordResetConfirm(BaseModel):
 
 
 @app.post('/api/v1/password-reset/confirm/')
-def password_reset_confirm(body: PasswordResetConfirm, session: SessionDep):
+def password_reset_confirm(body: PasswordResetConfirm, session: SessionDep, lang: LocaleDep):
     """Redefine a senha a partir do token. Uso único; invalida o token."""
     if len(body.password) < 6:
-        raise HTTPException(status_code=400, detail="A senha deve ter ao menos 6 caracteres")
+        raise HTTPException(status_code=400, detail=t("erro.senha_curta", lang))
     tok = session.exec(select(PasswordResetToken).where(PasswordResetToken.token == body.token)).first()
     if not tok or tok.used_at is not None:
-        raise HTTPException(status_code=400, detail="Token inválido")
+        raise HTTPException(status_code=400, detail=t("erro.token_invalido", lang))
     if tok.expires_at < datetime.datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Token expirado")
+        raise HTTPException(status_code=400, detail=t("erro.token_expirado", lang))
 
     user = session.get(User, tok.user_id)
     if not user:
-        raise HTTPException(status_code=400, detail="Token inválido")
+        raise HTTPException(status_code=400, detail=t("erro.token_invalido", lang))
 
     user.hashed_password = hash_password(body.password)
     tok.used_at = datetime.datetime.utcnow()
@@ -390,14 +391,14 @@ class GoogleAuthResponse(BaseModel):
     username: str
 
 @app.post('/api/v1/auth/google/', response_model=GoogleAuthResponse)
-def google_login(body: GoogleLoginRequest, session: SessionDep):
+def google_login(body: GoogleLoginRequest, session: SessionDep, lang: LocaleDep):
     try:
         claims = verify_google_token(body.credential)
         email = claims.get("email")
         if not email:
             raise ValueError("token sem email")
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Google inválido")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("erro.token_google_invalido", lang))
 
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
@@ -451,10 +452,10 @@ class ProfileUpdate(BaseModel):
 
 
 @app.patch('/api/v1/me/')
-def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser):
+def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     nome = body.display_name.strip()
     if not nome:
-        raise HTTPException(status_code=400, detail="Nome é obrigatório")
+        raise HTTPException(status_code=400, detail=t("erro.nome_obrigatorio", lang))
     user.display_name = nome
     session.add(user)
     session.commit()
@@ -467,6 +468,7 @@ def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser):
 def get_active_org_id(
     session: SessionDep,
     user: CurrentUser,
+    lang: LocaleDep,
     x_org_id: Annotated[int | None, Header(alias="X-Org-Id")] = None,
 ) -> int | None:
     """Resolve a organização ativa da requisição.
@@ -481,7 +483,7 @@ def get_active_org_id(
     )
     if x_org_id is not None:
         if x_org_id not in org_ids:
-            raise HTTPException(status_code=403, detail="Sem acesso a esta organização")
+            raise HTTPException(status_code=403, detail=t("erro.sem_acesso_org", lang))
         return x_org_id
     return min(org_ids) if org_ids else None
 
@@ -489,9 +491,13 @@ def get_active_org_id(
 ActiveOrg = Annotated[int | None, Depends(get_active_org_id)]
 
 
-def require_active_org(org_id: int | None) -> int:
+def require_active_org(org_id: int | None, lang: str = LOCALE_PADRAO) -> int:
+    """`lang` é opcional de propósito: 15 rotas chamam esta função e elas
+    pertencem às fatias do #301/#302. Sem locale explícito responde no padrão
+    do app (inglês), que é o comportamento correto — só ainda não reage ao
+    header nessas rotas. Elas passam o `lang` quando forem migradas."""
     if org_id is None:
-        raise HTTPException(status_code=400, detail="Nenhuma organização ativa")
+        raise HTTPException(status_code=400, detail=t("erro.sem_org_ativa", lang))
     return org_id
 
 
@@ -1305,15 +1311,15 @@ def list_organizations(session: SessionDep, user: CurrentUser) -> list[Organizat
     ).all()
 
 @app.post('/api/v1/organizations/', status_code=201)
-def create_organization(body: OrganizationCreate, session: SessionDep, user: CurrentUser) -> Organization:
+def create_organization(body: OrganizationCreate, session: SessionDep, user: CurrentUser, lang: LocaleDep) -> Organization:
     nome = body.nome.strip()
     if not nome:
-        raise HTTPException(status_code=400, detail="Nome da organização é obrigatório")
+        raise HTTPException(status_code=400, detail=t("erro.nome_org_obrigatorio", lang))
     duplicada = session.exec(
         select(Organization).where(Organization.nome == nome, Organization.deleted == False)
     ).first()
     if duplicada:
-        raise HTTPException(status_code=400, detail="Nome de organização já está em uso")
+        raise HTTPException(status_code=400, detail=t("erro.nome_org_em_uso", lang))
 
     org = Organization(nome=nome)
     session.add(org)
@@ -1333,7 +1339,7 @@ class OnboardingRequest(BaseModel):
 
 
 @app.post('/api/v1/onboarding/', status_code=201)
-def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentUser):
+def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     """Primeiro acesso de quem entrou sem organização (típico do login Google).
 
     Cria a organização pessoal (o usuário vira admin), grava o nome de exibição
@@ -1346,12 +1352,12 @@ def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentU
 
     nome = body.organizacao.strip()
     if not nome:
-        raise HTTPException(status_code=400, detail="Nome da organização é obrigatório")
+        raise HTTPException(status_code=400, detail=t("erro.nome_org_obrigatorio", lang))
     duplicada = session.exec(
         select(Organization).where(Organization.nome == nome, Organization.deleted == False)
     ).first()
     if duplicada:
-        raise HTTPException(status_code=400, detail="Nome de organização já está em uso")
+        raise HTTPException(status_code=400, detail=t("erro.nome_org_em_uso", lang))
 
     org = Organization(nome=nome)
     session.add(org)

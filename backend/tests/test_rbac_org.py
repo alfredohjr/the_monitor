@@ -64,7 +64,11 @@ def test_org_name_must_be_unique(client: TestClient, session: Session):
 
     r2 = client.post("/api/v1/organizations/", json={"nome": "Acme"}, headers=auth(bob))
     assert r2.status_code == 400
-    assert "nome" in r2.json()["detail"].lower() or "já" in r2.json()["detail"].lower()
+    # O erro precisa ser SOBRE o nome já usado; o idioma da resposta depende do
+    # Accept-Language (#300), então o matcher cobre os dois.
+    detalhe = r2.json()["detail"].lower()
+    assert any(p in detalhe for p in ("nome", "name")), detalhe
+    assert any(p in detalhe for p in ("já", "already")), detalhe
 
 
 def test_membership_role_defaults_to_user(session: Session):

@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
+from messages import get_locale, t
 from models import User, get_session
 
 # Este default é PÚBLICO — está no repositório. Existe só pra dev não precisar de
@@ -91,6 +92,7 @@ def verify_google_token(token: str) -> dict:
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
     session: Session = Depends(get_session),
+    lang: str = Depends(get_locale),
 ) -> User:
     token = credentials.credentials
     try:
@@ -99,9 +101,9 @@ def get_current_user(
         if not username:
             raise ValueError
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("erro.token_invalido", lang))
 
     user = session.exec(select(User).where(User.username == username)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário não encontrado")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("erro.usuario_nao_encontrado", lang))
     return user
