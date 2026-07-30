@@ -60,7 +60,7 @@ describe('AdminUsers', () => {
   it('org paga: mostra o form de adicionar membro (#216)', async () => {
     mockApi({ me: adminMe, users: [] });
     render(<AdminUsers />);
-    expect(await screen.findByPlaceholderText('E-mail do novo membro')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText("New member's e-mail")).toBeInTheDocument();
     expect(screen.queryByTestId('plano-free-aviso')).not.toBeInTheDocument();
   });
 
@@ -68,16 +68,16 @@ describe('AdminUsers', () => {
     mockApi({ me: adminMeFree, users: [] });
     render(<AdminUsers />);
     expect(await screen.findByTestId('plano-free-aviso')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('E-mail do novo membro')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("New member's e-mail")).not.toBeInTheDocument();
   });
 
   it('adiciona um membro só com e-mail via POST', async () => {
     const onPost = jest.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
     mockApi({ me: adminMe, users: [], onPost });
     render(<AdminUsers />);
-    await screen.findByText('Adicionar');
-    fireEvent.change(screen.getByPlaceholderText('E-mail do novo membro'), { target: { value: 'novo@x.com' } });
-    fireEvent.click(screen.getByText('Adicionar'));
+    await screen.findByText('Add');
+    fireEvent.change(screen.getByPlaceholderText("New member's e-mail"), { target: { value: 'novo@x.com' } });
+    fireEvent.click(screen.getByText('Add'));
     await waitFor(() => expect(onPost).toHaveBeenCalled());
     const body = JSON.parse((onPost.mock.calls[0][1] as RequestInit).body as string);
     expect(body.email).toBe('novo@x.com');
@@ -95,8 +95,8 @@ describe('AdminUsers', () => {
     render(<AdminUsers />);
     await screen.findByText('colab');
     // admin (id 1 = ele mesmo) não tem botão remover
-    expect(screen.getAllByText('Remover')).toHaveLength(1);
-    fireEvent.click(screen.getByText('Remover'));
+    expect(screen.getAllByText('Remove')).toHaveLength(1);
+    fireEvent.click(screen.getByText('Remove'));
     await waitFor(() => expect(onDelete).toHaveBeenCalled());
     expect(onDelete.mock.calls[0][0]).toContain('/organizations/7/users/2/');
   });
@@ -104,7 +104,7 @@ describe('AdminUsers', () => {
   it('mostra acesso restrito para não-admin', async () => {
     mockApi({ me: { id: 5, username: 'user', role: 'user', organizations: [] }, users: [] });
     render(<AdminUsers />);
-    expect(await screen.findByText(/acesso restrito/i)).toBeInTheDocument();
+    expect(await screen.findByText(/restricted access/i)).toBeInTheDocument();
   });
 
   it('atribui métricas a um lançador (carrega, alterna e salva via PUT) (#163)', async () => {
@@ -131,7 +131,7 @@ describe('AdminUsers', () => {
     });
 
     render(<AdminUsers />);
-    fireEvent.click(await screen.findByText('Métricas'));
+    fireEvent.click(await screen.findByText('Metrics'));
 
     // painel abre com M1 marcada (atribuída) e M2 desmarcada
     const receita = await screen.findByLabelText('Receita') as HTMLInputElement;
@@ -140,7 +140,7 @@ describe('AdminUsers', () => {
     expect(custo.checked).toBe(false);
 
     fireEvent.click(custo); // adiciona M2
-    fireEvent.click(screen.getByText('Salvar métricas'));
+    fireEvent.click(screen.getByText('Save metrics'));
 
     await waitFor(() => expect(putCall).toHaveBeenCalled());
     const body = JSON.parse((putCall.mock.calls[0][1] as RequestInit).body as string);
@@ -174,5 +174,42 @@ describe('Navbar — RBAC por papel', () => {
     mockMe('admin');
     render(<Navbar />);
     expect(await screen.findByText('Admin')).toBeInTheDocument();
+  });
+});
+
+describe('AdminUsers — idioma (#296)', () => {
+  it('renderiza em pt-BR e interpola o nome do usuário na dica de atribuição', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => ({ id: 1, role: 'admin', organizations: [{ id: 1, nome: 'Acme', role: 'admin', is_paid: true }] }) });
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, json: async () => [] });
+      if (url.includes('/users/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 1, username: 'admin', email: null, role: 'admin' },
+        { id: 2, username: 'colab', email: null, role: 'user' },
+      ] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+    render(<AdminUsers />);
+    // Ancora no que só existe DEPOIS do /me/ resolver. O título é estático e
+    // renderiza no primeiro passe, então esperá-lo não prova nada — foi
+    // exatamente o erro que venho corrigindo nos testes antigos.
+    expect(await screen.findByPlaceholderText('E-mail do novo membro')).toBeInTheDocument();
+    expect(screen.getByText('Administração')).toBeInTheDocument();
+    // papel mapeado para exibição, não o identificador cru da API. A lista de
+    // usuários vem de um segundo fetch, então precisa de findBy também.
+    expect(await screen.findByText('lançador')).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByText('Métricas'));
+    expect(await screen.findByText('Selecione as métricas que colab pode ver e lançar:')).toBeInTheDocument();
+  });
+
+  it('papel desconhecido cai no valor cru da API', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string) => {
+      if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => ({ id: 1, role: 'admin', organizations: [{ id: 1, nome: 'Acme', role: 'admin', is_paid: true }] }) });
+      if (url.includes('/users/')) return Promise.resolve({ ok: true, json: async () => [{ id: 9, username: 'x', email: null, role: 'auditor' }] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+    render(<AdminUsers />);
+    expect(await screen.findByText('auditor')).toBeInTheDocument();
   });
 });
