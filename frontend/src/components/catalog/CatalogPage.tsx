@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 
 interface Metric {
   id: number;
@@ -20,6 +21,7 @@ interface Subscription {
 
 export default function CatalogPage() {
   const router = useRouter();
+  const { t } = useT();
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function CatalogPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a] flex items-center justify-center text-zinc-600 dark:text-zinc-400">
-        <span className="animate-pulse">Carregando catálogo...</span>
+        <span className="animate-pulse">{t("catalog.loading")}</span>
       </div>
     );
   }
@@ -78,9 +80,9 @@ export default function CatalogPage() {
     <div className="flex flex-col min-h-screen items-center p-6 pt-24 sm:p-24 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="relative z-10 w-full max-w-4xl mt-8">
         <div className="mb-10">
-          <Link href="/metrics" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar para Métricas</Link>
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Catálogo de Métricas</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">Assine as métricas do sistema que deseja acompanhar nos seus dashboards.</p>
+          <Link href="/metrics" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">{t("catalog.backToMetrics")}</Link>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">{t("catalog.title")}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400">{t("catalog.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -100,14 +102,14 @@ export default function CatalogPage() {
                     onClick={() => handleCancelar(m.id)}
                     className="mt-auto w-full py-2 rounded-xl text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition"
                   >
-                    Cancelar assinatura
+                    {t("catalog.unsubscribe")}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleAssinar(m.id)}
                     className="mt-auto w-full py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 transition"
                   >
-                    Assinar
+                    {t("catalog.subscribe")}
                   </button>
                 )}
               </div>

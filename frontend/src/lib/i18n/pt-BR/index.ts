@@ -2,6 +2,7 @@
 // precisa existir aqui (o teste de paridade de chaves cobre isso).
 import { admin } from "./admin";
 import { auth } from "./auth";
+import { catalog } from "./catalog";
 import { comum } from "./comum";
 import { dashboard } from "./dashboard";
 import { goals } from "./goals";
@@ -24,6 +25,7 @@ import { navbar } from "./navbar";
 export const ptBR = {
   admin,
   auth,
+  catalog,
   comum,
   dashboard,
   goals,
