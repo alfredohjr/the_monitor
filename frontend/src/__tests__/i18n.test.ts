@@ -1,6 +1,7 @@
 import {
   CATALOGOS,
   LOCALES,
+  localeDeAcceptLanguage,
   getStoredLocale,
   getInitialLocale,
   applyLocale,
@@ -122,4 +123,26 @@ test('os locales do front são exatamente os que o backend entende', () => {
   // aceita "en", "pt" e "pt-*". Trocar isto para, digamos, "pt_BR" com
   // underscore faria o backend cair no padrão sem nenhum erro visível.
   expect(LOCALES).toEqual(['en', 'pt-BR']);
+});
+
+// --- Accept-Language no servidor (#314) -------------------------------------
+
+describe('localeDeAcceptLanguage', () => {
+  it.each([
+    [null, 'en'],
+    ['', 'en'],
+    ['en-US,en;q=0.9', 'en'],
+    ['pt-BR', 'pt-BR'],
+    ['pt', 'pt-BR'],
+    ['pt-PT', 'pt-BR'],
+    ['en;q=0.5,pt-BR;q=0.9', 'pt-BR'],
+    ['pt-BR;q=0.3,en;q=0.8', 'en'],
+    ['pt-BR,en', 'pt-BR'],
+    ['de-DE,fr;q=0.9,pt-BR;q=0.1', 'pt-BR'],
+    ['de-DE,fr', 'en'],
+    ['???', 'en'],
+    ['pt-BR;q=abc', 'pt-BR'],
+  ])('%s → %s', (header, esperado) => {
+    expect(localeDeAcceptLanguage(header)).toBe(esperado);
+  });
 });

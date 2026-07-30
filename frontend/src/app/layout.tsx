@@ -5,6 +5,7 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import VersionBadge from "@/components/layout/VersionBadge";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { t } from "@/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,9 +18,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Metadata ESTÁTICO, no idioma padrão do app, com o texto vindo do catálogo.
+//
+// Cheguei a implementar `generateMetadata` lendo o Accept-Language — funciona,
+// mas `headers()` no layout raiz opta o app INTEIRO fora da geração estática:
+// medi 24 páginas estáticas antes e 1 depois. Trocar isso por uma
+// <meta description> traduzida não se paga, e a linguagem da INTERFACE já é
+// resolvida no cliente pelo provider e pelo script anti-flash do <html lang>.
+//
+// "themonitor" é marca e não se traduz.
 export const metadata: Metadata = {
   title: "themonitor",
-  description: "Track your objectives and performance.",
+  description: t("layout.metaDescription"),
   icons: { icon: "/favicon.svg" },
 };
 

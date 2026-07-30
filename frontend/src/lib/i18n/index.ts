@@ -101,6 +101,35 @@ export function interpolar(texto: string, vars: Vars): string {
   );
 }
 
+// Um item do Accept-Language: "pt-BR;q=0.9" → tag + peso.
+const ITEM_ACCEPT_LANGUAGE = /^\s*([A-Za-z*-]+)\s*(?:;\s*q\s*=\s*([^;,]*))?\s*$/;
+
+/**
+ * Locale a partir do header `Accept-Language`.
+ *
+ * Existe para o que roda no SERVIDOR — metadata e a rota do llms.txt — onde não
+ * há localStorage para consultar. Espelha a mesma regra do backend
+ * (`messages.locale_de_accept_language`): o peso `q` manda, não a ordem de
+ * escrita, e um `q` malformado não descarta a preferência de idioma.
+ */
+export function localeDeAcceptLanguage(header: string | null | undefined): Locale {
+  if (!header) return LOCALE_PADRAO;
+
+  const candidatos: { q: number; pos: number; locale: Locale }[] = [];
+  header.split(",").forEach((parte, pos) => {
+    const m = ITEM_ACCEPT_LANGUAGE.exec(parte);
+    if (!m) return;
+    const tag = m[1].toLowerCase();
+    const q = m[2] !== undefined && !Number.isNaN(Number(m[2])) ? Number(m[2]) : 1.0;
+    if (tag === "pt" || tag.startsWith("pt-")) candidatos.push({ q, pos, locale: "pt-BR" });
+    else if (tag === "en" || tag.startsWith("en-")) candidatos.push({ q, pos, locale: "en" });
+  });
+
+  if (candidatos.length === 0) return LOCALE_PADRAO;
+  candidatos.sort((a, b) => b.q - a.q || a.pos - b.pos);
+  return candidatos[0].locale;
+}
+
 /**
  * Traduz uma chave no locale ativo. `locale` explícito ignora o ativo — útil no
  * servidor, onde não há localStorage, e em teste.
