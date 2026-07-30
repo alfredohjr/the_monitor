@@ -53,3 +53,44 @@ describe('apiFetch', () => {
     expect(getActiveOrg()).toBeNull();
   });
 });
+
+describe('apiFetch — Accept-Language (#303)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    delete (global as { fetch?: unknown }).fetch;
+  });
+
+  function mockFetch() {
+    const fn = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    (global as { fetch: unknown }).fetch = fn;
+    return fn;
+  }
+
+  it('manda en por padrão', async () => {
+    const fn = mockFetch();
+    await apiFetch('/api/v1/metrics/');
+    expect((fn.mock.calls[0][1].headers as Record<string, string>)['Accept-Language']).toBe('en');
+  });
+
+  it('manda pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    const fn = mockFetch();
+    await apiFetch('/api/v1/metrics/');
+    expect((fn.mock.calls[0][1].headers as Record<string, string>)['Accept-Language']).toBe('pt-BR');
+  });
+
+  it('acompanha a troca de idioma sem recarregar o módulo', async () => {
+    const fn = mockFetch();
+    await apiFetch('/api/v1/metrics/');
+    localStorage.setItem('locale', 'pt-BR');
+    await apiFetch('/api/v1/metrics/');
+    const cabecalhos = fn.mock.calls.map((c) => (c[1].headers as Record<string, string>)['Accept-Language']);
+    expect(cabecalhos).toEqual(['en', 'pt-BR']);
+  });
+
+  it('não sobrescreve um Accept-Language explícito do chamador', async () => {
+    const fn = mockFetch();
+    await apiFetch('/api/v1/metrics/', { headers: { 'Accept-Language': 'de-DE' } });
+    expect((fn.mock.calls[0][1].headers as Record<string, string>)['Accept-Language']).toBe('de-DE');
+  });
+});

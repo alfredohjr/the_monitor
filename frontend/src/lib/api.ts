@@ -5,26 +5,32 @@
 // Base da API. Em produção o front é servido no mesmo domínio e o proxy (Caddy)
 // roteia /api/* pro backend — então NEXT_PUBLIC_API_BASE="" faz as chamadas
 // ficarem same-origin (/api/v1/...). Sem env (dev/testes) cai em localhost:8000.
+import { getInitialLocale, t } from "./i18n";
+
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 type ErroPydantic = { loc?: unknown[]; msg?: string };
 
 // Normaliza o `detail` de um erro da API para texto exibível.
-// O FastAPI manda `detail` como string nos erros nossos (400/403), mas o 422 de
-// validação do pydantic manda uma LISTA de objetos — jogar isso direto na tela
-// vira "[object Object]", e num setState do React quebra a renderização. As
-// mensagens do pydantic são em inglês, então traduzimos o caso que os formulários
-// realmente produzem (e-mail malformado) e caímos num genérico no resto.
-export function mensagemDeErro(detail: unknown, fallback = "Erro inesperado"): string {
+// O FastAPI manda `detail` como string nos erros nossos (400/403) — e desde o
+// #300-#302 essa string já vem no idioma pedido pelo Accept-Language. O 422 de
+// validação do pydantic manda uma LISTA de objetos, sempre em inglês: jogar isso
+// direto na tela vira "[object Object]" e num setState do React quebra a
+// renderização, então traduzimos aqui o caso que os formulários produzem.
+//
+// `fallback` é opcional (não tem valor default) de propósito: um default como
+// `= t("comum.unexpectedError")` seria avaliado no CARREGAMENTO do módulo e
+// congelaria o idioma daquele instante — trocar de idioma não teria efeito.
+export function mensagemDeErro(detail: unknown, fallback?: string): string {
   if (typeof detail === "string" && detail) return detail;
 
   if (Array.isArray(detail) && detail.length > 0) {
     const erros = detail as ErroPydantic[];
     const temEmail = erros.some((e) => Array.isArray(e?.loc) && e.loc.includes("email"));
-    return temEmail ? "E-mail inválido." : "Confira os dados do formulário.";
+    return t(temEmail ? "comum.invalidEmail" : "comum.checkFormData");
   }
 
-  return fallback;
+  return fallback ?? t("comum.unexpectedError");
 }
 
 const ACTIVE_ORG_KEY = "active_org_id";
@@ -44,7 +50,7 @@ export function clearActiveOrg(): void {
 }
 
 /**
- * fetch com Authorization + X-Org-Id automáticos.
+ * fetch com Authorization, X-Org-Id e Accept-Language automáticos.
  * `path` pode ser relativo ("/api/v1/...") ou absoluto.
  */
 export function apiFetch(path: string, opts: RequestInit = {}): Promise<Response> {
@@ -53,6 +59,9 @@ export function apiFetch(path: string, opts: RequestInit = {}): Promise<Response
   const headers: Record<string, string> = { ...(opts.headers as Record<string, string> | undefined) };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   if (org != null) headers["X-Org-Id"] = String(org);
+  // Idioma da requisição: o backend responde os erros nele (#299-#302). Um
+  // header explícito do chamador vence — quem passou sabe o que quer.
+  if (!headers["Accept-Language"]) headers["Accept-Language"] = getInitialLocale();
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
   return fetch(url, { ...opts, headers });
 }

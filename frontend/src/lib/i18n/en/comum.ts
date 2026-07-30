@@ -21,4 +21,10 @@ export const comum = {
   placeholderCurrency: "e.g. 500.00 (R$)",
   placeholderPercent: "e.g. 75 (%)",
   placeholderGeneric: "e.g. 5.5, TRUE, 500",
+  // Erros genéricos da camada de API (`mensagemDeErro`). O `detail` das rotas
+  // vem traduzido do backend (#300-#302); estes cobrem o 422 do pydantic e o
+  // fallback quando não há detail utilizável.
+  unexpectedError: "Unexpected error",
+  invalidEmail: "Invalid e-mail.",
+  checkFormData: "Check the form data.",
 };
