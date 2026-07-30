@@ -82,7 +82,10 @@ def test_notifica_quando_lancamento_atinge_a_meta(client: TestClient, session: S
     client.post("/api/v1/logs/", json={"goal": goal.id, "data": "2026-07-01", "valor_logado": "50"}, headers=auth(user))
     lista = notifs(client, user)
     assert len(lista) == 1
-    assert "atingida" in lista[0]["mensagem"].lower()
+    # A mensagem sai no idioma do usuário (#306); o teste verifica que ela é
+    # SOBRE meta atingida, não o texto de um idioma só.
+    msg = lista[0]["mensagem"].lower()
+    assert "atingida" in msg or "goal reached" in msg
 
 
 def test_nao_notifica_se_nao_atinge(client: TestClient, session: Session, org_id: int):
@@ -100,3 +103,38 @@ def test_notifica_apenas_uma_vez_ao_cruzar(client: TestClient, session: Session,
     # Já estava atingida; novo lançamento não gera outra notificação.
     client.post("/api/v1/logs/", json={"goal": goal.id, "data": "2026-07-01", "valor_logado": "10"}, headers=auth(user))
     assert len(notifs(client, user)) == 1
+
+
+# --- idioma da notificação (#306) ---
+
+def test_notificacao_usa_o_locale_gravado_do_usuario(client: TestClient, session: Session, org_id: int):
+    """A notificação é PERSISTIDA e lida depois, possivelmente noutra sessão.
+    Por isso o idioma vem do User.locale, não do Accept-Language de quem lançou:
+    o texto fica gravado e não é retraduzido na leitura."""
+    user = make_user(session, org_id, "bia")
+    user.locale = "pt-BR"
+    session.add(user)
+    session.commit()
+    goal = make_goal(session, org_id, "100")
+
+    # Requisição em INGLÊS, usuário com preferência em português: vence o gravado.
+    client.post(
+        "/api/v1/logs/",
+        json={"goal": goal.id, "data": "2026-07-01", "valor_logado": "150"},
+        headers={**auth(user), "Accept-Language": "en"},
+    )
+    lista = notifs(client, user)
+    assert len(lista) == 1
+    assert "Meta atingida" in lista[0]["mensagem"]
+
+
+def test_notificacao_em_ingles_por_padrao(client: TestClient, session: Session, org_id: int):
+    user = make_user(session, org_id, "carl")
+    goal = make_goal(session, org_id, "100")
+    client.post(
+        "/api/v1/logs/",
+        json={"goal": goal.id, "data": "2026-07-01", "valor_logado": "150"},
+        headers=auth(user),
+    )
+    lista = notifs(client, user)
+    assert "Goal reached" in lista[0]["mensagem"]
