@@ -49,6 +49,10 @@ class Organization(SQLModel, table=True):
     # de usuário único) não podem associar novos membros — isso exige um plano
     # pago. Marcado manualmente/por superadmin. Default: free.
     is_paid: bool = Field(default=False)
+    # Moeda dos valores da organização (#307). Idioma e moeda são coisas
+    # distintas: traduzir a interface não converte dinheiro. Orgs existentes
+    # ficam em BRL — trocar a moeda de quem já usa reinterpretaria o histórico.
+    moeda: str = Field(default="BRL", max_length=3)
     deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

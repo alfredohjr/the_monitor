@@ -86,3 +86,35 @@ def test_locale_em_tabela_com_dados(tmp_path, monkeypatch):
     with engine.connect() as conn:
         locale = conn.execute(sa.text("SELECT locale FROM user WHERE username='antigo'")).scalar()
     assert locale == "en", "usuário pré-existente devia herdar o padrão do app"
+
+
+def test_moeda_em_org_com_dados(tmp_path, monkeypatch):
+    """Organização que já existe NÃO pode mudar de moeda ao migrar.
+
+    Trocar a moeda de quem já usa o sistema reinterpreta todo o histórico: os
+    mesmos números passariam a significar outra coisa. O server_default garante
+    que quem já estava lá continua em BRL.
+    """
+    import sqlalchemy as sa
+
+    db = tmp_path / "org_moeda.db"
+    url = f"sqlite:///{db}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+
+    command.upgrade(cfg, "c5d6e7f8a9b0")
+    engine = sa.create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO organization (nome, is_paid, deleted, created_at) "
+                "VALUES ('Antiga', 0, 0, '2026-01-01 00:00:00')"
+            )
+        )
+
+    command.upgrade(cfg, "head")
+
+    with engine.connect() as conn:
+        moeda = conn.execute(sa.text("SELECT moeda FROM organization WHERE nome='Antiga'")).scalar()
+    assert moeda == "BRL", "org pré-existente teve a moeda alterada pela migration"

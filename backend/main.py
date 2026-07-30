@@ -435,7 +435,7 @@ def me(session: SessionDep, user: CurrentUser):
     for m in memberships:
         org = session.get(Organization, m.organization_id)
         if org and not org.deleted:
-            orgs.append({"id": org.id, "nome": org.nome, "role": m.role, "is_paid": org.is_paid})
+            orgs.append({"id": org.id, "nome": org.nome, "role": m.role, "is_paid": org.is_paid, "moeda": org.moeda})
     return {
         "id": user.id,
         "username": user.username,

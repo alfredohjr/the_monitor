@@ -97,3 +97,19 @@ def test_user_can_belong_to_multiple_organizations(client: TestClient, session: 
     resp = client.get("/api/v1/organizations/", headers=auth(user))
     assert resp.status_code == 200
     assert len(resp.json()) == 2
+
+
+# --- moeda da organização (#307) ---
+
+def test_org_nova_nasce_em_brl(client: TestClient, session: Session):
+    user = make_user(session, "dono")
+    r = client.post("/api/v1/organizations/", json={"nome": "Acme"}, headers=auth(user))
+    assert r.status_code == 201
+    assert r.json()["moeda"] == "BRL"
+
+
+def test_me_expoe_a_moeda_da_org(client: TestClient, session: Session):
+    user = make_user(session, "dono")
+    client.post("/api/v1/organizations/", json={"nome": "Acme"}, headers=auth(user))
+    orgs = client.get("/api/v1/me/", headers=auth(user)).json()["organizations"]
+    assert orgs[0]["moeda"] == "BRL"
