@@ -121,7 +121,7 @@ export default function Navbar() {
               <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.logs")}</Link>
               {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.goals")}</Link>}
               {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.metrics")}</Link>}
-              {!isUser && <Link href="/metas/importar" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.import")}</Link>}
+              {!isUser && <Link href="/goals/import" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.import")}</Link>}
               {isAdmin && <Link href="/admin" className="text-zinc-900 dark:text-amber-300 hover:text-black dark:text-amber-200 transition">{t("navbar.admin")}</Link>}
             </>
           )}

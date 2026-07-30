@@ -40,8 +40,8 @@ export default function GoalList() {
             <p className="text-zinc-600 dark:text-zinc-400">{t("goals.subtitle")}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Link href="/metas/ancorar" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">{t("goals.anchorToIndex")}</Link>
-            <Link href="/metas/clonar" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">{t("goals.cloneGoals")}</Link>
+            <Link href="/goals/anchor" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">{t("goals.anchorToIndex")}</Link>
+            <Link href="/goals/clone" className="px-6 py-3 bg-zinc-200 dark:bg-white/10 rounded-xl font-bold hover:bg-zinc-300 dark:bg-white/20 truncate text-center">{t("goals.cloneGoals")}</Link>
             <Link href="/goals/new" className="px-6 py-3 bg-blue-600 rounded-xl font-bold hover:bg-blue-500 truncate text-center">{t("goals.newGoal")}</Link>
           </div>
         </div>

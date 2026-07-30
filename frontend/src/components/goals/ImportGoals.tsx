@@ -114,7 +114,7 @@ export default function ImportGoals() {
         <Link href="/goals" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">{t("goalsImport.backToGoals")}</Link>
         <h1 className="text-3xl font-extrabold tracking-tight mb-1">{t("goalsImport.title")}</h1>
         <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-2">{t("goalsImport.subtitle")}</p>
-        <p className="text-zinc-500 text-xs mb-8">{t("goalsImport.haveSpreadsheet")} <Link href="/lancamentos/importar" className="text-blue-400 hover:text-blue-300">{t("goalsImport.importCsvLink")}</Link></p>
+        <p className="text-zinc-500 text-xs mb-8">{t("goalsImport.haveSpreadsheet")} <Link href="/logs/import" className="text-blue-400 hover:text-blue-300">{t("goalsImport.importCsvLink")}</Link></p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {result && (
