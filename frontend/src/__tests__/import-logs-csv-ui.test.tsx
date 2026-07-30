@@ -37,19 +37,41 @@ describe('ImportLogsCSV', () => {
     const { container } = render(<ImportLogsCSV />);
     await screen.findByRole('option', { name: 'Receita (daily)' });
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
+    fireEvent.click(screen.getByText('Preview'));
 
     expect(await screen.findByText(/esperado 'data,valor'/)).toBeInTheDocument();
-    expect(screen.getByText('Confirmar importação')).toBeInTheDocument();  // preview habilita confirmar
+    expect(screen.getByText('Confirm import')).toBeInTheDocument();  // preview habilita confirmar
   });
 
   it('confirma e mostra o resultado', async () => {
     const { container } = render(<ImportLogsCSV />);
     await screen.findByRole('option', { name: 'Receita (daily)' });
     preencher(container);
-    fireEvent.click(screen.getByText('Pré-visualizar'));
-    fireEvent.click(await screen.findByText('Confirmar importação'));
+    fireEvent.click(screen.getByText('Preview'));
+    fireEvent.click(await screen.findByText('Confirm import'));
 
-    expect(await screen.findByText(/2 criada\(s\)/)).toBeInTheDocument();
+    expect(await screen.findByText(/2 created/)).toBeInTheDocument();
+  });
+});
+
+describe('ImportLogsCSV — idioma (#293)', () => {
+  it('renderiza em pt-BR e mantém `data,valor` intacto nos dois idiomas', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, json: async () => [{ id: 1, codigo: 'REC', nome: 'Receita', periodo: 'daily' }],
+    });
+    render(<ImportLogsCSV />);
+    expect(await screen.findByText('Importar lançamentos (CSV)')).toBeInTheDocument();
+    // O token do protocolo aparece igual em pt-BR e em inglês: o backend compara
+    // o cabeçalho literalmente, então traduzi-lo quebraria a importação.
+    expect(screen.getByText(/formato data,valor/)).toBeInTheDocument();
+  });
+
+  it('em inglês, o token `data,valor` continua o mesmo', async () => {
+    (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+      ok: true, json: async () => [{ id: 1, codigo: 'REC', nome: 'Receita', periodo: 'daily' }],
+    });
+    render(<ImportLogsCSV />);
+    expect(await screen.findByText(/the data,valor format/)).toBeInTheDocument();
   });
 });

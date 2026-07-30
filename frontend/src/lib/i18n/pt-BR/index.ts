@@ -9,6 +9,7 @@ import { goalsImport } from "./goalsImport";
 import { landing } from "./landing";
 import { layout } from "./layout";
 import { logs } from "./logs";
+import { logsImport } from "./logsImport";
 import { login } from "./login";
 import { metrics } from "./metrics";
 import { onboarding } from "./onboarding";
@@ -25,6 +26,7 @@ export const ptBR = {
   landing,
   layout,
   logs,
+  logsImport,
   login,
   metrics,
   onboarding,

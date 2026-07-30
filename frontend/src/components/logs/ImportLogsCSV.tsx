@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch, API_BASE } from "@/lib/api";
+import { useT } from "@/lib/i18n/useT";
 
 interface Metric { id: number; codigo: string; nome?: string; periodo: string }
 interface ErroLinha { linha: number; motivo: string }
@@ -10,6 +11,7 @@ interface Resumo { criadas: number; ignoradas: number; sem_meta: number; erros: 
 
 export default function ImportLogsCSV() {
   const router = useRouter();
+  const { t } = useT();
   const [token, setToken] = useState("");
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [metricId, setMetricId] = useState("");
@@ -37,7 +39,7 @@ export default function ImportLogsCSV() {
         body: JSON.stringify({ metric_id: Number(metricId), csv, dry_run }),
       });
       const d = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(d.detail || "Não foi possível importar");
+      if (!resp.ok) throw new Error(d.detail || t("logsImport.importFailed"));
       return d;
     } finally {
       setLoading(false);
@@ -50,7 +52,7 @@ export default function ImportLogsCSV() {
     try {
       setPreview(await chamar(true));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro");
+      setError(err instanceof Error ? err.message : t("goalsImport.genericError"));
       setPreview(null);
     }
   };
@@ -60,7 +62,7 @@ export default function ImportLogsCSV() {
       setResult(await chamar(false));
       setPreview(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro");
+      setError(err instanceof Error ? err.message : t("goalsImport.genericError"));
     }
   };
 
@@ -71,29 +73,29 @@ export default function ImportLogsCSV() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
-        <Link href="/logs" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">← Voltar pra Lançamentos</Link>
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1">Importar lançamentos (CSV)</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">Cole os dados no formato <code className="text-zinc-700 dark:text-zinc-300">data,valor</code> (uma linha por dia). Cada valor casa com a meta do mesmo dia.</p>
+        <Link href="/logs" className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:text-white mb-2 inline-block">{t("logsImport.backToLogs")}</Link>
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1">{t("logsImport.title")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">{t("logsImport.subtitle")}</p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {result && (
           <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">
-            Importado: {result.criadas} criada(s), {result.ignoradas} já existente(s), {result.sem_meta} sem meta no dia.
+            {t("logsImport.imported", { criadas: result.criadas, ignoradas: result.ignoradas, sem_meta: result.sem_meta })}
           </div>
         )}
 
         <form onSubmit={handlePreview} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Métrica</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goalsImport.metricLabel")}</label>
             <select name="metric_id" value={metricId} onChange={e => { setMetricId(e.target.value); setPreview(null); setResult(null); }} required
               className="w-full px-5 py-3 bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl">
-              <option value="">Selecione a métrica</option>
+              <option value="">{t("goalsImport.selectMetric")}</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo} ({m.periodo})</option>)}
             </select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">CSV</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("logsImport.csvLabel")}</label>
             <textarea name="csv" value={csv} onChange={e => { setCsv(e.target.value); setPreview(null); setResult(null); }} required rows={8}
               placeholder={"data,valor\n2026-08-03,5\n2026-08-04,7"}
               className="w-full px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl font-mono text-sm" />
@@ -101,23 +103,23 @@ export default function ImportLogsCSV() {
 
           <button type="submit" disabled={loading}
             className="w-full bg-zinc-200 dark:bg-white/10 font-bold py-3 rounded-xl hover:bg-zinc-300 dark:bg-white/20 transition">
-            {loading ? "Calculando..." : "Pré-visualizar"}
+            {loading ? t("goalsImport.calculating") : t("goalsImport.preview")}
           </button>
         </form>
 
         {resumo && (
           <div className="mt-8">
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-3">
-              <span className="text-zinc-600 dark:text-zinc-400">Válidas: <strong className="text-zinc-900 dark:text-white">{resumo.criadas}</strong></span>
-              <span className="text-zinc-600 dark:text-zinc-400">Já existentes: <strong className="text-zinc-900 dark:text-white">{resumo.ignoradas}</strong></span>
-              <span className="text-zinc-600 dark:text-zinc-400">Sem meta no dia: <strong className="text-zinc-900 dark:text-white">{resumo.sem_meta}</strong></span>
-              <span className="text-zinc-600 dark:text-zinc-400">Erros: <strong className="text-zinc-900 dark:text-white">{resumo.erros.length}</strong></span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("logsImport.summaryValid")} <strong className="text-zinc-900 dark:text-white">{resumo.criadas}</strong></span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("logsImport.summaryExisting")} <strong className="text-zinc-900 dark:text-white">{resumo.ignoradas}</strong></span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("logsImport.summaryNoGoal")} <strong className="text-zinc-900 dark:text-white">{resumo.sem_meta}</strong></span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("logsImport.summaryErrors")} <strong className="text-zinc-900 dark:text-white">{resumo.erros.length}</strong></span>
             </div>
             {resumo.erros.length > 0 && (
               <div className="max-h-48 overflow-y-auto rounded-xl border border-red-500/20 mb-4">
                 <table className="w-full text-sm">
                   <thead className="text-red-300/70 text-left sticky top-0 bg-zinc-100 dark:bg-[#111]">
-                    <tr><th className="py-2 px-3">Linha</th><th className="px-3">Motivo</th></tr>
+                    <tr><th className="py-2 px-3">{t("logsImport.colLine")}</th><th className="px-3">{t("logsImport.colReason")}</th></tr>
                   </thead>
                   <tbody>
                     {resumo.erros.map(er => (
@@ -132,7 +134,7 @@ export default function ImportLogsCSV() {
             {preview && !result && (
               <button onClick={handleConfirm} disabled={loading}
                 className="w-full bg-blue-600 font-bold py-3 rounded-xl hover:bg-blue-500 transition">
-                {loading ? "Gravando..." : "Confirmar importação"}
+                {loading ? t("goalsImport.saving") : t("logsImport.confirmImport")}
               </button>
             )}
           </div>
