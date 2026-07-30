@@ -169,3 +169,25 @@ def test_me_reflects_admin_role(client, session):
 
     resp = client.get("/api/v1/me/", headers=headers)
     assert resp.json()["role"] == "admin"
+
+
+def test_email_de_verificacao_sai_no_idioma_da_requisicao(client, session, monkeypatch):
+    """Transacional nasce de uma requisição: o idioma certo é aquele em que a
+    pessoa está interagindo agora, não um padrão gravado — no registro o usuário
+    acabou de ser criado com o locale default e ainda não escolheu nada."""
+    capturado = {}
+    import email_service
+
+    def fake(to_email, token, lang="en"):
+        capturado["lang"] = lang
+        return True
+
+    monkeypatch.setattr("main.send_verification_email", fake)
+
+    client.post(
+        "/api/v1/register/",
+        json={"username": "zeca", "password": "senha123", "email": "zeca@x.com",
+              "organizacao": "Zeca Org", "codigo_organizacao": "k"},
+        headers={"Accept-Language": "pt-BR"},
+    )
+    assert capturado["lang"] == "pt-BR"

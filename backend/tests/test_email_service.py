@@ -184,7 +184,9 @@ def test_render_html_exibe_alerta_risco(session):
     session.commit()
     resumo = build_resumo(user, session, date(2026, 6, 28))
     html = render_html(resumo)
-    assert "risco" in html.lower()
+    # O selo existe nos dois idiomas; o teste verifica que ele APARECE, não o
+    # texto. O par de traduções tem teste próprio logo abaixo.
+    assert "⚠" in html
 
 
 # --- endpoint de preview ---
@@ -199,3 +201,48 @@ def test_preview_retorna_html(client: TestClient, session: Session):
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
     assert "ana" in resp.text
+
+
+# --- idioma do e-mail (#305) ---
+
+def _resumo_com_meta(session):
+    """Os cabeçalhos da tabela só existem quando há metas — sem isso o teste
+    verificaria a tradução de um bloco que nem é renderizado."""
+    user = make_user(session)
+    metric = make_metric(session)
+    make_goal(session, metric.id)
+    return build_resumo(user, session, date(2026, 6, 28))
+
+
+def test_render_html_em_ingles_por_padrao(session):
+    html = render_html(_resumo_com_meta(session))
+    assert 'lang="en"' in html
+    assert "Daily goals summary" in html
+    assert "Metric" in html
+    assert "Target" in html
+
+
+def test_render_html_em_portugues(session):
+    html = render_html(_resumo_com_meta(session), "pt-BR")
+    assert 'lang="pt-BR"' in html
+    assert "Resumo diário de metas" in html
+    assert "Métrica" in html
+    assert "Alvo" in html
+
+
+def test_render_html_sem_metas_nos_dois_idiomas(session):
+    user = make_user(session)
+    resumo = build_resumo(user, session, date(2026, 6, 28))
+    assert "No goal registered yet" in render_html(resumo)
+    assert "Nenhuma meta cadastrada ainda" in render_html(resumo, "pt-BR")
+
+
+def test_render_html_alerta_de_risco_nos_dois_idiomas(session):
+    user = make_user(session)
+    metric = make_metric(session)
+    goal = make_goal(session, metric.id, alvo="100")
+    session.add(LogEntry(goal=goal.id, data=date(2026, 6, 28), valor_logado="50"))
+    session.commit()
+    resumo = build_resumo(user, session, date(2026, 6, 28))
+    assert "at risk" in render_html(resumo).lower()
+    assert "em risco" in render_html(resumo, "pt-BR").lower()
