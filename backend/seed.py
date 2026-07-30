@@ -3,14 +3,22 @@ from sqlmodel import Session, select
 from models import Goal, GoalTemplate, Metric, Organization, User, ExternalIndex
 
 _METRICAS_PADRAO = [
-    dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                tipo="currency", periodo="daily",   valor_padrao="0"),
-    dict(codigo="PAD_RECEITA_MENSAL",  nome="Receita Mensal",        descricao="Faturamento total do mês.",                   tipo="currency", periodo="monthly", valor_padrao="0"),
-    dict(codigo="PAD_HORAS_ESTUDO",    nome="Horas Estudadas",       descricao="Tempo dedicado ao estudo no dia (horas).",    tipo="decimal",  periodo="daily",   valor_padrao="0"),
-    dict(codigo="PAD_PAGINAS_LIDAS",   nome="Páginas Lidas",         descricao="Quantidade de páginas lidas no dia.",         tipo="number",   periodo="daily",   valor_padrao="0"),
-    dict(codigo="PAD_EXERCICIO",       nome="Exercício Físico",      descricao="Realizou atividade física hoje? (true/false)", tipo="boolean",  periodo="daily",   valor_padrao="false"),
-    dict(codigo="PAD_HORAS_SONO",      nome="Horas de Sono",         descricao="Horas dormidas na noite anterior.",           tipo="decimal",  periodo="daily",   valor_padrao="7"),
-    dict(codigo="PAD_PESO_CORPORAL",   nome="Peso Corporal (kg)",    descricao="Peso registrado em kg.",                      tipo="decimal",  periodo="daily",   valor_padrao=None),
-    dict(codigo="PAD_TAXA_CONVERSAO",  nome="Taxa de Conversão (%)", descricao="Percentual de leads convertidos.",            tipo="percent",  periodo="monthly", valor_padrao="0"),
+    dict(codigo="PAD_RECEITA_DIARIA",  nome="Receita do Dia",       descricao="Valor total faturado no dia.",                 tipo="currency", periodo="daily",   valor_padrao="0",
+         nome_en="Daily Revenue",       descricao_en="Total amount billed in the day."),
+    dict(codigo="PAD_RECEITA_MENSAL",  nome="Receita Mensal",        descricao="Faturamento total do mês.",                    tipo="currency", periodo="monthly", valor_padrao="0",
+         nome_en="Monthly Revenue",     descricao_en="Total billing for the month."),
+    dict(codigo="PAD_HORAS_ESTUDO",    nome="Horas Estudadas",       descricao="Tempo dedicado ao estudo no dia (horas).",     tipo="decimal",  periodo="daily",   valor_padrao="0",
+         nome_en="Study Hours",         descricao_en="Time devoted to studying in the day (hours)."),
+    dict(codigo="PAD_PAGINAS_LIDAS",   nome="Páginas Lidas",         descricao="Quantidade de páginas lidas no dia.",          tipo="number",   periodo="daily",   valor_padrao="0",
+         nome_en="Pages Read",          descricao_en="Number of pages read in the day."),
+    dict(codigo="PAD_EXERCICIO",       nome="Exercício Físico",      descricao="Realizou atividade física hoje? (true/false)", tipo="boolean",  periodo="daily",   valor_padrao="false",
+         nome_en="Physical Exercise",   descricao_en="Did you exercise today? (true/false)"),
+    dict(codigo="PAD_HORAS_SONO",      nome="Horas de Sono",         descricao="Horas dormidas na noite anterior.",            tipo="decimal",  periodo="daily",   valor_padrao="7",
+         nome_en="Sleep Hours",         descricao_en="Hours slept the previous night."),
+    dict(codigo="PAD_PESO_CORPORAL",   nome="Peso Corporal (kg)",    descricao="Peso registrado em kg.",                       tipo="decimal",  periodo="daily",   valor_padrao=None,
+         nome_en="Body Weight (kg)",    descricao_en="Weight recorded in kg."),
+    dict(codigo="PAD_TAXA_CONVERSAO",  nome="Taxa de Conversão (%)", descricao="Percentual de leads convertidos.",             tipo="percent",  periodo="monthly", valor_padrao="0",
+         nome_en="Conversion Rate (%)", descricao_en="Percentage of leads converted."),
 ]
 
 

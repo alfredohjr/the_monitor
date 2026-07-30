@@ -607,9 +607,30 @@ class MetricCreate(BaseModel):
 class MetricUpdate(MetricCreate):
     pass
 
+def _localizar_metrica(m: Metric, lang: str) -> Metric:
+    """Devolve a métrica com nome/descrição no idioma pedido.
+
+    Só traduz métrica do SISTEMA (is_default): métrica criada por usuário é dado
+    dele e fica exatamente como foi escrita.
+
+    Usa `model_copy` de propósito — a troca acontece na RESPOSTA, não no
+    registro. Mutar o objeto do ORM aqui faria a sessão persistir a tradução no
+    commit seguinte, e uma leitura em inglês apagaria o português do banco.
+    Sem tradução preenchida, mantém o original: métrica sem `nome_en` não pode
+    sumir da tela.
+    """
+    if lang == LOCALE_PADRAO and m.is_default and m.nome_en:
+        return m.model_copy(update={
+            "nome": m.nome_en,
+            "descricao": m.descricao_en or m.descricao,
+        })
+    return m
+
+
 @app.get('/api/v1/metrics/')
 def list_metrics(
-    session: SessionDep, org: ActiveOrg, user: CurrentUser, apenas_inscritas: bool = False
+    session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep,
+    apenas_inscritas: bool = False,
 ) -> list[Metric]:
     # Métricas da org ativa + catálogo padrão (global).
     cond = Metric.is_default == True
@@ -631,7 +652,7 @@ def list_metrics(
     if org is not None and not _is_org_admin(session, user.id, org):
         atribuidas = _assigned_metric_ids(session, user.id, org)
         metrics = [m for m in metrics if m.id in atribuidas]
-    return metrics
+    return [_localizar_metrica(m, lang) for m in metrics]
 
 @app.post('/api/v1/metrics/', status_code=201)
 def create_metric(body: MetricCreate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
