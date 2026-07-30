@@ -188,7 +188,7 @@ def test_send_verification_email_assunto_e_destinatario(smtp_configurado):
 
     msg = smtp_configurado.instances[0].enviadas[0]
     assert msg["To"] == "ana@example.com"
-    assert "Confirme seu e-mail" in msg["Subject"]
+    assert "Confirm your e-mail" in msg["Subject"]
 
 
 def test_enviar_resumo_para_todos_continua_apos_falha(smtp_configurado):
@@ -312,3 +312,57 @@ def test_resumo_diario_ignora_org_paga_deletada(smtp_configurado):
         enviar_resumo_para_todos(session)
 
     assert smtp_configurado.todas_enviadas() == []
+
+
+# --- idioma dos e-mails transacionais (#305) ---
+
+def test_verificacao_em_ingles_por_padrao(smtp_configurado):
+    send_verification_email("ana@example.com", "tok-123")
+    assert "Confirm your e-mail" in smtp_configurado.todas_enviadas()[0]["Subject"]
+
+
+def test_verificacao_em_portugues(smtp_configurado):
+    send_verification_email("ana@example.com", "tok-123", "pt-BR")
+    assert "Confirme seu e-mail" in smtp_configurado.todas_enviadas()[0]["Subject"]
+
+
+def test_reset_de_senha_nos_dois_idiomas(smtp_configurado):
+    from email_service import send_password_reset_email
+
+    send_password_reset_email("ana@example.com", "tok-1")
+    send_password_reset_email("ana@example.com", "tok-2", "pt-BR")
+    # Cada envio abre uma conexão nova: os dois assuntos não ficam na mesma.
+    assuntos = [m["Subject"] for m in smtp_configurado.todas_enviadas()]
+    assert any("Password reset" in a for a in assuntos)
+    assert any("Redefinição de senha" in a for a in assuntos)
+
+
+def test_resumo_diario_usa_o_locale_gravado_do_usuario(smtp_configurado):
+    """Aqui NÃO existe requisição para consultar o Accept-Language — é rotina.
+    O idioma tem que sair da coluna User.locale (#304)."""
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        org = Organization(nome="Paga", is_paid=True)
+        session.add(org)
+        session.commit()
+
+        bia = User(
+            username="bia", hashed_password=hash_password("x"),
+            email="bia@example.com", locale="pt-BR",
+        )
+        session.add(bia)
+        session.commit()
+        _vincula(session, bia, org)
+        session.commit()
+
+        enviar_resumo_para_todos(session)
+
+    msg = smtp_configurado.todas_enviadas()[0]
+    corpo = msg.get_body(preferencelist=("html",)).get_content()
+    assert 'lang="pt-BR"' in corpo
+    assert "Resumo do dia" in corpo
+    assert "Resumo de metas" in msg["Subject"]

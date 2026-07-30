@@ -7,6 +7,7 @@ from email.message import EmailMessage
 
 from sqlmodel import Session, select
 
+from messages import LOCALE_PADRAO, t
 from models import Goal, LogEntry, Metric, Membership, Organization, User
 
 logger = logging.getLogger(__name__)
@@ -57,11 +58,17 @@ def build_resumo(user: User, session: Session, hoje: date | None = None) -> dict
     }
 
 
-def render_html(resumo: dict) -> str:
+def render_html(resumo: dict, lang: str = LOCALE_PADRAO) -> str:
+    """Monta o e-mail de resumo diário no idioma pedido.
+
+    `lang` vem do `User.locale` (#304): este e-mail é gerado por rotina, sem
+    requisição, então não há Accept-Language para consultar.
+    """
     itens_html = ""
     for item in resumo["itens"]:
         valor = item["valor_atual"] if item["valor_atual"] is not None else "—"
-        risco_badge = ' <span style="color:#c0392b;font-weight:bold;">⚠ em risco</span>' if item["em_risco"] else ""
+        risco = t("email.em_risco", lang)
+        risco_badge = f' <span style="color:#c0392b;font-weight:bold;">⚠ {risco}</span>' if item["em_risco"] else ""
         itens_html += f"""
         <tr>
           <td style="padding:8px;border-bottom:1px solid #eee">{item['metric_nome']}</td>
@@ -69,28 +76,28 @@ def render_html(resumo: dict) -> str:
           <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">{valor}{risco_badge}</td>
         </tr>"""
 
-    sem_metas = "<p>Nenhuma meta cadastrada ainda.</p>" if not resumo["itens"] else ""
+    sem_metas = f'<p>{t("email.resumo_sem_metas", lang)}</p>' if not resumo["itens"] else ""
 
     return f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Resumo diário de metas</title></head>
+<html lang="{lang}">
+<head><meta charset="UTF-8"><title>{t("email.resumo_titulo", lang)}</title></head>
 <body style="font-family:sans-serif;max-width:600px;margin:40px auto;color:#333">
-  <h2 style="color:#2c3e50">Resumo do dia — {resumo['data']}</h2>
-  <p>Olá, <strong>{resumo['username']}</strong>!</p>
+  <h2 style="color:#2c3e50">{t("email.resumo_cabecalho", lang, data=resumo['data'])}</h2>
+  <p>{t("email.resumo_saudacao", lang)}, <strong>{resumo['username']}</strong>!</p>
   {sem_metas}
   {"" if not resumo["itens"] else f'''
   <table style="width:100%;border-collapse:collapse">
     <thead>
       <tr style="background:#f5f5f5">
-        <th style="padding:8px;text-align:left">Métrica</th>
-        <th style="padding:8px">Alvo</th>
-        <th style="padding:8px">Hoje</th>
+        <th style="padding:8px;text-align:left">{t("email.col_metrica", lang)}</th>
+        <th style="padding:8px">{t("email.col_alvo", lang)}</th>
+        <th style="padding:8px">{t("email.col_hoje", lang)}</th>
       </tr>
     </thead>
     <tbody>{itens_html}</tbody>
   </table>'''}
   <hr style="margin-top:32px">
-  <p style="font-size:12px;color:#999">The Monitor — acompanhamento de metas</p>
+  <p style="font-size:12px;color:#999">{t("email.rodape", lang)}</p>
 </body>
 </html>"""
 
@@ -172,7 +179,7 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
     return True
 
 
-def send_verification_email(to_email: str, token: str) -> bool:
+def send_verification_email(to_email: str, token: str, lang: str = LOCALE_PADRAO) -> bool:
     """Envia o link de verificação de e-mail.
 
     O link aponta para o frontend, que consome o token via POST /verify-email/.
@@ -182,14 +189,14 @@ def send_verification_email(to_email: str, token: str) -> bool:
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     link = f"{frontend_url}/verificar-email?token={token}"
     html = (
-        f'<p>Confirme seu e-mail clicando no link abaixo (válido por 24h):</p>'
+        f'<p>{t("email.verificacao_corpo", lang)}</p>'
         f'<p><a href="{link}">{link}</a></p>'
     )
     logger.info("Verificação de e-mail para %s | link: %s", to_email, link)
-    return send_email(to_email, "Confirme seu e-mail — The Monitor", html)
+    return send_email(to_email, t("email.verificacao_assunto", lang), html)
 
 
-def send_password_reset_email(to_email: str, token: str) -> bool:
+def send_password_reset_email(to_email: str, token: str, lang: str = LOCALE_PADRAO) -> bool:
     """Envia o link de redefinição de senha (#242).
 
     O link aponta para o frontend (/redefinir-senha), que consome o token via
@@ -198,12 +205,12 @@ def send_password_reset_email(to_email: str, token: str) -> bool:
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     link = f"{frontend_url}/redefinir-senha?token={token}"
     html = (
-        f'<p>Recebemos um pedido para redefinir sua senha. Clique no link abaixo (válido por 1h):</p>'
+        f'<p>{t("email.reset_corpo", lang)}</p>'
         f'<p><a href="{link}">{link}</a></p>'
-        f'<p>Se não foi você, ignore este e-mail.</p>'
+        f'<p>{t("email.reset_ignore", lang)}</p>'
     )
     logger.info("Redefinição de senha para %s | link: %s", to_email, link)
-    return send_email(to_email, "Redefinição de senha — The Monitor", html)
+    return send_email(to_email, t("email.reset_assunto", lang), html)
 
 
 def _ids_de_usuarios_pagos(session: Session) -> set[int]:
@@ -230,5 +237,6 @@ def enviar_resumo_para_todos(session: Session) -> None:
         if user.id not in pagos:
             continue  # conta free não recebe notificação (#253)
         resumo = build_resumo(user, session, hoje)
-        html = render_html(resumo)
-        send_email(user.email, f"Resumo de metas — {hoje}", html)
+        # Sem requisição aqui: o idioma sai do que o usuário gravou (#304).
+        html = render_html(resumo, user.locale)
+        send_email(user.email, t("email.resumo_assunto", user.locale, data=hoje), html)

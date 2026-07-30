@@ -274,7 +274,7 @@ def register(body: RegisterRequest, session: SessionDep, lang: LocaleDep):
         )
         session.add(token)
         session.commit()
-        send_verification_email(body.email, token.token)
+        send_verification_email(body.email, token.token, lang)
 
     return user
 
@@ -320,7 +320,7 @@ class EmailRequest(BaseModel):
 
 
 @app.post('/api/v1/verify-email/resend/')
-def resend_verification(body: EmailRequest, session: SessionDep):
+def resend_verification(body: EmailRequest, session: SessionDep, lang: LocaleDep):
     """Reenvia o link de verificação. Resposta genérica (não vaza cadastro):
     só dispara o e-mail se a conta existe e ainda não está verificada."""
     email = body.email.strip().lower()
@@ -333,12 +333,12 @@ def resend_verification(body: EmailRequest, session: SessionDep):
         )
         session.add(token)
         session.commit()
-        send_verification_email(user.email, token.token)
+        send_verification_email(user.email, token.token, lang)
     return {"detail": "Se o e-mail existir e não estiver verificado, enviamos um novo link."}
 
 
 @app.post('/api/v1/password-reset/request/')
-def password_reset_request(body: EmailRequest, session: SessionDep):
+def password_reset_request(body: EmailRequest, session: SessionDep, lang: LocaleDep):
     """'Esqueci minha senha'. SEMPRE responde 200 (não revela se o e-mail existe);
     se existir, cria um token de uso único (1h) e envia o link."""
     email = body.email.strip().lower()
@@ -351,7 +351,7 @@ def password_reset_request(body: EmailRequest, session: SessionDep):
         )
         session.add(token)
         session.commit()
-        send_password_reset_email(email, token.token)
+        send_password_reset_email(email, token.token, lang)
     return {"detail": "Se o e-mail estiver cadastrado, enviamos um link para redefinir a senha."}
 
 
