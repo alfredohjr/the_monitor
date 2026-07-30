@@ -213,3 +213,42 @@ describe('AdminUsers — idioma (#296)', () => {
     expect(await screen.findByText('auditor')).toBeInTheDocument();
   });
 });
+
+describe('AdminUsers — moeda da organização (#308)', () => {
+  function mockOrg(moeda = 'BRL', onPatch?: (corpo: unknown) => void) {
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (opts?.method === 'PATCH' && /\/organizations\/\d+\/$/.test(url)) {
+        onPatch?.(JSON.parse(opts.body as string));
+        return Promise.resolve({ ok: true, json: async () => ({ id: 7, nome: 'Acme', moeda: 'USD' }) });
+      }
+      if (url.includes('/me/')) return Promise.resolve({ ok: true, json: async () => ({
+        id: 1, role: 'admin',
+        organizations: [{ id: 7, nome: 'Acme', role: 'admin', is_paid: true, moeda }],
+      }) });
+      if (url.includes('/users/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 1, username: 'admin', email: null, role: 'admin' },
+      ] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+  }
+
+  it('mostra a moeda atual da organização', async () => {
+    mockOrg('BRL');
+    render(<AdminUsers />);
+    const seletor = await screen.findByLabelText(/currency|moeda/i);
+    expect((seletor as HTMLSelectElement).value).toBe('BRL');
+  });
+
+  it('trocar a moeda manda PATCH para a organização', async () => {
+    const enviados: unknown[] = [];
+    mockOrg('BRL', (c) => enviados.push(c));
+    render(<AdminUsers />);
+    // Espera o /me resolver: o select é estático e renderiza no primeiro passe,
+    // então mexer nele antes da carga mandaria PATCH sem saber qual org é.
+    // "admin" aparece duas vezes (username e papel); o placeholder do convite
+    // só existe depois do /me confirmar que a org é paga.
+    await screen.findByPlaceholderText(/new member|novo membro/i);
+    fireEvent.change(screen.getByLabelText(/currency|moeda/i), { target: { value: 'USD' } });
+    await waitFor(() => expect(enviados).toContainEqual({ moeda: 'USD' }));
+  });
+});

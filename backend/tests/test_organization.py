@@ -113,3 +113,63 @@ def test_me_expoe_a_moeda_da_org(client: TestClient, session: Session):
     client.post("/api/v1/organizations/", json={"nome": "Acme"}, headers=auth(user))
     orgs = client.get("/api/v1/me/", headers=auth(user)).json()["organizations"]
     assert orgs[0]["moeda"] == "BRL"
+
+
+# --- admin escolhe a moeda (#308) ---
+
+def _org_com_admin(client: TestClient, session: Session):
+    admin = make_user(session, "chefe")
+    r = client.post("/api/v1/organizations/", json={"nome": "Acme"}, headers=auth(admin))
+    return admin, r.json()["id"]
+
+
+def test_admin_troca_a_moeda_da_org(client: TestClient, session: Session):
+    admin, org_id = _org_com_admin(client, session)
+    r = client.patch(
+        f"/api/v1/organizations/{org_id}/", json={"moeda": "USD"}, headers=auth(admin)
+    )
+    assert r.status_code == 200
+    assert r.json()["moeda"] == "USD"
+
+    orgs = client.get("/api/v1/me/", headers=auth(admin)).json()["organizations"]
+    assert orgs[0]["moeda"] == "USD"
+
+
+def test_lancador_comum_nao_troca_a_moeda(client: TestClient, session: Session):
+    """Moeda define o significado dos valores da org inteira — só o admin mexe."""
+    admin, org_id = _org_com_admin(client, session)
+    peao = make_user(session, "peao")
+    session.add(Membership(user_id=peao.id, organization_id=org_id, role="user"))
+    session.commit()
+
+    r = client.patch(
+        f"/api/v1/organizations/{org_id}/", json={"moeda": "USD"}, headers=auth(peao)
+    )
+    assert r.status_code == 403
+
+    org = session.get(Organization, org_id)
+    session.refresh(org)
+    assert org.moeda == "BRL", "a moeda mudou apesar do 403"
+
+
+def test_moeda_fora_do_conjunto_recusada(client: TestClient, session: Session):
+    """Campo livre vira lixo no Intl.NumberFormat do front — conjunto fechado."""
+    admin, org_id = _org_com_admin(client, session)
+    for invalida in ["XYZ", "brl", "", "R$"]:
+        r = client.patch(
+            f"/api/v1/organizations/{org_id}/", json={"moeda": invalida}, headers=auth(admin)
+        )
+        assert r.status_code == 400, f"aceitou moeda inválida: {invalida!r}"
+
+    org = session.get(Organization, org_id)
+    session.refresh(org)
+    assert org.moeda == "BRL"
+
+
+def test_nao_membro_nem_enxerga_a_org(client: TestClient, session: Session):
+    admin, org_id = _org_com_admin(client, session)
+    estranho = make_user(session, "estranho")
+    r = client.patch(
+        f"/api/v1/organizations/{org_id}/", json={"moeda": "USD"}, headers=auth(estranho)
+    )
+    assert r.status_code in (403, 404)
