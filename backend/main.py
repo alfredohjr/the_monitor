@@ -983,7 +983,7 @@ def refresh_external_index(code: str, session: SessionDep, _: CurrentUser, lang:
         raise HTTPException(status_code=404, detail=t("erro.indice_nao_encontrado", lang))
     provider = EXTERNAL_PROVIDERS.get(idx.provider)
     if not provider:
-        raise HTTPException(status_code=400, detail=f"Índice '{code}' não tem provider automático (entra por import curado)")
+        raise HTTPException(status_code=400, detail=t("erro.indice_sem_provider", lang, code=code))
     novos = 0
     for d in provider():
         existente = session.exec(
@@ -1296,7 +1296,7 @@ def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: 
         try:
             itens.append((date_type.fromisoformat(item.data), item.valor))
         except ValueError:
-            raise HTTPException(status_code=422, detail=f"Data inválida: {item.data}")
+            raise HTTPException(status_code=422, detail=t("erro.data_invalida_item", lang, data=item.data))
     res = _importar_lancamentos(session, org_id, body.metric_id, itens, body.dry_run)
     return {"dry_run": body.dry_run, **res}
 

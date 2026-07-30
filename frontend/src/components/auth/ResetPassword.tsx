@@ -101,7 +101,7 @@ export default function ResetPassword() {
           </form>
         )}
         <p className="mt-6 text-center text-sm text-zinc-500">
-          <Link href="/login" className="text-blue-400 hover:text-blue-300">Voltar para o login</Link>
+          <Link href="/login" className="text-blue-400 hover:text-blue-300">{t("auth.backToLogin")}</Link>
         </p>
       </div>
     </div>
