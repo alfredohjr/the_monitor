@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import LogList from '@/components/logs/LogList';
 import LogForm from '@/components/logs/LogForm';
-import { formatValor, placeholderValor } from '@/lib/formatValor';
+import { formatValor, placeholderValor, setMoedaAtiva, simboloMoeda } from '@/lib/formatValor';
 
 const mockPush = jest.fn();
 
@@ -137,5 +137,64 @@ describe('Lançamentos — idioma (#292)', () => {
     render(<LogForm />);
     expect(await screen.findByText('Fazer Check-in')).toBeInTheDocument();
     expect(screen.getByText('Quanto atingiu?')).toBeInTheDocument();
+  });
+});
+
+describe('formatValor — moeda da org + locale (#309)', () => {
+  afterEach(() => localStorage.clear());
+
+  it('usa BRL com formatação em inglês por padrão', () => {
+    expect(formatValor('1234.5', 'currency')).toBe('R$ 1,234.50');
+  });
+
+  it('usa BRL com formatação em pt-BR quando o locale está salvo', () => {
+    localStorage.setItem('locale', 'pt-BR');
+    expect(formatValor('1234.5', 'currency')).toBe('R$ 1.234,50');
+  });
+
+  it('acompanha a moeda da organização ativa', () => {
+    setMoedaAtiva('USD');
+    expect(formatValor('1234.5', 'currency')).toBe('$ 1,234.50');
+    setMoedaAtiva('EUR');
+    expect(formatValor('1234.5', 'currency')).toBe('€ 1,234.50');
+  });
+
+  it('NÃO converte o valor — só muda a formatação', () => {
+    // Trocar o símbolo convertendo daria outro número; trocar sem converter
+    // mostra o mesmo dinheiro com outro rótulo. A segunda é a correta aqui:
+    // não há taxa de câmbio no sistema, e inventar uma seria mentir sobre o dado.
+    setMoedaAtiva('BRL');
+    const emBRL = formatValor('100', 'currency');
+    setMoedaAtiva('USD');
+    const emUSD = formatValor('100', 'currency');
+    expect(emBRL.replace(/[^\d.,]/g, '')).toBe(emUSD.replace(/[^\d.,]/g, ''));
+  });
+
+  it('moeda desconhecida cai em BRL em vez de estourar', () => {
+    // Intl.NumberFormat lança RangeError com código inválido, e o erro
+    // apareceria na tela de quem usa. O backend valida (#308), mas o front
+    // não pode depender só disso.
+    setMoedaAtiva('XYZ');
+    expect(() => formatValor('10', 'currency')).not.toThrow();
+    expect(formatValor('10', 'currency')).toContain('R$');
+  });
+
+  it('percent e number seguem intocados', () => {
+    setMoedaAtiva('USD');
+    expect(formatValor('75', 'percent')).toBe('75%');
+    expect(formatValor('42', 'number')).toBe('42');
+  });
+});
+
+describe('simboloMoeda (#309)', () => {
+  afterEach(() => localStorage.clear());
+
+  it('devolve o símbolo da moeda ativa', () => {
+    setMoedaAtiva('BRL');
+    expect(simboloMoeda()).toBe('R$');
+    setMoedaAtiva('USD');
+    expect(simboloMoeda()).toBe('$');
+    setMoedaAtiva('EUR');
+    expect(simboloMoeda()).toBe('€');
   });
 });

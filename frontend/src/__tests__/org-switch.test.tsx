@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Navbar from '@/components/layout/Navbar';
-import { getActiveOrg } from '@/lib/api';
+import { getMoedaAtiva } from '@/lib/formatValor';
+import { getActiveOrg, setActiveOrg } from '@/lib/api';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
@@ -67,5 +68,37 @@ describe('Navbar — switch de organização', () => {
     render(<Navbar />);
     await waitFor(() => expect(screen.getByText(/Hi/)).toBeInTheDocument());
     expect(screen.queryByLabelText('Organization')).not.toBeInTheDocument();
+  });
+});
+
+describe('Navbar — moeda da org ativa (#309)', () => {
+  const orgsComMoeda = {
+    role: 'admin',
+    organizations: [
+      { id: 7, nome: 'Acme', role: 'admin', moeda: 'USD' },
+      { id: 9, nome: 'Outra', role: 'admin', moeda: 'EUR' },
+    ],
+  };
+
+  it('grava a moeda da org ativa para o formatValor usar', async () => {
+    localStorage.setItem('access_token', 'tok');
+    // mockMe responde [] para as outras rotas: o NotificationBell renderizado
+    // dentro do Navbar espera lista e quebra com um objeto.
+    mockMe(orgsComMoeda);
+    render(<Navbar />);
+    await waitFor(() => expect(getMoedaAtiva()).toBe('USD'));
+  });
+
+  it('trocar de organização troca a moeda junto', async () => {
+    // Sem isso, os valores da org nova apareceriam com o símbolo da anterior —
+    // o número certo com a moeda errada, que é pior que um erro visível.
+    localStorage.setItem('access_token', 'tok');
+    setActiveOrg(7);
+    mockMe(orgsComMoeda);
+    render(<Navbar />);
+    await waitFor(() => expect(getMoedaAtiva()).toBe('USD'));
+
+    fireEvent.change(await screen.findByLabelText(/organization/i), { target: { value: '9' } });
+    await waitFor(() => expect(getMoedaAtiva()).toBe('EUR'));
   });
 });

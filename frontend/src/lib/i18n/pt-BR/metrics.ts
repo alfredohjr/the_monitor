@@ -32,7 +32,7 @@ export const metrics = {
   formType: "Tipo",
   typeNumber: "Número Inteiro",
   typeDecimal: "Número Decimal",
-  typeCurrency: "Monetário (R$)",
+  typeCurrency: "Monetário",
   typePercent: "Percentual (%)",
   typeString: "Texto",
   typeBoolean: "Booleano",

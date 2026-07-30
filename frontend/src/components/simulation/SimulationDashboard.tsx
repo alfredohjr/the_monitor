@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { apiFetch, API_BASE } from "@/lib/api";
 import { useT } from "@/lib/i18n/useT";
+import { simboloMoeda } from "@/lib/formatValor";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
@@ -359,7 +360,11 @@ export default function SimulationDashboard() {
   const sumAdjusted = simData.reduce((acc, d) => acc + (isNaN(d.alvo) ? 0 : d.alvo), 0);
   const percentage = sumBaseline > 0 ? ((sumAdjusted / sumBaseline) * 100).toFixed(1) : "0.0";
   const selectedMetricObj = metrics.find(m => String(m.id) === selectedMetric);
-  const prefix = (selectedMetricObj?.tipo === 'decimal' || selectedMetricObj?.tipo === 'currency') ? "R$ " : "";
+  // O símbolo acompanha a moeda da organização (#309) — antes era "R$ " cravado,
+  // o que mostraria o número certo com a moeda errada numa org em USD/EUR.
+  const prefix = (selectedMetricObj?.tipo === 'decimal' || selectedMetricObj?.tipo === 'currency')
+    ? `${simboloMoeda()} `
+    : "";
 
   return (
     <div className="flex flex-col min-h-screen p-6 pt-24 sm:p-24 relative bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white overflow-hidden">

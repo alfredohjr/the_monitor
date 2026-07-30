@@ -15,8 +15,8 @@ export const comum = {
   genericError: "Erro inesperado",
   requiredField: "Campo obrigatório",
   // Placeholders do campo de valor, compartilhados por GoalForm e LogForm
-  // (via `placeholderValor`). O "(R$)" acompanha o #309.
-  placeholderCurrency: "Ex: 500.00 (R$)",
+  // (via `placeholderValor`). O símbolo vem da moeda da org (#309).
+  placeholderCurrency: "Ex: 500.00 ({simbolo})",
   placeholderPercent: "Ex: 75 (%)",
   placeholderGeneric: "Ex: 5.5, TRUE, 500",
   // Erros genéricos da camada de API (`mensagemDeErro`). O `detail` das rotas

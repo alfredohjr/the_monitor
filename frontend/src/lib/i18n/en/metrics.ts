@@ -41,7 +41,7 @@ export const metrics = {
   typeDecimal: "Decimal Number",
   // O "(R$)" fica correto enquanto a moeda for fixa. Quando o #309 tornar a
   // moeda um atributo da organizaÃ§Ã£o, este rÃ³tulo precisa acompanhar.
-  typeCurrency: "Currency (R$)",
+  typeCurrency: "Currency",
   typePercent: "Percentage (%)",
   typeString: "Text",
   typeBoolean: "Boolean",
