@@ -1,5 +1,6 @@
 import {
   CATALOGOS,
+  LOCALES,
   getStoredLocale,
   getInitialLocale,
   applyLocale,
@@ -113,4 +114,12 @@ test('placeholder sem valor fica visível (bug reportável, não silencioso)', (
 
 test('sem vars, chaves no texto não são tocadas', () => {
   expect(traduzir(FIX_VARS, 'a.literal', 'en')).toBe('literal {chave}');
+});
+
+test('os locales do front são exatamente os que o backend entende', () => {
+  // Contrato entre as duas pontas: o `Accept-Language` que o apiFetch manda é
+  // este valor cru. O parser do backend (messages.locale_de_accept_language)
+  // aceita "en", "pt" e "pt-*". Trocar isto para, digamos, "pt_BR" com
+  // underscore faria o backend cair no padrão sem nenhum erro visível.
+  expect(LOCALES).toEqual(['en', 'pt-BR']);
 });
