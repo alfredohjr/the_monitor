@@ -21,6 +21,6 @@ describe('robots.txt', () => {
     expect(disallowed).toContain('/goals');
     expect(disallowed).toContain('/logs');
     expect(disallowed).toContain('/metrics');
-    expect(disallowed).toContain('/simulacao');
+    expect(disallowed).toContain('/simulation');
   });
 });

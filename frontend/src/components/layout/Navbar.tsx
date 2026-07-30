@@ -117,7 +117,7 @@ export default function Navbar() {
           {loggedIn && (
             <>
               {!isUser && <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.dashboard")}</Link>}
-              {!isUser && <Link href="/simulacao" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition sm:ml-2">{t("navbar.simulation")}</Link>}
+              {!isUser && <Link href="/simulation" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition sm:ml-2">{t("navbar.simulation")}</Link>}
               <Link href="/logs" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.logs")}</Link>
               {!isUser && <Link href="/goals" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.goals")}</Link>}
               {!isUser && <Link href="/metrics" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition">{t("navbar.metrics")}</Link>}
@@ -132,7 +132,7 @@ export default function Navbar() {
               <ThemeToggle />
               <LocaleToggle />
               <NotificationBell />
-              <Link href="/perfil" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title={t("navbar.myProfile")}>{t("navbar.greeting")}, {username || t("navbar.defaultUser")}</Link>
+              <Link href="/profile" className="text-emerald-400 font-bold hover:text-emerald-300 transition" title={t("navbar.myProfile")}>{t("navbar.greeting")}, {username || t("navbar.defaultUser")}</Link>
               {orgs.length > 0 && (
                 <select
                   aria-label={t("navbar.organization")}

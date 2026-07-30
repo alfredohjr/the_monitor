@@ -18,7 +18,7 @@ The Monitor é uma aplicação web para registrar métricas (indicadores), defin
 - \`/goals\` — Gerenciamento de metas vinculadas a métricas
 - \`/logs\` — Registro de lançamentos diários
 - \`/metrics\` — Cadastro e configuração de métricas
-- \`/simulacao\` — Simulação de cenários futuros
+- \`/simulation\` — Simulação de cenários futuros
 
 ## Sobre
 
