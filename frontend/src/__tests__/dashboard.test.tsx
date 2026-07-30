@@ -51,7 +51,7 @@ describe('Dashboard — auto-seleção de métrica', () => {
   it('mostra "Todas as Métricas" quando não há métricas', async () => {
     mockFetch([]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('all');
   });
 
@@ -67,7 +67,7 @@ describe('Dashboard — auto-seleção de métrica', () => {
       { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily', is_default: false },
     ]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('all');
   });
 
@@ -98,18 +98,47 @@ describe('Dashboard — layout: KPIs antigos removidos e filtros reposicionados'
   it('não renderiza os KPIs antigos (Metas Ativas, Taxa de Esforço, Último Registo)', async () => {
     mockFetch([{ id: 42, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
-    expect(screen.queryByText(/metas ativas/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/taxa de esforço/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/último regist/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
+    // Guardas de KPI removido: cobrem os DOIS idiomas de propósito. Só em
+    // português, com a tela em inglês, passariam a valer trivialmente e o card
+    // poderia voltar sem alarme (anotado no #315).
+    expect(screen.queryByText(/metas ativas|active goals/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/taxa de esforço|effort rate/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/último regist|last entry/i)).not.toBeInTheDocument();
   });
 
   it('mantém o filtro de métrica, o filtro de data e o atalho de check-in', async () => {
     mockFetch([{ id: 42, codigo: 'VENDAS', nome: 'Vendas', tipo: 'number', periodo: 'daily', is_default: false }]);
     const { container } = render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect(screen.getByRole('combobox')).toBeInTheDocument();
     expect(container.querySelectorAll('input[type="date"]').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/check-in hoje/i)).toBeInTheDocument();
+    expect(screen.getByText(/check-in today/i)).toBeInTheDocument();
+  });
+});
+
+describe('Dashboard — idioma (#294)', () => {
+  it('mostra o texto de carregando em inglês (trava o matcher de sincronização)', () => {
+    // Vários testes usam esse texto como sinal de "os dados chegaram". Se ele
+    // mudar sem o matcher acompanhar, os waitFor viram no-op e as asserções
+    // seguintes rodam contra a tela vazia.
+    mockFetch([]);
+    render(<DashboardGrid />);
+    expect(screen.getByText(/syncing/i)).toBeInTheDocument();
+  });
+
+  it('renderiza em pt-BR quando o locale está salvo', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    mockFetch([]);
+    render(<DashboardGrid />);
+    expect(await screen.findByText('Painel de Evolução')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Todas as Métricas' })).toBeInTheDocument();
+  });
+
+  it('renderiza em inglês por padrão', async () => {
+    mockFetch([]);
+    render(<DashboardGrid />);
+    expect(await screen.findByText('Progress Dashboard')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'All Metrics' })).toBeInTheDocument();
   });
 });

@@ -61,21 +61,21 @@ describe('DashboardGrid — consome a lista de métricas do backend', () => {
   it('exibe métrica própria retornada pelo backend', async () => {
     mockMetrics([metricaPropria]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect(screen.getByRole('option', { name: 'Minha Métrica' })).toBeInTheDocument();
   });
 
   it('exibe métrica do sistema quando o backend a inclui (assinada)', async () => {
     mockMetrics([metricaPropria, metricaSistema]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect(screen.getByRole('option', { name: 'Métrica Sistema' })).toBeInTheDocument();
   });
 
   it('não exibe métrica que o backend não retornou (não assinada)', async () => {
     mockMetrics([metricaPropria, metricaSistema]);
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/syncing/i)).not.toBeInTheDocument());
     expect(screen.queryByRole('option', { name: 'Não Assinada' })).not.toBeInTheDocument();
   });
 });

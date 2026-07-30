@@ -2,6 +2,7 @@
 // precisa existir aqui (o teste de paridade de chaves cobre isso).
 import { auth } from "./auth";
 import { comum } from "./comum";
+import { dashboard } from "./dashboard";
 import { goals } from "./goals";
 import { goalsAnchor } from "./goalsAnchor";
 import { goalsClone } from "./goalsClone";
@@ -19,6 +20,7 @@ import { navbar } from "./navbar";
 export const ptBR = {
   auth,
   comum,
+  dashboard,
   goals,
   goalsAnchor,
   goalsClone,

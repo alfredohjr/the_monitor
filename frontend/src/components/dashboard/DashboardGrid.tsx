@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Y_AXIS_WIDTH, Y_AXIS_TICK_DX } from "@/lib/chart";
 import { formatValor } from "@/lib/formatValor";
+import { useT } from "@/lib/i18n/useT";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
 
 export default function DashboardGrid() {
   const router = useRouter();
+  const { t } = useT();
   const [goals, setGoals] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [rawLoading, setRawLoading] = useState(true);
@@ -156,7 +158,7 @@ export default function DashboardGrid() {
   if (loading || !token) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-[#0a0a0a] flex items-center justify-center text-zinc-600 dark:text-zinc-400">
-        <span className="animate-pulse">Sincronizando estatísticas com o Banco...</span>
+        <span className="animate-pulse">{t("dashboard.loading")}</span>
       </div>
     );
   }
@@ -168,22 +170,22 @@ export default function DashboardGrid() {
 
       <div className="relative z-10 w-full max-w-5xl">
         <div className="mb-10 mt-8">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2">Painel de Evolução</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">Acompanhe seus dados reais, volume de lançamentos e cadência de progresso.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2">{t("dashboard.title")}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400">{t("dashboard.subtitle")}</p>
         </div>
 
         {hasMeta && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up">
-              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Meta do Período</h3>
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("dashboard.kpiGoal")}</h3>
               <p data-testid="kpi-meta-total" className="text-4xl font-bold text-amber-400">{formatValor(String(metaTotal), kpiTipo)}</p>
             </div>
             <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">Realizado</h3>
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("dashboard.kpiAchieved")}</h3>
               <p data-testid="kpi-realizado-total" className="text-4xl font-bold text-blue-400">{formatValor(String(realizadoTotal), kpiTipo)}</p>
             </div>
             <div className="p-6 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">% Realizada</h3>
+              <h3 className="text-zinc-600 dark:text-zinc-400 text-sm font-medium mb-1">{t("dashboard.kpiPercent")}</h3>
               <p data-testid="kpi-percentual" className={`text-4xl font-bold ${pctRealizada >= 100 ? 'text-emerald-400' : pctRealizada >= 50 ? 'text-blue-300' : 'text-orange-400'}`}>{pctRealizada}%</p>
             </div>
           </div>
@@ -192,7 +194,7 @@ export default function DashboardGrid() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap border-t border-zinc-200 dark:border-white/10 mt-8 pt-6">
           <div className="flex items-center gap-4 flex-wrap">
             <select value={selectedMetric} onChange={e => setSelectedMetric(e.target.value)} className="bg-zinc-100 dark:bg-[#111] border border-zinc-200 dark:border-white/10 px-4 py-3 rounded-full text-sm outline-none w-40 sm:w-auto">
-              <option value="all">Todas as Métricas</option>
+              <option value="all">{t("dashboard.allMetrics")}</option>
               {metrics.map(m => <option key={m.id} value={m.id}>{m.nome || m.codigo}</option>)}
             </select>
             <div className="flex items-center gap-2">
@@ -202,15 +204,15 @@ export default function DashboardGrid() {
             </div>
           </div>
           <Link href="/logs/new" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-full font-medium transition text-sm text-center">
-            + Check-in Hoje
+            {t("dashboard.checkinToday")}
           </Link>
         </div>
 
         <div className="mt-8 p-6 sm:p-8 rounded-3xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 h-[400px] flex flex-col animate-fade-in-up" style={{ animationDelay: '300ms' }}>
           <h3 className="text-xl font-bold mb-6">
             {selectedMetric === "all"
-              ? "Frequência de Check-ins (Histórico Geral)"
-              : hasMeta ? "Realizado vs. Meta por Período" : "Evolução dos Valores"}
+              ? t("dashboard.chartFrequency")
+              : hasMeta ? t("dashboard.chartAchievedVsGoal") : t("dashboard.chartValueEvolution")}
           </h3>
           {chartData.length > 0 ? (
             <div className="flex-1 w-full min-h-[0]">
@@ -229,7 +231,7 @@ export default function DashboardGrid() {
                   {hasMeta && (
                     <Bar
                       dataKey="meta"
-                      name="Meta"
+                      name={t("dashboard.seriesGoal")}
                       fill="#d97706"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={56}
@@ -238,7 +240,7 @@ export default function DashboardGrid() {
                   <Line
                     type="monotone"
                     dataKey={dataKeyToPlot}
-                    name={selectedMetric === "all" ? "Registos" : "Realizado"}
+                    name={selectedMetric === "all" ? t("dashboard.seriesEntries") : t("dashboard.seriesAchieved")}
                     stroke="#3b82f6"
                     strokeWidth={4}
                     connectNulls={false}
@@ -253,7 +255,7 @@ export default function DashboardGrid() {
               <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              <p>Nenhum lançamento efetuado ou pertencente a esse filtro.</p>
+              <p>{t("dashboard.empty")}</p>
             </div>
           )}
         </div>
