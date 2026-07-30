@@ -37,7 +37,7 @@ describe('Simulação — auto-seleção de métrica', () => {
   it('select permanece vazio quando não há métricas', async () => {
     mockFetch([]);
     render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 
@@ -53,7 +53,7 @@ describe('Simulação — auto-seleção de métrica', () => {
       { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily' },
     ]);
     render(<SimulationDashboard />);
-    await waitFor(() => expect(screen.queryByText(/carregando/i)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 });

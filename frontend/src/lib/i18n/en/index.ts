@@ -16,6 +16,7 @@ import { login } from "./login";
 import { metrics } from "./metrics";
 import { onboarding } from "./onboarding";
 import { register } from "./register";
+import { simulation } from "./simulation";
 import { navbar } from "./navbar";
 
 export const en = {
@@ -34,5 +35,6 @@ export const en = {
   metrics,
   onboarding,
   register,
+  simulation,
   navbar,
 };
