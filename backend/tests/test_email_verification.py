@@ -62,7 +62,9 @@ def test_login_blocked_until_email_verified(client, session):
     )
     resp = client.post("/api/v1/token/", json={"username": "bia", "password": "senha123"})
     assert resp.status_code == 403
-    assert "verific" in resp.json()["detail"].lower()
+    # "verif" casa tanto "verificado" quanto "verified" — o teste verifica que o
+    # erro é SOBRE a verificação, não o texto exato, e isso vale nos dois idiomas.
+    assert "verif" in resp.json()["detail"].lower()
 
 
 def test_verify_email_then_login_works(client, session):
