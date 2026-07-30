@@ -125,17 +125,17 @@ def read_items(session:SessionDep, offset:int=0, limit: Annotated[int, Query(le=
     return items
 
 @app.get('/items/{item_id}')
-def read_item(item_id:int, session:SessionDep) -> Item:
+def read_item(item_id:int, session:SessionDep, lang: LocaleDep) -> Item:
     item = session.get(Item,item_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Item nao existe")
+        raise HTTPException(status_code=404, detail=t("erro.item_nao_existe", lang))
     return item
 
 @app.patch('/items/{item_id}')
-def update_item(item_id:int, item_data:Item, session:SessionDep) -> Item:
+def update_item(item_id:int, item_data:Item, session:SessionDep, lang: LocaleDep) -> Item:
     item = session.get(Item,item_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Item nao existe")
+        raise HTTPException(status_code=404, detail=t("erro.item_nao_existe", lang))
 
     item_valor_anterior = item.valor
 
@@ -174,10 +174,10 @@ def read_news(session:SessionDep, offset:int=0, limit: Annotated[int, Query(le=1
     return news_data
 
 @app.get('/historico/{item_id}')
-def read_historico(item_id:int, session:SessionDep) -> list[Historico]:
+def read_historico(item_id:int, session:SessionDep, lang: LocaleDep) -> list[Historico]:
     item = session.get(Item,item_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Item nao existe")
+        raise HTTPException(status_code=404, detail=t("erro.item_nao_existe", lang))
 
     historico = session.exec(select(Historico).where(Historico.item_id==item_id).offset(0).limit(100)).all()
 
@@ -780,7 +780,7 @@ def _ensure_subscription(session: Session, user_id: int, metric_id: int) -> None
 
 
 @app.post('/api/v1/goals/import')
-def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser):
+def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep):
     """Gera metas diárias a partir de um alvo total distribuído por uma curva.
 
     `dry_run=true` devolve a prévia (pontos + soma) sem gravar. Sem dry_run,
@@ -789,19 +789,19 @@ def import_goals(body: GoalImportRequest, session: SessionDep, org: ActiveOrg, u
     org_id = require_active_org(org)
     metric = _visible_metric(body.metric_id, session, org_id)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     if body.estrategia not in ESTRATEGIAS:
-        raise HTTPException(status_code=422, detail="Estratégia inválida")
+        raise HTTPException(status_code=422, detail=t("erro.estrategia_invalida", lang))
     try:
         d0 = datetime.date.fromisoformat(body.inicio)
         d1 = datetime.date.fromisoformat(body.fim)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+        raise HTTPException(status_code=422, detail=t("erro.datas_invalidas", lang))
     if d1 < d0:
-        raise HTTPException(status_code=422, detail="Data fim anterior à início")
+        raise HTTPException(status_code=422, detail=t("erro.data_fim_anterior", lang))
     dias = (d1 - d0).days + 1
     if dias > 366:
-        raise HTTPException(status_code=422, detail="Intervalo muito longo (máx. 366 dias)")
+        raise HTTPException(status_code=422, detail=t("erro.intervalo_muito_longo", lang))
 
     datas = [d0 + datetime.timedelta(days=i) for i in range(dias)]
     try:
@@ -854,22 +854,22 @@ class GoalCloneRequest(BaseModel):
 
 
 @app.post('/api/v1/goals/clone')
-def clone_goals(body: GoalCloneRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def clone_goals(body: GoalCloneRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     """Replica as metas diárias de um período para outro, deslocando as datas
     (origem_inicio → destino_inicio) e opcionalmente escalando o alvo. Idempotente
     por métrica/período; alvo não-numérico (ex.: boolean) é copiado sem escalar."""
     from datetime import date as date_type
     org_id = require_active_org(org)
     if not _visible_metric(body.metric_id, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     try:
         oi = date_type.fromisoformat(body.origem_inicio)
         of = date_type.fromisoformat(body.origem_fim)
         di = date_type.fromisoformat(body.destino_inicio)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+        raise HTTPException(status_code=422, detail=t("erro.datas_invalidas", lang))
     if of < oi:
-        raise HTTPException(status_code=422, detail="Fim da origem anterior ao início")
+        raise HTTPException(status_code=422, detail=t("erro.fim_origem_anterior", lang))
     offset = di - oi
 
     goals = session.exec(
@@ -947,10 +947,10 @@ def list_external_indices(session: SessionDep, _: CurrentUser) -> list[ExternalI
 
 
 @app.get('/api/v1/external-indices/{code}/series')
-def external_index_series(code: str, session: SessionDep, _: CurrentUser):
+def external_index_series(code: str, session: SessionDep, _: CurrentUser, lang: LocaleDep):
     idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == code)).first()
     if not idx:
-        raise HTTPException(status_code=404, detail="Índice não encontrado")
+        raise HTTPException(status_code=404, detail=t("erro.indice_nao_encontrado", lang))
     pts = session.exec(
         select(ExternalIndexPoint).where(ExternalIndexPoint.index_id == idx.id).order_by(ExternalIndexPoint.ref_date)
     ).all()
@@ -959,12 +959,12 @@ def external_index_series(code: str, session: SessionDep, _: CurrentUser):
 
 
 @app.post('/api/v1/external-indices/{code}/refresh')
-def refresh_external_index(code: str, session: SessionDep, _: CurrentUser):
+def refresh_external_index(code: str, session: SessionDep, _: CurrentUser, lang: LocaleDep):
     """Puxa a série do provider e faz upsert idempotente (unique por índice/mês);
     revisões atualizam o ponto existente em vez de duplicar."""
     idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == code)).first()
     if not idx:
-        raise HTTPException(status_code=404, detail="Índice não encontrado")
+        raise HTTPException(status_code=404, detail=t("erro.indice_nao_encontrado", lang))
     provider = EXTERNAL_PROVIDERS.get(idx.provider)
     if not provider:
         raise HTTPException(status_code=400, detail=f"Índice '{code}' não tem provider automático (entra por import curado)")
@@ -1006,16 +1006,17 @@ def _serie_indice(session: Session, index_id: int) -> list[tuple[str, float]]:
 
 
 def _resolver_curva_ancorada(session: Session, idx: ExternalIndex, body_or_anchor, alvo_base: float,
-                             inicio: str, fim: str, estrategia_base: str, strategy: str):
+                             inicio: str, fim: str, estrategia_base: str, strategy: str,
+                             lang: str = LOCALE_PADRAO):
     """Resolve o alvo corrigido e a curva diária. Levanta 422 em datas/strategy inválidas."""
     import datetime as _dt
     try:
         d0 = _dt.date.fromisoformat(inicio)
         d1 = _dt.date.fromisoformat(fim)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+        raise HTTPException(status_code=422, detail=t("erro.datas_invalidas", lang))
     if d1 < d0:
-        raise HTTPException(status_code=422, detail="Data fim anterior à início")
+        raise HTTPException(status_code=422, detail=t("erro.data_fim_anterior", lang))
     serie = _serie_indice(session, idx.id)
     try:
         alvo_corrigido = resolver_alvo_ancorado(alvo_base, serie, inicio, fim, strategy)
@@ -1027,18 +1028,18 @@ def _resolver_curva_ancorada(session: Session, idx: ExternalIndex, body_or_ancho
 
 
 @app.post('/api/v1/goals/import-anchored')
-def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser):
+def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep):
     """Importa metas ancoradas num índice externo (#167). Snapshot: resolve a curva
     agora e grava; guarda o GoalAnchor (fórmula) para re-ancorar sob demanda."""
     org_id = require_active_org(org)
     if not _visible_metric(body.metric_id, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     idx = session.exec(select(ExternalIndex).where(ExternalIndex.code == body.index_code)).first()
     if not idx:
-        raise HTTPException(status_code=404, detail="Índice não encontrado")
+        raise HTTPException(status_code=404, detail=t("erro.indice_nao_encontrado", lang))
 
     alvo_corrigido, datas, valores = _resolver_curva_ancorada(
-        session, idx, body, body.alvo_base, body.inicio, body.fim, body.estrategia_base, body.strategy)
+        session, idx, body, body.alvo_base, body.inicio, body.fim, body.estrategia_base, body.strategy, lang)
     soma = round(sum(valores), 2)
 
     if body.dry_run:
@@ -1072,20 +1073,20 @@ def import_anchored_goals(body: GoalAnchoredImportRequest, session: SessionDep, 
 
 
 @app.post('/api/v1/goals/anchors/{anchor_id}/re-anchor')
-def re_anchor_goals(anchor_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def re_anchor_goals(anchor_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     """Re-ancora sob demanda: recomputa a curva com a série mais recente do índice
     e substitui as metas daquele anchor (snapshot novo)."""
     org_id = require_active_org(org)
     anchor = session.get(GoalAnchor, anchor_id)
     if not anchor or anchor.organization_id != org_id:
-        raise HTTPException(status_code=404, detail="Âncora não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.ancora_nao_encontrada", lang))
     idx = session.get(ExternalIndex, anchor.index_id)
     if not idx:
-        raise HTTPException(status_code=404, detail="Índice não encontrado")
+        raise HTTPException(status_code=404, detail=t("erro.indice_nao_encontrado", lang))
 
     alvo_corrigido, datas, valores = _resolver_curva_ancorada(
         session, idx, anchor, float(anchor.alvo_base), anchor.inicio, anchor.fim,
-        anchor.estrategia_base, anchor.strategy)
+        anchor.estrategia_base, anchor.strategy, lang)
 
     # Substitui as metas do anchor (soft-delete as antigas, recria resolvidas).
     antigas = session.exec(select(Goal).where(Goal.anchor_id == anchor_id, Goal.deleted == False)).all()
@@ -1350,7 +1351,7 @@ def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentU
     """
     ja_tem = session.exec(select(Membership).where(Membership.user_id == user.id)).first()
     if ja_tem:
-        raise HTTPException(status_code=400, detail="Usuário já pertence a uma organização")
+        raise HTTPException(status_code=400, detail=t("erro.ja_pertence_org", lang))
 
     nome = body.organizacao.strip()
     if not nome:
@@ -1382,11 +1383,11 @@ def onboarding_solo(body: OnboardingRequest, session: SessionDep, user: CurrentU
 
 # ---------- Admin: gestão de usuários da organização ----------
 
-def require_org_admin(session: Session, user: User, org_id: int) -> Organization:
+def require_org_admin(session: Session, user: User, org_id: int, lang: str = LOCALE_PADRAO) -> Organization:
     """Garante que `user` é admin da organização `org_id`. Levanta 404/403."""
     org = session.get(Organization, org_id)
     if not org or org.deleted:
-        raise HTTPException(status_code=404, detail="Organização não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.org_nao_encontrada", lang))
     membership = session.exec(
         select(Membership).where(
             Membership.user_id == user.id,
@@ -1394,7 +1395,7 @@ def require_org_admin(session: Session, user: User, org_id: int) -> Organization
         )
     ).first()
     if not membership or membership.role != "admin":
-        raise HTTPException(status_code=403, detail="Acesso restrito ao admin da organização")
+        raise HTTPException(status_code=403, detail=t("erro.acesso_restrito_admin", lang))
     return org
 
 
@@ -1403,8 +1404,8 @@ class OrgUserCreate(BaseModel):
 
 
 @app.get('/api/v1/organizations/{org_id}/users/')
-def list_org_users(org_id: int, session: SessionDep, user: CurrentUser):
-    require_org_admin(session, user, org_id)
+def list_org_users(org_id: int, session: SessionDep, user: CurrentUser, lang: LocaleDep):
+    require_org_admin(session, user, org_id, lang)
     memberships = session.exec(select(Membership).where(Membership.organization_id == org_id)).all()
     out = []
     for m in memberships:
@@ -1415,7 +1416,7 @@ def list_org_users(org_id: int, session: SessionDep, user: CurrentUser):
 
 
 @app.post('/api/v1/organizations/{org_id}/users/', status_code=201)
-def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user: CurrentUser):
+def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     """Admin adiciona um membro à org só com o e-mail.
 
     - E-mail já cadastrado: vincula a conta existente à org (papel 'user').
@@ -1423,14 +1424,14 @@ def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user:
       vincula. A pessoa entra depois pelo login com Google usando o mesmo
       e-mail (o backend casa por e-mail).
     """
-    org = require_org_admin(session, user, org_id)
+    org = require_org_admin(session, user, org_id, lang)
     # #216: associar membros exige plano pago. Orgs free/pessoais são single-user.
     if not org.is_paid:
-        raise HTTPException(status_code=403, detail="Adicionar membros exige um plano pago para esta organização")
+        raise HTTPException(status_code=403, detail=t("erro.membros_exige_plano_pago", lang))
 
     email = body.email.strip().lower()
     if not email:
-        raise HTTPException(status_code=400, detail="E-mail é obrigatório")
+        raise HTTPException(status_code=400, detail=t("erro.email_obrigatorio", lang))
 
     existente = session.exec(select(User).where(User.email == email)).first()
     if existente:
@@ -1441,7 +1442,7 @@ def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user:
             )
         ).first()
         if ja_membro:
-            raise HTTPException(status_code=400, detail="Usuário já é membro desta organização")
+            raise HTTPException(status_code=400, detail=t("erro.ja_e_membro", lang))
         session.add(Membership(user_id=existente.id, organization_id=org_id, role="user"))
         session.commit()
         return {"id": existente.id, "username": existente.username, "email": existente.email, "role": "user"}
@@ -1464,10 +1465,10 @@ def create_org_user(org_id: int, body: OrgUserCreate, session: SessionDep, user:
 
 
 @app.delete('/api/v1/organizations/{org_id}/users/{user_id}/')
-def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: CurrentUser):
-    require_org_admin(session, user, org_id)
+def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: CurrentUser, lang: LocaleDep):
+    require_org_admin(session, user, org_id, lang)
     if user_id == user.id:
-        raise HTTPException(status_code=400, detail="Você não pode remover a si mesmo")
+        raise HTTPException(status_code=400, detail=t("erro.nao_pode_remover_a_si", lang))
 
     membership = session.exec(
         select(Membership).where(
@@ -1476,7 +1477,7 @@ def remove_org_user(org_id: int, user_id: int, session: SessionDep, user: Curren
         )
     ).first()
     if not membership:
-        raise HTTPException(status_code=404, detail="Usuário não pertence a esta organização")
+        raise HTTPException(status_code=404, detail=t("erro.usuario_nao_pertence_org", lang))
 
     session.delete(membership)
     session.commit()
@@ -1497,20 +1498,20 @@ class MetricAssignmentUpdate(BaseModel):
     assignments: list[MetricAssignmentItem] | None = None
 
 
-def _require_member(session: Session, user_id: int, org_id: int) -> Membership:
+def _require_member(session: Session, user_id: int, org_id: int, lang: str = LOCALE_PADRAO) -> Membership:
     m = session.exec(
         select(Membership).where(Membership.user_id == user_id, Membership.organization_id == org_id)
     ).first()
     if not m:
-        raise HTTPException(status_code=404, detail="Usuário não pertence a esta organização")
+        raise HTTPException(status_code=404, detail=t("erro.usuario_nao_pertence_org", lang))
     return m
 
 
 @app.get('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
-def list_user_metric_assignments(org_id: int, user_id: int, session: SessionDep, user: CurrentUser):
+def list_user_metric_assignments(org_id: int, user_id: int, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     """Lista as métricas atribuídas ao lançador + as flags de permissão (#163/#164)."""
-    require_org_admin(session, user, org_id)
-    _require_member(session, user_id, org_id)
+    require_org_admin(session, user, org_id, lang)
+    _require_member(session, user_id, org_id, lang)
     rows = session.exec(
         select(UserMetricAssignment).where(
             UserMetricAssignment.user_id == user_id,
@@ -1527,12 +1528,12 @@ def list_user_metric_assignments(org_id: int, user_id: int, session: SessionDep,
 
 
 @app.put('/api/v1/organizations/{org_id}/users/{user_id}/metrics/')
-def set_user_metric_assignments(org_id: int, user_id: int, body: MetricAssignmentUpdate, session: SessionDep, user: CurrentUser):
+def set_user_metric_assignments(org_id: int, user_id: int, body: MetricAssignmentUpdate, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     """Substitui o conjunto de métricas atribuídas ao lançador (idempotente) e suas
     flags de permissão. Só aceita métricas visíveis à org. Remover uma atribuição
     não apaga os lançamentos históricos daquele usuário (só o vínculo é removido)."""
-    require_org_admin(session, user, org_id)
-    _require_member(session, user_id, org_id)
+    require_org_admin(session, user, org_id, lang)
+    _require_member(session, user_id, org_id, lang)
 
     # Normaliza para um dict metric_id -> (can_edit, can_delete).
     if body.assignments is not None:
