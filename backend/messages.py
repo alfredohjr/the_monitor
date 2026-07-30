@@ -1,0 +1,112 @@
+"""Mensagens do backend em pt-BR e inglês (#299).
+
+Espelha as decisões que o front tomou no #277/#289:
+
+- **`en` é o padrão.** Locale desconhecido cai nele.
+- **Chave ausente devolve a própria chave**, nunca `None`: um `detail=None` vira
+  erro sem texto na tela, que é pior do que aparecer `erro.foo` e alguém abrir bug.
+- **Frase inteira no catálogo, com `{placeholder}`** — nunca concatenar pedaços,
+  porque isso amarra a ordem das palavras de um idioma só.
+
+O `detail` das rotas continua sendo **string**. Trocar por dict ou código de erro
+quebraria os testes do backend e o `mensagemDeErro` em `frontend/src/lib/api.ts`.
+
+Esta issue cria só a base: as rotas são migradas em #300, #301 e #302.
+"""
+from __future__ import annotations
+
+import re
+from typing import Annotated, Optional
+
+from fastapi import Depends, Header
+
+LOCALE_PADRAO = "en"
+LOCALES = ("en", "pt-BR")
+
+# Catálogo. As chaves são iguais nos dois idiomas — há teste de paridade.
+MSG: dict[str, dict[str, str]] = {
+    "en": {
+        "erro.credenciais_invalidas": "Invalid credentials",
+    },
+    "pt-BR": {
+        "erro.credenciais_invalidas": "Credenciais inválidas",
+    },
+}
+
+
+def t(chave: str, lang: str = LOCALE_PADRAO, **vars) -> str:
+    """Traduz `chave` no idioma pedido.
+
+    Ordem: idioma pedido → `en` → a própria chave. `vars` interpola
+    `{nome}` no texto já traduzido; placeholder sem valor fica visível.
+    """
+    catalogo = MSG.get(lang) or MSG[LOCALE_PADRAO]
+    texto = catalogo.get(chave) or MSG[LOCALE_PADRAO].get(chave) or chave
+    return _interpolar(texto, vars) if vars else texto
+
+
+def _interpolar(texto: str, vars: dict) -> str:
+    def troca(m: re.Match) -> str:
+        nome = m.group(1)
+        return str(vars[nome]) if nome in vars else m.group(0)
+
+    return re.sub(r"\{(\w+)\}", troca, texto)
+
+
+# Um item do Accept-Language: "pt-BR;q=0.9" → ("pt-br", "0.9").
+# O peso é capturado como texto livre de propósito: um `q` malformado
+# ("q=abc") não pode descartar a preferência de idioma inteira — o cliente
+# disse qual idioma quer, só errou o peso.
+_ITEM = re.compile(r"^\s*([A-Za-z*-]+)\s*(?:;\s*q\s*=\s*([^;,]*))?\s*$")
+
+
+def locale_de_accept_language(header: Optional[str]) -> str:
+    """Escolhe o locale a partir do header `Accept-Language`.
+
+    Respeita o peso `q` da RFC 9110: o cliente lista preferências com qualidade,
+    e a ordem de escrita não é a ordem de preferência. Empate mantém a ordem em
+    que veio. Idiomas que não atendemos são ignorados; se não sobrar nenhum,
+    devolve `en`.
+    """
+    if not header:
+        return LOCALE_PADRAO
+
+    candidatos: list[tuple[float, int, str]] = []
+    for posicao, parte in enumerate(header.split(",")):
+        m = _ITEM.match(parte)
+        if not m:
+            continue
+        tag, q_bruto = m.group(1).lower(), m.group(2)
+        try:
+            q = float(q_bruto) if q_bruto is not None else 1.0
+        except ValueError:
+            # "q=abc" é lixo; trata como sem qualidade declarada em vez de
+            # descartar a preferência inteira.
+            q = 1.0
+
+        if tag == "pt" or tag.startswith("pt-"):
+            # Só existe uma variante de português no app; pt-PT também cai aqui.
+            candidatos.append((q, posicao, "pt-BR"))
+        elif tag == "en" or tag.startswith("en-"):
+            candidatos.append((q, posicao, "en"))
+
+    if not candidatos:
+        return LOCALE_PADRAO
+
+    # Maior q primeiro; empate resolve pela ordem de aparição.
+    candidatos.sort(key=lambda c: (-c[0], c[1]))
+    return candidatos[0][2]
+
+
+def get_locale(accept_language: Optional[str] = Header(default=None)) -> str:
+    """Dependency do FastAPI: o locale da requisição.
+
+    Uso nas rotas (a partir do #300):
+
+        def rota(lang: LocaleDep):
+            raise HTTPException(400, detail=t("erro.x", lang))
+    """
+    return locale_de_accept_language(accept_language)
+
+
+LocaleDep = Annotated[str, Depends(get_locale)]
