@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
       { source: "/perfil", destination: "/profile", permanent: true },
       { source: "/notificacoes", destination: "/notifications", permanent: true },
       { source: "/simulacao", destination: "/simulation", permanent: true },
+      // As LISTAS já eram /goals e /logs; só as sub-rotas tinham ficado em
+      // português (#312). Unifica o prefixo em vez de manter a tela dividida.
+      { source: "/metas/importar", destination: "/goals/import", permanent: true },
+      { source: "/metas/ancorar", destination: "/goals/anchor", permanent: true },
+      { source: "/metas/clonar", destination: "/goals/clone", permanent: true },
+      { source: "/lancamentos/importar", destination: "/logs/import", permanent: true },
     ];
   },
   eslint: {
