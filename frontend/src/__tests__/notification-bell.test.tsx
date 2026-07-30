@@ -27,7 +27,7 @@ describe('NotificationBell — legibilidade (#182)', () => {
   it('o painel aberto tem fundo sólido (não translúcido)', async () => {
     render(<NotificationBell />);
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
     const panel = await screen.findByTestId('notif-panel');
     // painel: branco no claro, escuro (dark:) preservado
     expect(panel.className).toContain('dark:bg-zinc-900');
@@ -44,7 +44,7 @@ describe('NotificationBell — recarrega ao abrir', () => {
     // Uma notificação nova chega no backend depois da carga inicial.
     currentNotifs = [{ id: 1, mensagem: '🎯 Meta atingida: Vendas', lida: false, created_at: '2026-07-08T00:00:00' }];
 
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
 
     await waitFor(() => expect(screen.getByText(/meta atingida/i)).toBeInTheDocument());
   });
@@ -79,7 +79,7 @@ describe('NotificationBell — fecha o painel ao trocar de página (#183)', () =
     const { rerender } = render(<NotificationBell />);
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
     expect(await screen.findByTestId('notif-panel')).toBeInTheDocument();
 
     mockPathname = '/metas';          // navegou
@@ -95,7 +95,7 @@ describe('NotificationBell — fecha o painel ao trocar de página (#183)', () =
     const { rerender } = render(<NotificationBell />);
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
     expect(await screen.findByTestId('notif-panel')).toBeInTheDocument();
 
     rerender(<NotificationBell />);   // mesma rota
@@ -113,7 +113,7 @@ describe('NotificationBell — fecha o painel ao trocar de página (#183)', () =
     );
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
     expect(await screen.findByTestId('notif-panel')).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole('button', { name: /outro elemento/i }));
@@ -129,7 +129,7 @@ describe('NotificationBell — fecha o painel ao trocar de página (#183)', () =
     render(<NotificationBell />);
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: /notificações/i }));
+    fireEvent.click(screen.getByRole('button', { name: /notifications/i }));
     const panel = await screen.findByTestId('notif-panel');
 
     fireEvent.mouseDown(await screen.findByText(/meta atingida/i));
