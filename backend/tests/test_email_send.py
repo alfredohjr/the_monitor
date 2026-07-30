@@ -179,7 +179,7 @@ def test_send_verification_email_usa_frontend_url_do_ambiente(monkeypatch, smtp_
 
     msg = smtp_configurado.instances[0].enviadas[0]
     corpo = msg.get_body(preferencelist=("html",)).get_content()
-    assert "https://app.exemplo.com/verificar-email?token=tok-123" in corpo
+    assert "https://app.exemplo.com/verify-email?token=tok-123" in corpo
     assert "localhost:3000" not in corpo
 
 
@@ -366,3 +366,23 @@ def test_resumo_diario_usa_o_locale_gravado_do_usuario(smtp_configurado):
     assert 'lang="pt-BR"' in corpo
     assert "Resumo do dia" in corpo
     assert "Resumo de metas" in msg["Subject"]
+
+
+# --- rotas dos links de e-mail (#313) ---
+
+def test_link_de_verificacao_aponta_para_a_rota_nova(monkeypatch, smtp_configurado):
+    monkeypatch.setenv("FRONTEND_URL", "https://app.exemplo.com")
+    send_verification_email("ana@example.com", "tok-123")
+    corpo = smtp_configurado.todas_enviadas()[0].get_body(preferencelist=("html",)).get_content()
+    assert "https://app.exemplo.com/verify-email?token=tok-123" in corpo
+    assert "/verificar-email" not in corpo
+
+
+def test_link_de_reset_aponta_para_a_rota_nova(monkeypatch, smtp_configurado):
+    from email_service import send_password_reset_email
+
+    monkeypatch.setenv("FRONTEND_URL", "https://app.exemplo.com")
+    send_password_reset_email("ana@example.com", "tok-456")
+    corpo = smtp_configurado.todas_enviadas()[0].get_body(preferencelist=("html",)).get_content()
+    assert "https://app.exemplo.com/reset-password?token=tok-456" in corpo
+    assert "/redefinir-senha" not in corpo

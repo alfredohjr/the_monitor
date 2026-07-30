@@ -187,7 +187,7 @@ def send_verification_email(to_email: str, token: str, lang: str = LOCALE_PADRAO
     usuário preso no 403 até existir uma tela de reenvio.
     """
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    link = f"{frontend_url}/verificar-email?token={token}"
+    link = f"{frontend_url}/verify-email?token={token}"
     html = (
         f'<p>{t("email.verificacao_corpo", lang)}</p>'
         f'<p><a href="{link}">{link}</a></p>'
@@ -199,11 +199,11 @@ def send_verification_email(to_email: str, token: str, lang: str = LOCALE_PADRAO
 def send_password_reset_email(to_email: str, token: str, lang: str = LOCALE_PADRAO) -> bool:
     """Envia o link de redefinição de senha (#242).
 
-    O link aponta para o frontend (/redefinir-senha), que consome o token via
+    O link aponta para o frontend (/reset-password), que consome o token via
     POST /password-reset/confirm/. Vai também pro log, útil se o SMTP falhar.
     """
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    link = f"{frontend_url}/redefinir-senha?token={token}"
+    link = f"{frontend_url}/reset-password?token={token}"
     html = (
         f'<p>{t("email.reset_corpo", lang)}</p>'
         f'<p><a href="{link}">{link}</a></p>'

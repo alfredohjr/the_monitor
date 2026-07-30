@@ -32,6 +32,24 @@ test('sub-rotas de metas e lançamentos redirecionam (#312)', async () => {
   expect(mapa['/lancamentos/importar']).toBe('/logs/import');
 });
 
+test('rotas que chegam por e-mail redirecionam (#313)', async () => {
+  const rs = await redirects();
+  const mapa = Object.fromEntries(rs.map((r) => [r.source, r.destination]));
+  expect(mapa['/esqueci-senha']).toBe('/forgot-password');
+  expect(mapa['/redefinir-senha']).toBe('/reset-password');
+  expect(mapa['/verificar-email']).toBe('/verify-email');
+});
+
+test('nenhum destino traz query string própria — ela apagaria o token (#313)', async () => {
+  // O Next repassa a query da origem para o destino, MAS uma query escrita no
+  // destino vence. Estas três rotas chegam por link de e-mail já enviado com
+  // ?token=...; perder isso é conta bloqueada para quem recebeu o e-mail ontem.
+  const rs = await redirects();
+  for (const r of rs) {
+    expect(r.destination).not.toContain('?');
+  }
+});
+
 test('os destinos novos não colidem com as rotas dinâmicas [id]', async () => {
   // /goals/[id] e /logs/[id] já existem. No Next uma rota estática vence a
   // dinâmica, mas o destino precisa ser um segmento que NÃO é um id válido —
