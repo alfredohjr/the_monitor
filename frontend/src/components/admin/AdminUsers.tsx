@@ -1,5 +1,6 @@
 "use client";
 import { API_BASE, mensagemDeErro } from "@/lib/api";
+import { useT } from "@/lib/i18n/useT";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ interface Metric {
 
 export default function AdminUsers() {
   const router = useRouter();
+  const { t } = useT();
   const [token, setToken] = useState("");
   const [orgId, setOrgId] = useState<number | null>(null);
   const [orgNome, setOrgNome] = useState("");
@@ -120,10 +122,10 @@ export default function AdminUsers() {
       });
       if (!resp.ok) {
         const d = await resp.json().catch(() => ({}));
-        setError(mensagemDeErro(d.detail, "Não foi possível salvar as métricas"));
+        setError(mensagemDeErro(d.detail, t("admin.saveMetricsFailed")));
         return;
       }
-      setMessage("Métricas atribuídas atualizadas.");
+      setMessage(t("admin.metricsUpdated"));
       setExpandedUser(null);
     } finally {
       setSavingMetrics(false);
@@ -141,11 +143,11 @@ export default function AdminUsers() {
     });
     if (!resp.ok) {
       const d = await resp.json().catch(() => ({}));
-      setError(mensagemDeErro(d.detail, "Não foi possível adicionar o usuário"));
+      setError(mensagemDeErro(d.detail, t("admin.addUserFailed")));
       return;
     }
     setEmail("");
-    setMessage("Usuário adicionado. Ele entra pelo login com Google usando esse e-mail.");
+    setMessage(t("admin.userAdded"));
     if (orgId) loadUsers(orgId, token);
   };
 
@@ -163,9 +165,9 @@ export default function AdminUsers() {
     return (
       <div className="flex min-h-screen items-center justify-center p-6 bg-zinc-50 dark:bg-[#0a0a0a] text-center">
         <div className="bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-10 rounded-3xl text-zinc-900 dark:text-white">
-          <h1 className="text-2xl font-bold mb-3">Acesso restrito</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">Esta área é exclusiva de administradores de organização.</p>
-          <Link href="/logs" className="text-blue-400 hover:text-blue-300">Ir para Lançamentos</Link>
+          <h1 className="text-2xl font-bold mb-3">{t("admin.restrictedTitle")}</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">{t("admin.restrictedText")}</p>
+          <Link href="/logs" className="text-blue-400 hover:text-blue-300">{t("admin.goToLogs")}</Link>
         </div>
       </div>
     );
@@ -174,8 +176,8 @@ export default function AdminUsers() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-80px)] items-center p-6 bg-zinc-50 dark:bg-[#0a0a0a]">
       <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-8 sm:p-12 rounded-3xl mt-16 text-zinc-900 dark:text-white">
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1">Administração</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">Usuários de <strong>{orgNome}</strong></p>
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1">{t("admin.title")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8">{t("admin.usersOf")} <strong>{orgNome}</strong></p>
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {message && <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">{message}</div>}
@@ -184,19 +186,17 @@ export default function AdminUsers() {
           <>
             <form onSubmit={handleCreate} className="grid sm:grid-cols-[1fr_auto] gap-3 mb-2">
               <input name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                placeholder="E-mail do novo membro"
+                placeholder={t("admin.emailPlaceholder")}
                 className="px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" />
-              <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">Adicionar</button>
+              <button type="submit" className="bg-blue-600 font-bold py-3 px-6 rounded-xl hover:bg-blue-500 transition">{t("admin.add")}</button>
             </form>
             <p className="text-zinc-500 text-xs mb-8">
-              Se o e-mail já tiver conta, ele é vinculado a esta organização. Se não, criamos a conta e a pessoa
-              entra pelo <strong>login com Google</strong> usando o mesmo e-mail.
+              {t("admin.inviteHint")}
             </p>
           </>
         ) : (
           <div data-testid="plano-free-aviso" className="mb-8 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-black dark:text-amber-200 text-sm">
-            Adicionar membros exige um <strong>plano pago</strong>. Sua organização está no plano <strong>free</strong>
-            (uso individual). Fale com a gente para liberar mais membros.
+            {t("admin.freePlanWarning")}
           </div>
         )}
 
@@ -204,7 +204,7 @@ export default function AdminUsers() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-zinc-600 dark:text-zinc-400 text-left border-b border-zinc-200 dark:border-white/10">
-              <th className="py-2">Usuário</th><th>E-mail</th><th>Papel</th><th></th>
+              <th className="py-2">{t("admin.colUser")}</th><th>{t("admin.colEmail")}</th><th>{t("admin.colRole")}</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -213,24 +213,24 @@ export default function AdminUsers() {
                 <tr className="border-b border-zinc-200 dark:border-white/5">
                   <td className="py-3 break-all">{u.username}</td>
                   <td className="text-zinc-600 dark:text-zinc-400 break-all">{u.email || "—"}</td>
-                  <td>{u.role}</td>
+                  <td>{u.role === "admin" ? t("admin.roleAdmin") : u.role === "user" ? t("admin.roleUser") : u.role}</td>
                   <td className="text-right whitespace-nowrap">
                     {u.role !== "admin" && (
                       <button onClick={() => toggleMetricsPanel(u.id)} className="text-blue-400 hover:text-blue-300 text-xs mr-3">
-                        {expandedUser === u.id ? "Fechar" : "Métricas"}
+                        {expandedUser === u.id ? t("admin.close") : t("admin.metrics")}
                       </button>
                     )}
                     {u.id !== meId && (
-                      <button onClick={() => handleRemove(u.id)} className="text-red-400 hover:text-red-300 text-xs">Remover</button>
+                      <button onClick={() => handleRemove(u.id)} className="text-red-400 hover:text-red-300 text-xs">{t("admin.remove")}</button>
                     )}
                   </td>
                 </tr>
                 {expandedUser === u.id && (
                   <tr className="border-b border-zinc-200 dark:border-white/5 bg-zinc-100 dark:bg-white/5">
                     <td colSpan={4} className="p-4">
-                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mb-3">Selecione as métricas que <strong>{u.username}</strong> pode ver e lançar:</p>
+                      <p className="text-zinc-600 dark:text-zinc-400 text-xs mb-3">{t("admin.assignHint", { usuario: u.username })}</p>
                       {metrics.length === 0 ? (
-                        <p className="text-zinc-500 text-xs">Nenhuma métrica nesta organização.</p>
+                        <p className="text-zinc-500 text-xs">{t("admin.noMetrics")}</p>
                       ) : (
                         <div className="flex flex-col gap-2 mb-3">
                           {metrics.map(m => (
@@ -242,12 +242,12 @@ export default function AdminUsers() {
                               {assigned.has(m.id) && (
                                 <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
                                   <label className="flex items-center gap-1 cursor-pointer">
-                                    <input type="checkbox" aria-label={`Editar ${m.codigo}`} checked={canEdit.has(m.id)} onChange={() => toggleInSet(setCanEdit, m.id)} />
-                                    pode editar
+                                    <input type="checkbox" aria-label={t("admin.canEditAria", { codigo: m.codigo })} checked={canEdit.has(m.id)} onChange={() => toggleInSet(setCanEdit, m.id)} />
+                                    {t("admin.canEdit")}
                                   </label>
                                   <label className="flex items-center gap-1 cursor-pointer">
-                                    <input type="checkbox" aria-label={`Excluir ${m.codigo}`} checked={canDelete.has(m.id)} onChange={() => toggleInSet(setCanDelete, m.id)} />
-                                    pode excluir
+                                    <input type="checkbox" aria-label={t("admin.canDeleteAria", { codigo: m.codigo })} checked={canDelete.has(m.id)} onChange={() => toggleInSet(setCanDelete, m.id)} />
+                                    {t("admin.canDelete")}
                                   </label>
                                 </div>
                               )}
@@ -257,7 +257,7 @@ export default function AdminUsers() {
                       )}
                       <button onClick={() => saveMetrics(u.id)} disabled={savingMetrics}
                         className="text-xs bg-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-500 transition">
-                        {savingMetrics ? "Salvando..." : "Salvar métricas"}
+                        {savingMetrics ? t("admin.savingMetrics") : t("admin.saveMetrics")}
                       </button>
                     </td>
                   </tr>
