@@ -10,7 +10,7 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
-from messages import LOCALE_PADRAO, LocaleDep, t
+from messages import LOCALE_PADRAO, LOCALES, LocaleDep, t
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email, send_password_reset_email
 from seed import seed_exemplo, seed_metricas_padrao, seed_goal_templates, seed_external_indices
@@ -442,25 +442,41 @@ def me(session: SessionDep, user: CurrentUser):
         "email": user.email,
         "email_verified": user.email_verified,
         "display_name": user.display_name,
+        "locale": user.locale,
         "role": highest_role(session, user.id),
         "organizations": orgs,
     }
 
 
 class ProfileUpdate(BaseModel):
-    display_name: str
+    # Ambos opcionais: trocar SÓ o idioma não pode esbarrar na validação do
+    # nome, senão quem nunca definiu display_name fica preso no inglês.
+    display_name: str | None = None
+    locale: str | None = None
 
 
 @app.patch('/api/v1/me/')
 def update_me(body: ProfileUpdate, session: SessionDep, user: CurrentUser, lang: LocaleDep):
-    nome = body.display_name.strip()
-    if not nome:
-        raise HTTPException(status_code=400, detail=t("erro.nome_obrigatorio", lang))
-    user.display_name = nome
+    if body.display_name is not None:
+        nome = body.display_name.strip()
+        if not nome:
+            raise HTTPException(status_code=400, detail=t("erro.nome_obrigatorio", lang))
+        user.display_name = nome
+
+    if body.locale is not None:
+        if body.locale not in LOCALES:
+            raise HTTPException(status_code=400, detail=t("erro.locale_invalido", lang))
+        user.locale = body.locale
+
     session.add(user)
     session.commit()
     session.refresh(user)
-    return {"id": user.id, "username": user.username, "display_name": user.display_name}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "locale": user.locale,
+    }
 
 
 # ---------- Organização ativa (escopo dos dados) ----------

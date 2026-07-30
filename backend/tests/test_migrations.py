@@ -52,3 +52,37 @@ def test_migrations_are_in_sync_with_models(tmp_path, monkeypatch):
         ctx = MigrationContext.configure(conn)
         diff = compare_metadata(ctx, SQLModel.metadata)
     assert diff == [], f"Models fora de sincronia com as migrations: {diff}"
+
+
+def test_locale_em_tabela_com_dados(tmp_path, monkeypatch):
+    """A migration do #304 acrescenta uma coluna NOT NULL numa tabela que já tem
+    linhas — o cenário que o `server_default` existe para cobrir.
+
+    O teste de upgrade do zero não pega isso: sem linhas, NOT NULL sem default
+    passa liso. Em produção, com usuários cadastrados, quebraria.
+    """
+    import sqlalchemy as sa
+
+    db = tmp_path / "com_dados.db"
+    url = f"sqlite:///{db}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+
+    # Sobe até a revisão ANTERIOR ao locale e insere um usuário.
+    command.upgrade(cfg, "b4c5d6e7f8a9")
+    engine = sa.create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text(
+                "INSERT INTO user (username, hashed_password, email_verified) "
+                "VALUES ('antigo', 'x', 0)"
+            )
+        )
+
+    # Agora aplica a migration do locale por cima dos dados existentes.
+    command.upgrade(cfg, "head")
+
+    with engine.connect() as conn:
+        locale = conn.execute(sa.text("SELECT locale FROM user WHERE username='antigo'")).scalar()
+    assert locale == "en", "usuário pré-existente devia herdar o padrão do app"

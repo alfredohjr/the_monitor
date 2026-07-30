@@ -27,6 +27,7 @@ LOCALES = ("en", "pt-BR")
 MSG: dict[str, dict[str, str]] = {
     "en": {
         "erro.credenciais_invalidas": "Invalid credentials",
+        "erro.locale_invalido": "Unsupported language",
         "erro.usuario_nao_pertence_org": "User does not belong to this organization",
         "erro.nao_pode_remover_a_si": "You cannot remove yourself",
         "erro.ja_e_membro": "User is already a member of this organization",
@@ -72,6 +73,7 @@ MSG: dict[str, dict[str, str]] = {
     },
     "pt-BR": {
         "erro.credenciais_invalidas": "Credenciais inválidas",
+        "erro.locale_invalido": "Idioma não suportado",
         "erro.usuario_nao_pertence_org": "Usuário não pertence a esta organização",
         "erro.nao_pode_remover_a_si": "Você não pode remover a si mesmo",
         "erro.ja_e_membro": "Usuário já é membro desta organização",

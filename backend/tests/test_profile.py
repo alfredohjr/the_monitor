@@ -88,3 +88,53 @@ def test_patch_me_exige_autenticacao(client, session):
     # Sem header Authorization o HTTPBearer do projeto responde 403 (não 401).
     resp = client.patch("/api/v1/me/", json={"display_name": "X"})
     assert resp.status_code == 403
+
+
+# --- idioma do usuário (#304) ---
+
+def test_me_inclui_locale_com_padrao_en(client, session):
+    """Usuário existente, criado antes da coluna, responde `en` — o padrão do app."""
+    user = make_user(session)
+    resp = client.get("/api/v1/me/", headers=auth(user))
+    assert resp.status_code == 200
+    assert resp.json()["locale"] == "en"
+
+
+def test_patch_me_define_locale(client, session):
+    user = make_user(session)
+    resp = client.patch("/api/v1/me/", json={"locale": "pt-BR"}, headers=auth(user))
+    assert resp.status_code == 200
+    assert resp.json()["locale"] == "pt-BR"
+
+    session.refresh(user)
+    assert user.locale == "pt-BR"
+
+
+def test_patch_me_locale_sozinho_nao_exige_display_name(client, session):
+    """Trocar só o idioma não pode esbarrar na validação do nome — senão quem
+    nunca definiu display_name fica sem conseguir mudar de idioma."""
+    user = make_user(session)
+    assert user.display_name is None
+    resp = client.patch("/api/v1/me/", json={"locale": "pt-BR"}, headers=auth(user))
+    assert resp.status_code == 200
+    session.refresh(user)
+    assert user.locale == "pt-BR"
+    assert user.display_name is None
+
+
+def test_patch_me_locale_invalido_recusado(client, session):
+    user = make_user(session)
+    resp = client.patch("/api/v1/me/", json={"locale": "klingon"}, headers=auth(user))
+    assert resp.status_code == 400
+    session.refresh(user)
+    assert user.locale == "en"
+
+
+def test_patch_me_aceita_nome_e_locale_juntos(client, session):
+    user = make_user(session)
+    resp = client.patch(
+        "/api/v1/me/", json={"display_name": "Ana", "locale": "pt-BR"}, headers=auth(user)
+    )
+    assert resp.status_code == 200
+    assert resp.json()["display_name"] == "Ana"
+    assert resp.json()["locale"] == "pt-BR"

@@ -11,4 +11,7 @@ export const profile = {
   updated: "Nome atualizado!",
   saving: "Salvando...",
   save: "Salvar",
+  languageLabel: "Idioma",
+  languageEn: "Inglês",
+  languagePtBR: "Português (Brasil)",
 };

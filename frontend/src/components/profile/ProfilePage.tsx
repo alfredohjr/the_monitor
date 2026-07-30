@@ -1,12 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/useT";
+import { useLocaleTolerante } from "@/lib/i18n/I18nProvider";
+import { LOCALES, type Locale } from "@/lib/i18n";
 import { apiFetch, mensagemDeErro } from "@/lib/api";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { t } = useT();
+  const { locale, setLocale } = useLocaleTolerante();
   const [token, setToken] = useState<string | null>(null);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState<string | null>(null);
@@ -14,6 +17,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState(false);
+  // O idioma do servidor é aplicado UMA vez, na carga. Sem esta trava, qualquer
+  // re-execução do efeito reaplica o valor vindo do /me e desfaz a escolha que
+  // o usuário acabou de fazer no seletor.
+  const localeAplicado = useRef(false);
 
   useEffect(() => {
     const t = localStorage.getItem("access_token");
@@ -26,9 +33,30 @@ export default function ProfilePage() {
         setUsername(d.username ?? "");
         setEmail(d.email ?? null);
         setDisplayName(d.display_name ?? "");
+        // O servidor é a fonte de verdade do idioma: quem trocou noutro
+        // dispositivo não pode voltar ao padrão só por abrir esta tela.
+        if (!localeAplicado.current && d.locale && LOCALES.includes(d.locale)) {
+          localeAplicado.current = true;
+          setLocale(d.locale as Locale);
+        }
       })
       .catch(() => {});
-  }, [router]);
+  }, [router, setLocale]);
+
+  // Troca de idioma é imediata e independente do "Salvar": persiste no
+  // servidor e aplica na hora, sem esperar o formulário do nome.
+  const trocarIdioma = async (novo: Locale) => {
+    setLocale(novo);
+    try {
+      await apiFetch("/api/v1/me/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: novo }),
+      });
+    } catch {
+      // Falha de rede não desfaz a escolha local: o próximo /me reconcilia.
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +114,21 @@ export default function ProfilePage() {
           <div className="text-sm text-zinc-500 space-y-1">
             {email && <p>{t("profile.emailLabel")} <span className="text-zinc-700 dark:text-zinc-300">{email}</span></p>}
             <p>{t("profile.usernameLabel")} <span className="text-zinc-700 dark:text-zinc-300">{username}</span></p>
+          </div>
+
+          <div>
+            <label htmlFor="locale" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">
+              {t("profile.languageLabel")}
+            </label>
+            <select
+              id="locale"
+              value={locale}
+              onChange={(e) => trocarIdioma(e.target.value as Locale)}
+              className="w-full bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500/50"
+            >
+              <option value="en">{t("profile.languageEn")}</option>
+              <option value="pt-BR">{t("profile.languagePtBR")}</option>
+            </select>
           </div>
 
           {erro && <p role="alert" className="text-sm text-red-400">{erro}</p>}
