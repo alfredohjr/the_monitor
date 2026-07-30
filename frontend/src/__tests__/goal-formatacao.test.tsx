@@ -43,7 +43,7 @@ describe('GoalList — formatação do alvo por tipo', () => {
     // Espera o DADO aparecer, não o estado vazio sumir: o matcher do vazio em
     // português virou no-op com a tela em inglês, e o waitFor resolvia antes do
     // fetch, testando uma tabela vazia.
-    expect(await screen.findByText(/R\$.*1\.000|R\$.*1000/)).toBeInTheDocument();
+    expect(await screen.findByText(/R\$\s*1[.,]000/)).toBeInTheDocument();
   });
 
   it('exibe alvo com % para tipo percent', async () => {

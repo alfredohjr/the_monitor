@@ -6,9 +6,10 @@ import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
 import { getActiveOrg, setActiveOrg, clearActiveOrg, API_BASE } from "@/lib/api";
+import { setMoedaAtiva, clearMoedaAtiva } from "@/lib/formatValor";
 import { useT } from "@/lib/i18n/useT";
 
-interface Org { id: number; nome: string; role: string }
+interface Org { id: number; nome: string; role: string; moeda?: string }
 
 export default function Navbar() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -48,6 +49,11 @@ export default function Navbar() {
           if (cur != null) setActiveOrg(cur);
         }
         setActiveOrgState(cur);
+        // A moeda acompanha a org ativa (#309). Sem isto, os valores da org nova
+        // sairiam com o símbolo da anterior — número certo, moeda errada, que é
+        // pior que um erro visível.
+        const ativa = list.find(o => o.id === cur);
+        if (ativa?.moeda) setMoedaAtiva(ativa.moeda);
       })
       .catch(() => { setRole(null); setOrgs([]); });
   }, [pathname]);
@@ -56,6 +62,8 @@ export default function Navbar() {
     const id = Number(e.target.value);
     setActiveOrg(id);
     setActiveOrgState(id);
+    const nova = orgs.find(o => o.id === id);
+    if (nova?.moeda) setMoedaAtiva(nova.moeda);
     // Recarrega para que todas as telas refaçam as buscas com a nova org.
     if (typeof window !== "undefined") window.location.reload();
   };
@@ -69,6 +77,7 @@ export default function Navbar() {
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("username");
     clearActiveOrg();
+    clearMoedaAtiva();
     setLoggedIn(false);
     setUsername(null);
     router.push("/login");
