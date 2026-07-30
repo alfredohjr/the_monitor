@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
       { source: "/metas/ancorar", destination: "/goals/anchor", permanent: true },
       { source: "/metas/clonar", destination: "/goals/clone", permanent: true },
       { source: "/lancamentos/importar", destination: "/logs/import", permanent: true },
+      // #313 — ATENÇÃO: estas três chegam por link de E-MAIL JÁ ENVIADO, com
+      // ?token=... de uso único e validade curta (1h no reset, 24h na
+      // verificação). O Next repassa a query da origem para o destino; escrever
+      // query no destino aqui apagaria o token e bloquearia a conta de quem
+      // recebeu o e-mail antes deste deploy.
+      { source: "/esqueci-senha", destination: "/forgot-password", permanent: true },
+      { source: "/redefinir-senha", destination: "/reset-password", permanent: true },
+      { source: "/verificar-email", destination: "/verify-email", permanent: true },
     ];
   },
   eslint: {

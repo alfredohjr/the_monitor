@@ -154,7 +154,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-4 text-center text-sm">
-          <Link href="/esqueci-senha" className="text-zinc-400 hover:text-blue-300 transition-colors">
+          <Link href="/forgot-password" className="text-zinc-400 hover:text-blue-300 transition-colors">
             {t("login.forgotPassword")}
           </Link>
         </p>
