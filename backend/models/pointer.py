@@ -13,6 +13,11 @@ class Metric(SQLModel, table=True):
     tipo: str = Field(default="number", max_length=20)
     periodo: str = Field(default="daily", max_length=20)
     is_default: bool = Field(default=False)
+    # Tradução do catálogo semeado (#317). Só faz sentido para is_default=True:
+    # métrica criada por usuário é dado dele e não se traduz. Nullable porque
+    # métrica sem tradução tem que continuar aparecendo, no idioma original.
+    nome_en: Optional[str] = Field(default=None, max_length=150)
+    descricao_en: Optional[str] = Field(default=None)
     # Dono do dado. None = métrica global (catálogo padrão, is_default) visível a
     # todas as organizações. Caso contrário, só membros da org a enxergam.
     organization_id: Optional[int] = Field(default=None, foreign_key="organization.id", index=True)
