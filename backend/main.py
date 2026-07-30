@@ -545,19 +545,21 @@ def _assignment(session: Session, user_id: int, metric_id: int, org_id: int) -> 
     ).first()
 
 
-def _enforce_entry_permission(session: Session, user: User, log: LogEntry, org_id: int, action: str) -> None:
+def _enforce_entry_permission(session: Session, user: User, log: LogEntry, org_id: int, action: str, lang: str = LOCALE_PADRAO) -> None:
     """Regras de editar/excluir lançamento (#164). Admin passa livre. Lançador só
     mexe nos próprios lançamentos e só com a flag ligada; senão 403."""
     if _is_org_admin(session, user.id, org_id):
         return
     if log.created_by != user.id:
-        raise HTTPException(status_code=403, detail="Você só pode alterar os próprios lançamentos")
+        raise HTTPException(status_code=403, detail=t("erro.so_proprios_lancamentos", lang))
     goal = session.get(Goal, log.goal)
     a = _assignment(session, user.id, goal.metric, org_id) if goal else None
     permitido = bool(a and (a.can_edit_entry if action == "edit" else a.can_delete_entry))
     if not permitido:
-        verbo = "editar" if action == "edit" else "excluir"
-        raise HTTPException(status_code=403, detail=f"Sem permissão para {verbo} este lançamento")
+        # Duas chaves completas em vez de interpolar o verbo: conjugação e
+        # ordem de palavras não sobrevivem a composição por pedaço.
+        chave = "erro.sem_permissao_editar" if action == "edit" else "erro.sem_permissao_excluir"
+        raise HTTPException(status_code=403, detail=t(chave, lang))
 
 
 def _owned_metric(metric_id: int, session: Session, org: int | None) -> Metric | None:
@@ -625,17 +627,17 @@ def create_metric(body: MetricCreate, session: SessionDep, org: ActiveOrg, _: Cu
     return metric
 
 @app.get('/api/v1/metrics/{metric_id}/')
-def get_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
+def get_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> Metric:
     metric = _visible_metric(metric_id, session, org)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     return metric
 
 @app.put('/api/v1/metrics/{metric_id}/')
-def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Metric:
+def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> Metric:
     metric = _owned_metric(metric_id, session, org)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     for key, val in body.model_dump().items():
         setattr(metric, key, val)
     session.add(metric)
@@ -644,10 +646,10 @@ def update_metric(metric_id: int, body: MetricUpdate, session: SessionDep, org: 
     return metric
 
 @app.delete('/api/v1/metrics/{metric_id}/', status_code=204)
-def delete_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def delete_metric(metric_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     metric = _owned_metric(metric_id, session, org)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     metric.deleted = True
     session.add(metric)
     session.commit()
@@ -667,15 +669,15 @@ class ProgressResp(BaseModel):
     pct: int
 
 @app.get('/api/v1/metrics/{metric_id}/progress', response_model=ProgressResp)
-def metric_progress(metric_id: int, start: str, end: str, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> ProgressResp:
+def metric_progress(metric_id: int, start: str, end: str, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> ProgressResp:
     metric = _visible_metric(metric_id, session, org)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     try:
         start_d = datetime.date.fromisoformat(start)
         end_d = datetime.date.fromisoformat(end)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Datas inválidas (use YYYY-MM-DD)")
+        raise HTTPException(status_code=422, detail=t("erro.datas_invalidas", lang))
     goals = session.exec(
         select(Goal).where(Goal.metric == metric_id, Goal.deleted == False, Goal.organization_id == org)
     ).all()
@@ -710,11 +712,11 @@ def list_goals(session: SessionDep, org: ActiveOrg, _: CurrentUser) -> list[Goal
     return session.exec(select(Goal).where(Goal.deleted == False, Goal.organization_id == org)).all()
 
 @app.post('/api/v1/goals/', status_code=201)
-def create_goal(body: GoalCreate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+def create_goal(body: GoalCreate, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> Goal:
     org_id = require_active_org(org)
     # A métrica-alvo precisa ser visível à org (a própria ou uma padrão).
     if not _visible_metric(body.metric, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     goal = Goal(**body.model_dump(), organization_id=org_id)
     session.add(goal)
     session.commit()
@@ -722,17 +724,17 @@ def create_goal(body: GoalCreate, session: SessionDep, org: ActiveOrg, _: Curren
     return goal
 
 @app.get('/api/v1/goals/{goal_id}/')
-def get_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+def get_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> Goal:
     goal = _owned_goal(goal_id, session, org)
     if not goal:
-        raise HTTPException(status_code=404, detail="Meta não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.meta_nao_encontrada", lang))
     return goal
 
 @app.put('/api/v1/goals/{goal_id}/')
-def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> Goal:
+def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> Goal:
     goal = _owned_goal(goal_id, session, org)
     if not goal:
-        raise HTTPException(status_code=404, detail="Meta não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.meta_nao_encontrada", lang))
     for key, val in body.model_dump().items():
         setattr(goal, key, val)
     session.add(goal)
@@ -741,10 +743,10 @@ def update_goal(goal_id: int, body: GoalUpdate, session: SessionDep, org: Active
     return goal
 
 @app.delete('/api/v1/goals/{goal_id}/', status_code=204)
-def delete_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def delete_goal(goal_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     goal = _owned_goal(goal_id, session, org)
     if not goal:
-        raise HTTPException(status_code=404, detail="Meta não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.meta_nao_encontrada", lang))
     goal.deleted = True
     session.add(goal)
     session.commit()
@@ -1147,17 +1149,17 @@ def _notify_if_goal_reached(new_log: LogEntry, session: Session, user: User) -> 
 
 
 @app.post('/api/v1/logs/', status_code=201)
-def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: CurrentUser) -> LogEntry:
+def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep) -> LogEntry:
     from datetime import date as date_type
     org_id = require_active_org(org)
     # Só lança em meta da própria org.
     goal = _owned_goal(body.goal, session, org_id)
     if not goal:
-        raise HTTPException(status_code=404, detail="Meta não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.meta_nao_encontrada", lang))
     # Enforcement de atribuição (#163): lançador só lança em métrica atribuída.
     if not _is_org_admin(session, user.id, org_id):
         if goal.metric not in _assigned_metric_ids(session, user.id, org_id):
-            raise HTTPException(status_code=403, detail="Métrica não atribuída a você")
+            raise HTTPException(status_code=403, detail=t("erro.metrica_nao_atribuida", lang))
     log = LogEntry(
         goal=body.goal,
         data=date_type.fromisoformat(body.data),
@@ -1172,23 +1174,23 @@ def create_log(body: LogCreate, session: SessionDep, org: ActiveOrg, user: Curre
     return log
 
 @app.get('/api/v1/logs/{log_id}/')
-def get_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser) -> LogEntry:
+def get_log(log_id: int, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep) -> LogEntry:
     log = session.get(LogEntry, log_id)
     if not log or log.deleted or log.organization_id != org:
-        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+        raise HTTPException(status_code=404, detail=t("erro.lancamento_nao_encontrado", lang))
     return log
 
 @app.put('/api/v1/logs/{log_id}/')
-def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg, user: CurrentUser) -> LogEntry:
+def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep) -> LogEntry:
     from datetime import date as date_type
     org_id = require_active_org(org)
     log = session.get(LogEntry, log_id)
     if not log or log.deleted or log.organization_id != org_id:
-        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
-    _enforce_entry_permission(session, user, log, org_id, "edit")
+        raise HTTPException(status_code=404, detail=t("erro.lancamento_nao_encontrado", lang))
+    _enforce_entry_permission(session, user, log, org_id, "edit", lang)
     # A meta destino também precisa ser da org ativa.
     if not _owned_goal(body.goal, session, org_id):
-        raise HTTPException(status_code=404, detail="Meta não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.meta_nao_encontrada", lang))
     # Auditoria: registra o valor anterior antes de sobrescrever (#164).
     session.add(LogEntryAudit(log_entry_id=log.id, action="edit", actor_id=user.id, valor_anterior=log.valor_logado))
     log.goal = body.goal
@@ -1200,12 +1202,12 @@ def update_log(log_id: int, body: LogUpdate, session: SessionDep, org: ActiveOrg
     return log
 
 @app.delete('/api/v1/logs/{log_id}/', status_code=204)
-def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, user: CurrentUser):
+def delete_log(log_id: int, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep):
     org_id = require_active_org(org)
     log = session.get(LogEntry, log_id)
     if not log or log.deleted or log.organization_id != org_id:
-        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
-    _enforce_entry_permission(session, user, log, org_id, "delete")
+        raise HTTPException(status_code=404, detail=t("erro.lancamento_nao_encontrado", lang))
+    _enforce_entry_permission(session, user, log, org_id, "delete", lang)
     session.add(LogEntryAudit(log_entry_id=log.id, action="delete", actor_id=user.id, valor_anterior=log.valor_logado))
     log.deleted = True
     session.add(log)
@@ -1261,12 +1263,12 @@ def _importar_lancamentos(session: Session, org_id: int, metric_id: int, itens, 
 
 
 @app.post('/api/v1/logs/import')
-def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def import_logs(body: LogImportRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     """Importa lançamentos (histórico realizado) em lote. Ver _importar_lancamentos."""
     from datetime import date as date_type
     org_id = require_active_org(org)
     if not _visible_metric(body.metric_id, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     itens = []
     for item in body.lancamentos:
         try:
@@ -1284,13 +1286,13 @@ class LogImportCSVRequest(BaseModel):
 
 
 @app.post('/api/v1/logs/import-csv')
-def import_logs_csv(body: LogImportCSVRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser):
+def import_logs_csv(body: LogImportCSVRequest, session: SessionDep, org: ActiveOrg, _: CurrentUser, lang: LocaleDep):
     """Importa lançamentos a partir de um CSV (colunas data,valor). Erros por
     linha são devolvidos em `erros` (linhas válidas são importadas mesmo assim)."""
     from datetime import date as date_type
     org_id = require_active_org(org)
     if not _visible_metric(body.metric_id, session, org_id):
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     linhas, erros = parse_csv_lancamentos(body.csv)
     itens = [(date_type.fromisoformat(l["data"]), l["valor"]) for l in linhas]
     res = _importar_lancamentos(session, org_id, body.metric_id, itens, body.dry_run)
@@ -1614,10 +1616,10 @@ def create_notification(body: NotificationCreate, session: SessionDep, user: Cur
     return notification
 
 @app.post('/api/v1/notifications/{notification_id}/read/')
-def mark_notification_read(notification_id: int, session: SessionDep, user: CurrentUser) -> Notification:
+def mark_notification_read(notification_id: int, session: SessionDep, user: CurrentUser, lang: LocaleDep) -> Notification:
     notification = session.get(Notification, notification_id)
     if not notification or notification.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Notificação não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.notificacao_nao_encontrada", lang))
     notification.lida = True
     session.add(notification)
     session.commit()
@@ -1641,10 +1643,10 @@ def list_subscriptions(session: SessionDep, user: CurrentUser) -> list[Subscript
     return [SubscriptionResponse(id=s.id, user_id=s.user_id, metric_id=s.metric_id) for s in subs]
 
 @app.post('/api/v1/subscriptions/', status_code=201)
-def create_subscription(body: SubscriptionCreate, session: SessionDep, user: CurrentUser) -> SubscriptionResponse:
+def create_subscription(body: SubscriptionCreate, session: SessionDep, user: CurrentUser, lang: LocaleDep) -> SubscriptionResponse:
     metric = session.get(Metric, body.metric_id)
     if not metric:
-        raise HTTPException(status_code=404, detail="Métrica não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
     existing = session.exec(
         select(UserMetricSubscription)
         .where(UserMetricSubscription.user_id == user.id)
@@ -1659,9 +1661,9 @@ def create_subscription(body: SubscriptionCreate, session: SessionDep, user: Cur
     return SubscriptionResponse(id=sub.id, user_id=sub.user_id, metric_id=sub.metric_id)
 
 @app.delete('/api/v1/subscriptions/{sub_id}/', status_code=204)
-def delete_subscription(sub_id: int, session: SessionDep, user: CurrentUser):
+def delete_subscription(sub_id: int, session: SessionDep, user: CurrentUser, lang: LocaleDep):
     sub = session.get(UserMetricSubscription, sub_id)
     if not sub or sub.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Subscrição não encontrada")
+        raise HTTPException(status_code=404, detail=t("erro.subscricao_nao_encontrada", lang))
     session.delete(sub)
     session.commit()
