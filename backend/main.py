@@ -1334,6 +1334,39 @@ def list_organizations(session: SessionDep, user: CurrentUser) -> list[Organizat
         .where(Membership.user_id == user.id, Organization.deleted == False)
     ).all()
 
+# Moedas aceitas. Conjunto fechado de propósito: o valor vai direto para o
+# `Intl.NumberFormat` do front, que lança RangeError com código inválido — e o
+# erro apareceria na tela do usuário, não no cadastro que o digitou.
+MOEDAS_SUPORTADAS = ("BRL", "USD", "EUR")
+
+
+class OrganizationUpdate(BaseModel):
+    moeda: str
+
+
+@app.patch('/api/v1/organizations/{org_id}/')
+def update_organization(
+    org_id: int,
+    body: OrganizationUpdate,
+    session: SessionDep,
+    user: CurrentUser,
+    lang: LocaleDep,
+):
+    """Ajusta a organização. Hoje só a moeda (#308).
+
+    Restrito ao admin da org: a moeda define o significado dos valores da
+    organização inteira, não é preferência individual.
+    """
+    org = require_org_admin(session, user, org_id, lang)
+    if body.moeda not in MOEDAS_SUPORTADAS:
+        raise HTTPException(status_code=400, detail=t("erro.moeda_invalida", lang))
+    org.moeda = body.moeda
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org
+
+
 @app.post('/api/v1/organizations/', status_code=201)
 def create_organization(body: OrganizationCreate, session: SessionDep, user: CurrentUser, lang: LocaleDep) -> Organization:
     nome = body.nome.strip()

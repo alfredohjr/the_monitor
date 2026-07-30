@@ -1,5 +1,5 @@
 "use client";
-import { API_BASE, mensagemDeErro } from "@/lib/api";
+import { API_BASE, apiFetch, mensagemDeErro } from "@/lib/api";
 import { useT } from "@/lib/i18n/useT";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -25,6 +25,7 @@ export default function AdminUsers() {
   const [orgId, setOrgId] = useState<number | null>(null);
   const [orgNome, setOrgNome] = useState("");
   const [orgIsPaid, setOrgIsPaid] = useState(false);
+  const [moeda, setMoeda] = useState("BRL");
   const [meId, setMeId] = useState<number | null>(null);
   const [notAdmin, setNotAdmin] = useState(false);
   const [users, setUsers] = useState<OrgUser[]>([]);
@@ -51,6 +52,7 @@ export default function AdminUsers() {
         setOrgId(adminOrg.id);
         setOrgNome(adminOrg.nome);
         setOrgIsPaid(!!adminOrg.is_paid);
+        if (adminOrg.moeda) setMoeda(adminOrg.moeda);
       })
       .catch(() => setNotAdmin(true));
   }, [router]);
@@ -132,6 +134,35 @@ export default function AdminUsers() {
     }
   }
 
+  // A moeda vale para a organização inteira, então salva na hora — não fica
+  // pendurada num "Salvar" junto com o convite de membro, que é outra ação.
+  const trocarMoeda = async (nova: string) => {
+    if (!orgId) return;   // /me ainda não resolveu: sem org, sem PATCH
+    const anterior = moeda;
+    setMoeda(nova);
+    setError("");
+    try {
+      const r = await apiFetch(`${API_BASE}/api/v1/organizations/${orgId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moeda: nova }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => null);
+        setError(mensagemDeErro(d?.detail));
+        setMoeda(anterior);   // desfaz na tela o que o servidor recusou
+        return;
+      }
+      setMessage(t("admin.currencySaved"));
+    } catch (e) {
+      // Desfaz na tela, mas deixa o erro no console: um `catch` mudo aqui
+      // escondeu um ReferenceError durante o desenvolvimento desta função —
+      // o PATCH nunca saía e nada aparecia em lugar nenhum.
+      console.error("Falha ao trocar a moeda da organização", e);
+      setMoeda(anterior);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -181,6 +212,23 @@ export default function AdminUsers() {
 
         {error && <div className="mb-4 p-3 rounded-xl bg-red-500/10 text-red-400 text-sm">{error}</div>}
         {message && <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-sm">{message}</div>}
+
+        <div className="mb-8">
+          <label htmlFor="moeda" className="block text-sm text-zinc-700 dark:text-zinc-300 mb-1">
+            {t("admin.currencyLabel")}
+          </label>
+          <select
+            id="moeda"
+            value={moeda}
+            disabled={!orgId}
+            onChange={(e) => trocarMoeda(e.target.value)}
+            className="w-full sm:w-64 px-4 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl text-zinc-900 dark:text-white"
+          >
+            <option value="BRL">BRL (R$)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+          </select>
+        </div>
 
         {orgIsPaid ? (
           <>

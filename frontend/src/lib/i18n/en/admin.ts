@@ -46,4 +46,9 @@ export const admin = {
   metricsUpdated: "Assigned metrics updated.",
   addUserFailed: "Could not add the user",
   userAdded: "User added. They sign in with Google using this e-mail.",
+
+  // Moeda da org (#308). Só o admin muda: define o significado dos valores
+  // da organização inteira, não é preferência individual.
+  currencyLabel: "Organization currency",
+  currencySaved: "Currency saved.",
 };

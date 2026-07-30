@@ -27,6 +27,7 @@ LOCALES = ("en", "pt-BR")
 MSG: dict[str, dict[str, str]] = {
     "en": {
         "erro.credenciais_invalidas": "Invalid credentials",
+        "erro.moeda_invalida": "Unsupported currency",
         "notif.meta_fallback": "Goal #{id}",
         "notif.meta_atingida": "🎯 Goal reached: {nome} ({total}/{alvo})",
         "email.reset_ignore": "If it wasn't you, ignore this e-mail.",
@@ -90,6 +91,7 @@ MSG: dict[str, dict[str, str]] = {
     },
     "pt-BR": {
         "erro.credenciais_invalidas": "Credenciais inválidas",
+        "erro.moeda_invalida": "Moeda não suportada",
         "notif.meta_fallback": "Meta #{id}",
         "notif.meta_atingida": "🎯 Meta atingida: {nome} ({total}/{alvo})",
         "email.reset_ignore": "Se não foi você, ignore este e-mail.",
