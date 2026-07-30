@@ -118,7 +118,7 @@ export default function NotificationBell() {
             ))
           )}
           <Link
-            href="/notificacoes"
+            href="/notifications"
             onClick={() => setOpen(false)}
             className="block text-center text-xs text-blue-400 hover:text-blue-300 transition px-3 py-2 mt-1 border-t border-zinc-200 dark:border-white/10"
           >
