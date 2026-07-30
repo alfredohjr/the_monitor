@@ -69,6 +69,29 @@ export function formatValor(value: string, tipo: string, moeda?: string): string
   }
 }
 
+/**
+ * Formata uma data ISO para EXIBIÇÃO no locale ativo.
+ *
+ * Só exibição: o formato que vai no payload da API continua `YYYY-MM-DD`, que é
+ * o que o backend valida. Trocar o formato enviado quebraria a gravação sem
+ * nenhum sintoma visível no front.
+ */
+export function formatData(iso: string): string {
+  if (!iso) return iso;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;   // "Invalid Date" na tela é pior que o valor cru
+  return d.toLocaleDateString(getInitialLocale());
+}
+
+/** Formata um número para exibição no locale ativo (2 casas). */
+export function formatNumero(val: number): string {
+  const n = isNaN(val) || val === null || val === undefined ? 0 : Number(val);
+  return n.toLocaleString(getInitialLocale(), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** Símbolo da moeda ativa, para telas que montam o valor à mão. */
 export function simboloMoeda(moeda?: string): string {
   const codigo = moeda && (MOEDAS as readonly string[]).includes(moeda) ? moeda : getMoedaAtiva();

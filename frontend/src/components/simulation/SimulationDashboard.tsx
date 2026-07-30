@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { apiFetch, API_BASE } from "@/lib/api";
 import { useT } from "@/lib/i18n/useT";
-import { simboloMoeda } from "@/lib/formatValor";
+import { formatNumero, simboloMoeda } from "@/lib/formatValor";
 import { useRouter } from "next/navigation";
 import { replicateForward } from "@/lib/simulation";
 import { useSubscribedMetrics } from "@/lib/useSubscribedMetrics";
@@ -90,10 +90,9 @@ function generateSlices(metricConfig: MetricConfig, startDateStr: string, endDat
   return Array.from(new Set(slices));
 }
 
-function formatNumber(val: number) {
-  if (isNaN(val) || val === null || val === undefined) return "0,00";
-  return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+// Formatação de número agora é compartilhada e segue o locale (#310). O
+// fallback antigo devolvia "0,00" cravado, que ficava errado em inglês.
+const formatNumber = formatNumero;
 
 const DraggableBar = ({ data, maxVal, onChange, prefix = "", isLocked = false, newLabel = "" }: DraggableBarProps) => {
   const [isDragging, setIsDragging] = useState(false);

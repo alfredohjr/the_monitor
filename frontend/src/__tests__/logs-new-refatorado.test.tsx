@@ -1,10 +1,14 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import LogForm from '@/components/logs/LogForm';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  // `replace` faltava: o LogForm chama router.replace('/login') no guard de
+  // autenticação, e sem ele o erro que aparece é "not a function", que esconde
+  // a causa real (falta de token).
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 jest.mock('next/link', () => {
@@ -95,5 +99,55 @@ describe('LogForm — refatoração /logs/new', () => {
     expect(body.data).toBe(HOJE);
     expect(body.goal).toBe('11');
     expect(body.valor_logado).toBe('500');
+  });
+});
+
+describe('Payload de data — não muda com o idioma (#310)', () => {
+  afterEach(() => localStorage.clear());
+
+  async function dataEnviada(locale?: string) {
+    // O helper é chamado duas vezes no MESMO teste. Sem cleanup, os dois
+    // formulários ficam montados e as queries do RTL (ligadas ao document.body)
+    // enxergam os dois.
+    cleanup();
+    localStorage.setItem('access_token', 'fake-token');
+    if (locale) localStorage.setItem('locale', locale);
+    const corpos: Record<string, unknown>[] = [];
+    (global as { fetch: unknown }).fetch = jest.fn().mockImplementation((url: string, opts?: RequestInit) => {
+      if (opts?.method === 'POST' && url.includes('/logs/')) {
+        corpos.push(JSON.parse(opts.body as string));
+        return Promise.resolve({ ok: true, json: async () => ({ id: 1 }) });
+      }
+      if (url.includes('/metrics/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 1, codigo: 'M', nome: 'Vendas', tipo: 'number', periodo: 'daily' },
+      ] });
+      if (url.includes('/goals/')) return Promise.resolve({ ok: true, json: async () => [
+        { id: 5, metric: 1, periodo_referencia: '2026-07' },
+      ] });
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { getAllByRole, getByPlaceholderText, getByRole, findAllByRole } = render(<LogForm />);
+    // Os <label> do LogForm não têm htmlFor, então o suite inteiro navega por
+    // posição — sigo o mesmo padrão em vez de inventar outro.
+    const selects = await findAllByRole('combobox');
+    fireEvent.change(selects[0], { target: { value: '1' } });
+    fireEvent.change(getAllByRole('combobox')[1], { target: { value: '5' } });
+    fireEvent.change(getByPlaceholderText(/e\.g\.|ex:|R\$/i), { target: { value: '10' } });
+    fireEvent.click(getByRole('button', { name: /stamp|carimbar/i }));
+    await waitFor(() => expect(corpos.length).toBe(1));
+    return corpos[0].data as string;
+  }
+
+  it('envia YYYY-MM-DD em inglês e em pt-BR', async () => {
+    // Esta é a razão de o #297 ter deixado a formatação de data para cá: mudar
+    // a EXIBIÇÃO é seguro, mudar o PAYLOAD quebra a validação do backend sem
+    // sintoma nenhum no front.
+    const emIngles = await dataEnviada();
+    expect(emIngles).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+    const emPortugues = await dataEnviada('pt-BR');
+    expect(emPortugues).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(emPortugues).toBe(emIngles);
   });
 });

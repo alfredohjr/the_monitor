@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/useT";
+import { formatData } from "@/lib/formatValor";
 import {
   Notification,
   fetchNotifications,
@@ -65,7 +66,7 @@ export default function NotificationsPage() {
                     {!n.lida && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
                     <span className="flex-1">{n.mensagem}</span>
                     <span className="text-xs text-zinc-500 shrink-0">
-                      {new Date(n.created_at).toLocaleDateString("pt-BR")}
+                      {formatData(n.created_at)}
                     </span>
                   </span>
                 </button>
