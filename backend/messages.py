@@ -27,6 +27,8 @@ LOCALES = ("en", "pt-BR")
 MSG: dict[str, dict[str, str]] = {
     "en": {
         "erro.credenciais_invalidas": "Invalid credentials",
+        "notif.meta_fallback": "Goal #{id}",
+        "notif.meta_atingida": "🎯 Goal reached: {nome} ({total}/{alvo})",
         "email.reset_ignore": "If it wasn't you, ignore this e-mail.",
         "email.reset_corpo": "We received a request to reset your password. Click the link below (valid for 1h):",
         "email.reset_assunto": "Password reset — The Monitor",
@@ -88,6 +90,8 @@ MSG: dict[str, dict[str, str]] = {
     },
     "pt-BR": {
         "erro.credenciais_invalidas": "Credenciais inválidas",
+        "notif.meta_fallback": "Meta #{id}",
+        "notif.meta_atingida": "🎯 Meta atingida: {nome} ({total}/{alvo})",
         "email.reset_ignore": "Se não foi você, ignore este e-mail.",
         "email.reset_corpo": "Recebemos um pedido para redefinir sua senha. Clique no link abaixo (válido por 1h):",
         "email.reset_assunto": "Redefinição de senha — The Monitor",

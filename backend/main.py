@@ -1159,8 +1159,13 @@ def _notify_if_goal_reached(new_log: LogEntry, session: Session, user: User) -> 
     total_antes = total - novo
     if total_antes < alvo <= total:
         metric = session.get(Metric, goal.metric)
-        nome = (metric.nome or metric.codigo) if metric else f"Meta #{goal.id}"
-        mensagem = f"🎯 Meta atingida: {nome} ({total:g}/{alvo:g})"
+        # A notificação é PERSISTIDA e lida depois, possivelmente noutra sessão:
+        # o texto fica gravado e não é retraduzido na leitura. Por isso o idioma
+        # vem do que o usuário gravou (#304), não do Accept-Language de quem
+        # lançou — que pode até ser outra pessoa, num lançamento feito por admin.
+        lang = user.locale
+        nome = (metric.nome or metric.codigo) if metric else t("notif.meta_fallback", lang, id=goal.id)
+        mensagem = t("notif.meta_atingida", lang, nome=nome, total=f"{total:g}", alvo=f"{alvo:g}")
         session.add(Notification(user_id=user.id, mensagem=mensagem))
         session.commit()
 
