@@ -178,5 +178,14 @@ def test_nenhum_detail_literal_em_portugues_sobrou_no_main():
     import re
 
     fonte = pathlib.Path(__file__).resolve().parent.parent / "main.py"
-    literais = re.findall(r'detail="[^"]*"', fonte.read_text())
+    texto = fonte.read_text()
+
+    literais = re.findall(r'detail="[^"]*"', texto)
     assert literais == [], f"detail= literal fora do catálogo: {literais}"
+
+    # f-string também: o #301 encontrou
+    #   detail=f"Sem permissão para {verbo} este lançamento"
+    # que NÃO aparece na varredura acima. Além de ficar fora do catálogo, montar
+    # frase interpolando um verbo não sobrevive a conjugação em outro idioma.
+    fstrings = re.findall(r'detail=f["\'][^"\']*["\']', texto)
+    assert fstrings == [], f"detail= com f-string (monta frase por pedaço): {fstrings}"

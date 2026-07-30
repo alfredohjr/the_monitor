@@ -129,7 +129,7 @@ export default function GoalForm({ id }: { id?: string }) {
 
           <div className="space-y-2">
             <label htmlFor="alvo" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("goals.targetLabel")}</label>
-            <input id="alvo" aria-label="alvo" type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder={placeholderValor(selectedMetricObj?.tipo ?? 'number')} />
+            <input id="alvo" aria-label={t("goals.targetLabel")} type="text" name="alvo" value={goalData.alvo} onChange={handleChange} required className="w-full px-5 py-3 bg-white border border-zinc-300 dark:bg-white/5 dark:border-white/10 rounded-xl" placeholder={placeholderValor(selectedMetricObj?.tipo ?? 'number')} />
           </div>
           <button type="submit" disabled={loading} className="w-full mt-4 bg-blue-600 font-bold py-4 rounded-xl hover:bg-blue-500 transition">
             {loading ? t("goals.computing") : (id ? t("goals.updateGoal") : t("goals.saveGoal"))}

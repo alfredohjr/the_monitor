@@ -70,7 +70,12 @@ describe('Dashboard — consome /progress (barra = meta, linha = realizado)', ()
       { id: 2, codigo: 'B', nome: 'Beta', tipo: 'number', periodo: 'daily', is_default: false },
     ]});
     render(<DashboardGrid />);
-    await waitFor(() => expect(screen.queryByText(/sincronizando/i)).not.toBeInTheDocument());
+    // Âncora POSITIVA: espera as métricas carregarem antes de afirmar o que
+    // NÃO está na tela. O matcher anterior era /sincronizando/i, que deixou de
+    // casar quando o dashboard passou a carregar em inglês (#294) — o waitFor
+    // resolvia no primeiro tick e as duas negações rodavam contra a tela vazia,
+    // passando por vacuidade.
+    expect(await screen.findByRole('option', { name: 'Alpha' })).toBeInTheDocument();
     expect(screen.queryByTestId('bar-meta')).not.toBeInTheDocument();
     expect(screen.queryByTestId('legend')).not.toBeInTheDocument();
   });

@@ -65,7 +65,7 @@ describe('GoalForm — placeholder do alvo por tipo', () => {
   it('mostra campo alvo com placeholder genérico sem métrica selecionada', () => {
     (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] });
     render(<GoalForm />);
-    const input = screen.getByLabelText(/alvo/i);
+    const input = screen.getByLabelText(/requested target|alvo requisitado/i);
     expect(input).toBeInTheDocument();
   });
 });

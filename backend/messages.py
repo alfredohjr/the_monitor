@@ -27,6 +27,8 @@ LOCALES = ("en", "pt-BR")
 MSG: dict[str, dict[str, str]] = {
     "en": {
         "erro.credenciais_invalidas": "Invalid credentials",
+        "erro.data_invalida_item": "Invalid date: {data}",
+        "erro.indice_sem_provider": "Index '{code}' has no automatic provider (it comes in by curated import)",
         "erro.moeda_invalida": "Unsupported currency",
         "notif.meta_fallback": "Goal #{id}",
         "notif.meta_atingida": "🎯 Goal reached: {nome} ({total}/{alvo})",
@@ -91,6 +93,8 @@ MSG: dict[str, dict[str, str]] = {
     },
     "pt-BR": {
         "erro.credenciais_invalidas": "Credenciais inválidas",
+        "erro.data_invalida_item": "Data inválida: {data}",
+        "erro.indice_sem_provider": "Índice '{code}' não tem provider automático (entra por import curado)",
         "erro.moeda_invalida": "Moeda não suportada",
         "notif.meta_fallback": "Meta #{id}",
         "notif.meta_atingida": "🎯 Meta atingida: {nome} ({total}/{alvo})",

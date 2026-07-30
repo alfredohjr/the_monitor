@@ -42,7 +42,7 @@ describe('GoalForm — pré-preenche alvo com valor_padrao da métrica', () => {
     render(<GoalForm />);
     await screen.findByText('Receita (daily)');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '1', name: 'metric' } });
-    const input = await screen.findByLabelText(/alvo/i) as HTMLInputElement;
+    const input = await screen.findByLabelText(/requested target|alvo requisitado/i) as HTMLInputElement;
     await waitFor(() => expect(input.value).toBe('1000'));
   });
 
@@ -57,7 +57,7 @@ describe('GoalForm — pré-preenche alvo com valor_padrao da métrica', () => {
     render(<GoalForm />);
     await screen.findByText('Peso (daily)');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '2', name: 'metric' } });
-    const input = await screen.findByLabelText(/alvo/i) as HTMLInputElement;
+    const input = await screen.findByLabelText(/requested target|alvo requisitado/i) as HTMLInputElement;
     await waitFor(() => expect(input.value).toBe(''));
   });
 });
