@@ -62,7 +62,7 @@ describe('CatalogPage — catálogo de métricas do sistema', () => {
     mockFetch([]);
     render(<CatalogPage />);
     await screen.findByText('Métrica A');
-    const btns = screen.getAllByRole('button', { name: /assinar/i });
+    const btns = screen.getAllByRole('button', { name: /subscribe/i });
     expect(btns.length).toBe(3);
   });
 
@@ -70,23 +70,37 @@ describe('CatalogPage — catálogo de métricas do sistema', () => {
     mockFetch([{ id: 10, metric_id: 1 }]);
     render(<CatalogPage />);
     await screen.findByText('Métrica A');
-    expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /assinar/i }).length).toBe(2);
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /subscribe/i }).length).toBe(2);
   });
 
   it('assinar métrica atualiza botão para "Cancelar"', async () => {
     mockFetch([]);
     render(<CatalogPage />);
     await screen.findByText('Métrica A');
-    fireEvent.click(screen.getAllByRole('button', { name: /assinar/i })[0]);
-    await waitFor(() => expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument());
+    fireEvent.click(screen.getAllByRole('button', { name: /subscribe/i })[0]);
+    await waitFor(() => expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument());
   });
 
   it('cancelar assinatura atualiza botão para "Assinar"', async () => {
     mockFetch([{ id: 10, metric_id: 1 }]);
     render(<CatalogPage />);
     await screen.findByText('Métrica A');
-    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
-    await waitFor(() => expect(screen.getAllByRole('button', { name: /assinar/i }).length).toBe(3));
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /subscribe/i }).length).toBe(3));
+  });
+});
+
+describe('Catálogo — idioma (#298)', () => {
+  it('renderiza o chrome em pt-BR, mas o nome da métrica segue vindo do banco', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    // O helper do suite já entrega as métricas fixas (Métrica A/B/C) e recebe
+    // apenas as assinaturas — não tem parâmetro de métricas.
+    mockFetch();
+    render(<CatalogPage />);
+    expect(await screen.findByText('Catálogo de Métricas')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /assinar/i }).length).toBe(3);
+    // nome vindo do banco: não é traduzido aqui (#317)
+    expect(screen.getByText('Métrica A')).toBeInTheDocument();
   });
 });
