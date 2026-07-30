@@ -9,4 +9,8 @@ export const layout = {
   switchToLightTheme: "Switch to light theme",
   switchToDarkTheme: "Switch to dark theme",
   toggleTheme: "Toggle theme",
+
+  // metadata da página (#314). Resolvido no SERVIDOR, a partir do
+  // Accept-Language — não há localStorage lá.
+  metaDescription: "Track your objectives and performance.",
 };
