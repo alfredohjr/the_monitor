@@ -1,4 +1,5 @@
 import { API_BASE } from "./api";
+import { t } from "./i18n";
 export interface Notification {
   id: number;
   mensagem: string;
@@ -21,7 +22,7 @@ export async function fetchNotifications(
   const res = await fetch(`${apiBase}/api/v1/notifications/`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Falha ao carregar notificações");
+  if (!res.ok) throw new Error(t("notifications.loadFailed"));
   return res.json();
 }
 
@@ -35,6 +36,6 @@ export async function markNotificationRead(
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Falha ao marcar como lida");
+  if (!res.ok) throw new Error(t("notifications.markFailed"));
   return res.json();
 }

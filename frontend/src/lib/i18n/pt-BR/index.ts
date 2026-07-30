@@ -14,7 +14,9 @@ import { logs } from "./logs";
 import { logsImport } from "./logsImport";
 import { login } from "./login";
 import { metrics } from "./metrics";
+import { notifications } from "./notifications";
 import { onboarding } from "./onboarding";
+import { profile } from "./profile";
 import { register } from "./register";
 import { simulation } from "./simulation";
 import { navbar } from "./navbar";
@@ -34,7 +36,9 @@ export const ptBR = {
   logsImport,
   login,
   metrics,
+  notifications,
   onboarding,
+  profile,
   register,
   simulation,
   navbar,

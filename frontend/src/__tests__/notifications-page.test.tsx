@@ -34,7 +34,7 @@ test('marcar como lida chama a API e atualiza o item', async () => {
     return Promise.resolve({ ok: true, json: async () => lista });
   });
   render(<NotificationsPage />);
-  const btn = await screen.findByRole('button', { name: /marcar.*lida|meta atingida/i });
+  const btn = await screen.findByRole('button', { name: /mark as read|meta atingida/i });
   fireEvent.click(btn);
   await waitFor(() => expect(read).toHaveBeenCalledWith(expect.stringContaining('/notifications/1/read/')));
 });
@@ -42,7 +42,7 @@ test('marcar como lida chama a API e atualiza o item', async () => {
 test('estado vazio quando não há notificações', async () => {
   (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
   render(<NotificationsPage />);
-  expect(await screen.findByText(/nenhuma notificação/i)).toBeInTheDocument();
+  expect(await screen.findByText(/no notification/i)).toBeInTheDocument();
 });
 
 test('redireciona para /login sem token', () => {
@@ -50,4 +50,18 @@ test('redireciona para /login sem token', () => {
   (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
   render(<NotificationsPage />);
   expect(mockReplace).toHaveBeenCalledWith('/login');
+});
+
+test('renderiza em pt-BR, mas a mensagem da notificação segue vindo do backend', async () => {
+  localStorage.setItem('locale', 'pt-BR');
+  (global as { fetch: unknown }).fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => [{ id: 1, mensagem: 'Meta atingida: Vendas', lida: false, created_at: '2026-07-29T10:00:00Z' }],
+  });
+  render(<NotificationsPage />);
+  // chrome da tela traduzido
+  expect(await screen.findByText('Notificações')).toBeInTheDocument();
+  expect(screen.getByText('Seu histórico completo de notificações.')).toBeInTheDocument();
+  // conteúdo da notificação NÃO é traduzido aqui — vem do banco (#306)
+  expect(screen.getByText('Meta atingida: Vendas')).toBeInTheDocument();
 });

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useT } from "@/lib/i18n/useT";
 import { usePathname } from "next/navigation";
 import {
   Notification,
@@ -14,6 +15,7 @@ export default function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { t } = useT();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async (t: string) => {
@@ -83,8 +85,8 @@ export default function NotificationBell() {
       <button
         onClick={handleToggle}
         className="relative text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white transition"
-        aria-label="Notificações"
-        title="Notificações"
+        aria-label={t("notifications.bellLabel")}
+        title={t("notifications.bellLabel")}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -98,9 +100,9 @@ export default function NotificationBell() {
 
       {open && (
         <div data-testid="notif-panel" className="absolute right-0 mt-3 w-72 max-h-96 overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 rounded-2xl shadow-xl z-50 p-2">
-          <p className="text-xs uppercase tracking-wider text-zinc-500 px-3 py-2">Notificações</p>
+          <p className="text-xs uppercase tracking-wider text-zinc-500 px-3 py-2">{t("notifications.bellLabel")}</p>
           {items.length === 0 ? (
-            <p className="text-sm text-zinc-500 px-3 py-4 text-center">Nenhuma notificação.</p>
+            <p className="text-sm text-zinc-500 px-3 py-4 text-center">{t("notifications.empty")}</p>
           ) : (
             items.map((n) => (
               <button
@@ -120,7 +122,7 @@ export default function NotificationBell() {
             onClick={() => setOpen(false)}
             className="block text-center text-xs text-blue-400 hover:text-blue-300 transition px-3 py-2 mt-1 border-t border-zinc-200 dark:border-white/10"
           >
-            Ver todas →
+            {t("notifications.seeAll")}
           </Link>
         </div>
       )}

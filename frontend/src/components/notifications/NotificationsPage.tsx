@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/lib/i18n/useT";
 import {
   Notification,
   fetchNotifications,
@@ -9,6 +10,7 @@ import {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { t } = useT();
   const [token, setToken] = useState<string | null>(null);
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +40,13 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col min-h-screen items-center p-6 pt-28 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 sm:p-8 rounded-3xl">
-        <h1 className="text-2xl font-extrabold tracking-tight mb-1">Notificações</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">Seu histórico completo de notificações.</p>
+        <h1 className="text-2xl font-extrabold tracking-tight mb-1">{t("notifications.title")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">{t("notifications.subtitle")}</p>
 
         {loading ? (
-          <p className="text-zinc-500 py-8 text-center">Carregando…</p>
+          <p className="text-zinc-500 py-8 text-center">{t("notifications.loading")}</p>
         ) : items.length === 0 ? (
-          <p className="text-zinc-500 py-8 text-center">Nenhuma notificação.</p>
+          <p className="text-zinc-500 py-8 text-center">{t("notifications.empty")}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((n) => (
@@ -52,7 +54,7 @@ export default function NotificationsPage() {
                 <button
                   onClick={() => handleRead(n.id)}
                   disabled={n.lida}
-                  aria-label={n.lida ? n.mensagem : `Marcar como lida: ${n.mensagem}`}
+                  aria-label={n.lida ? n.mensagem : t("notifications.markAsRead", { mensagem: n.mensagem })}
                   className={`w-full text-left px-4 py-3 rounded-2xl border transition ${
                     n.lida
                       ? "border-zinc-200 dark:border-white/5 text-zinc-500"
