@@ -71,3 +71,35 @@ describe('Perfil — idioma (#297)', () => {
     expect(screen.getByRole('button', { name: /salvar/i })).toBeInTheDocument();
   });
 });
+
+describe('Perfil — idioma no servidor (#304)', () => {
+  afterEach(() => localStorage.clear());
+
+  it('adota o locale que veio do /me, tratando o servidor como fonte de verdade', async () => {
+    // Sem isso, quem trocou de idioma noutro dispositivo voltaria ao padrão aqui.
+    mockFetch(() => ({ ok: true, json: async () => ({ username: 'a', email: null, display_name: 'A', locale: 'pt-BR' }) }));
+    render(<ProfilePage />);
+    await screen.findByDisplayValue('A');
+    await waitFor(() => expect(localStorage.getItem('locale')).toBe('pt-BR'));
+  });
+
+  it('trocar o idioma manda PATCH com locale e persiste local', async () => {
+    const chamadas: unknown[] = [];
+    mockFetch((url: string, opts?: RequestInit) => {
+      if (opts?.method === 'PATCH') {
+        chamadas.push(JSON.parse(opts.body as string));
+        return { ok: true, json: async () => ({ username: 'a', display_name: 'A', locale: 'pt-BR' }) };
+      }
+      return { ok: true, json: async () => ({ username: 'a', email: null, display_name: 'A', locale: 'en' }) };
+    });
+    render(<ProfilePage />);
+    // Espera o /me resolver ANTES de interagir: o select é estático e renderiza
+    // no primeiro passe, então mexer nele antes da carga faz o efeito
+    // sobrescrever a escolha. Ancorar no dado é o que reproduz o uso real.
+    await screen.findByDisplayValue('A');
+    fireEvent.change(screen.getByLabelText(/language|idioma/i), { target: { value: 'pt-BR' } });
+
+    await waitFor(() => expect(chamadas).toContainEqual({ locale: 'pt-BR' }));
+    await waitFor(() => expect(localStorage.getItem('locale')).toBe('pt-BR'));
+  });
+});

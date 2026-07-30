@@ -13,6 +13,9 @@ class User(SQLModel, table=True):
     # Nome de exibição editável pelo usuário. No login por Google o username é o
     # e-mail; o display_name deixa a UI mostrar um nome amigável (#206).
     display_name: Optional[str] = Field(default=None, max_length=150)
+    # Idioma preferido (#304). O backend usa isto para e-mail e notificação,
+    # onde não há requisição com Accept-Language para consultar.
+    locale: str = Field(default="en", max_length=10)
 
 
 class EmailVerificationToken(SQLModel, table=True):
