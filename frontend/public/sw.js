@@ -20,7 +20,9 @@ const CACHE = PREFIXO_CACHE + VERSAO;
 
 // Mínimo para a app abrir offline. Chunks do /_next/static entram sozinhos no
 // primeiro acesso — os nomes têm hash e não dá para listá-los aqui.
-const PRECACHE = ["/", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
+// `/offline` é o mais importante da lista: é a única tela que precisa estar
+// garantida no cache, porque só aparece quando não há rede para buscá-la (#322).
+const PRECACHE = ["/", "/offline", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 const PREFIXOS_PROIBIDOS = ["/api/"];
 
@@ -97,8 +99,11 @@ self.addEventListener("fetch", function (evento) {
   if (req.mode === "navigate") {
     evento.respondWith(
       fetch(req).catch(function () {
+        // A própria página, se já foi visitada, vem antes da tela de offline:
+        // quem já abriu o painel continua vendo o painel sem rede, e o aviso
+        // genérico fica para quem pede uma rota que nunca carregou (#322).
         return caches.match(req).then(function (hit) {
-          return hit || caches.match("/");
+          return hit || caches.match("/offline");
         });
       })
     );

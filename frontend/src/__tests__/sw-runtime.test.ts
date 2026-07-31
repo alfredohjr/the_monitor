@@ -142,6 +142,19 @@ describe("sw.js — install", () => {
     );
   });
 
+  it("precacheia a rota /offline — sem ela o fallback não tem o que servir", async () => {
+    // O handler de navegação responde `caches.match("/offline")`; se a rota não
+    // estiver no cache, isso resolve `undefined` e o usuário vê o erro de rede
+    // do navegador. Tirar `/offline` do PRECACHE não quebrava nenhum teste até
+    // este existir.
+    const { handlers, cachesAbertos } = carregarSW("1.2.3");
+    const esperas: Promise<unknown>[] = [];
+    handlers.install({ waitUntil: (p: Promise<unknown>) => esperas.push(p) } as never);
+    await Promise.all(esperas);
+
+    expect(cachesAbertos["themonitor-shell-1.2.3"].adicionados).toContain("/offline");
+  });
+
   it("um item que falha não derruba a instalação inteira", async () => {
     // Sem isto, um ícone renomeado deixaria o app sem service worker nenhum,
     // e o sintoma (nada acontece) não aponta para a causa.
@@ -205,6 +218,44 @@ describe("sw.js — fetch", () => {
     const e = eventoDe(req(`${ORIGEM}/_next/static/chunks/main-abc.js`));
     handlers.fetch(e.evento as never);
     expect(e.teveResposta()).toBe(true);
+  });
+
+  it("rede caída em navegação cai na tela offline (#322)", async () => {
+    // Sem isto o app instalado mostra o dinossauro do Chrome, que dentro de um
+    // app parece defeito nosso.
+    const { handlers, ctx } = carregarSW();
+    ctx.fetch = () => Promise.reject(new Error("offline"));
+    const procurados: unknown[] = [];
+    (ctx.caches as { match: unknown }).match = (chave: unknown) => {
+      procurados.push(chave);
+      // Nada da rota pedida no cache — força chegar ao último recurso.
+      return Promise.resolve(procurados.length > 1 ? { offline: true } : undefined);
+    };
+
+    const e = eventoDe(req(`${ORIGEM}/dashboard`), "navigate");
+    handlers.fetch(e.evento as never);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(procurados[procurados.length - 1]).toBe("/offline");
+  });
+
+  it("offline com a página já visitada serve a própria página, não a tela offline", async () => {
+    // Preferir o conteúdo real ao aviso genérico: quem já abriu o painel antes
+    // continua vendo o painel, mesmo sem rede.
+    const { handlers, ctx } = carregarSW();
+    ctx.fetch = () => Promise.reject(new Error("offline"));
+    const procurados: unknown[] = [];
+    (ctx.caches as { match: unknown }).match = (chave: unknown) => {
+      procurados.push(chave);
+      return Promise.resolve({ doCache: true });
+    };
+
+    const e = eventoDe(req(`${ORIGEM}/dashboard`), "navigate");
+    handlers.fetch(e.evento as never);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(procurados).toHaveLength(1);
+    expect(procurados[0]).not.toBe("/offline");
   });
 
   it("navegação vai à rede MESMO tendo a página no cache", async () => {

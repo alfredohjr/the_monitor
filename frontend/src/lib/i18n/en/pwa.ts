@@ -7,4 +7,11 @@ export const pwa = {
   // caracteres, então este NÃO pode crescer.
   shortName: "themonitor",
   description: "Track your metrics and goals, and follow daily progress.",
+
+  // Tela de sem conexão (#322). Sem jargão: quem lê isto já está frustrado, e
+  // "verifique sua conexão" não diz o que fazer que a pessoa já não tenha feito.
+  offlineTitle: "You're offline",
+  offlineMessage:
+    "themonitor needs a connection to load your data. Reconnect and try again — nothing you entered was lost.",
+  offlineRetry: "Try again",
 };
