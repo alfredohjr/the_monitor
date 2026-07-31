@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import CookieConsent from "@/components/layout/CookieConsent";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import VersionBadge from "@/components/layout/VersionBadge";
+import ServiceWorkerRegistration from "@/components/layout/ServiceWorkerRegistration";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { t } from "@/lib/i18n";
 import "./globals.css";
@@ -94,6 +95,7 @@ export default function RootLayout({
               "var l=localStorage.getItem('locale');document.documentElement.setAttribute('lang',l==='pt-BR'?'pt-BR':'en');}catch(e){}})();",
           }}
         />
+        <ServiceWorkerRegistration />
         <I18nProvider>
           <Navbar />
           {children}
