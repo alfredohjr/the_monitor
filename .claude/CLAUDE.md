@@ -109,5 +109,42 @@ Detalhes no `README.md` (§ *Deploy e versionamento*) e em `deploy/vps/`:
   só da 0.4 em diante. Deploy real: `deploy/vps/` — o `docker-compose.prod.yml`
   não tem proxy e publica o Postgres.
 
+### i18n — toda tela nova nasce com `t()`
+O app é bilíngue (**inglês padrão**, pt-BR opcional). Detalhes de uso no `README.md`
+(§ *Idiomas*). As regras que valem ao escrever código novo:
+
+- **Nunca literal visível no componente.** Catálogo em
+  `frontend/src/lib/i18n/{en,pt-BR}/<área>.ts`, **um arquivo por área** (menor
+  superfície de conflito entre PRs). No backend, `backend/messages.py` + `t(chave, lang)`.
+  Duas guardas automáticas cobrem isso: `i18n-guard.test.ts` (AST, pega JSX, atributo
+  visível e `useState("texto")`) e `test_messages_import_admin.py` (pega `detail=` literal
+  **e f-string**).
+- **Frase inteira no catálogo, com `{placeholder}`.** Nunca montar texto concatenando
+  pedaços — `"Importado: " + n + " metas"` amarra a ordem das palavras de um idioma só,
+  e verbo interpolado não sobrevive a conjugação.
+- **Teste sempre em PAR**: inglês por padrão **e** português com o locale/header. Um lado
+  só deixa passar tanto "esqueci de traduzir" quanto "traduzi mas ignorei o header" — e
+  o lado pt-BR costuma passar pelo motivo errado, porque o texto original já é português.
+- **Não traduza dado**: nome de métrica do usuário, notificação já gravada, `data,valor`
+  do CSV (o backend compara literalmente), `bucketKey`. Ver a lista no README.
+
+### Cuidado ao mudar texto que um teste usa
+Este é o erro mais caro da migração de i18n, e nenhuma guarda automática pega —
+separar o caso legítimo do perigoso exigiria entender a intenção do teste.
+
+```js
+// ERRADO: o waitFor é o sinal de "os dados chegaram", não uma asserção.
+await waitFor(() => expect(queryByText(/carregando/i)).not.toBeInTheDocument());
+expect(screen.getByText('valor')).toBeInTheDocument();
+```
+
+Quando o texto muda, o matcher para de casar, o `waitFor` resolve no primeiro tick e a
+asserção seguinte roda **contra a tela vazia**. Se ela também for negativa, o teste passa
+por vacuidade — foi assim que duas guardas de permissão de lançamento (#164) ficaram sem
+verificar nada.
+
+**Ancore no positivo**: `await screen.findByText(<o dado que deve aparecer>)`. E ao
+traduzir um texto, procure quem o usa como matcher — inclusive `getAllBy*`/`findAllBy*`.
+
 ### Fluxo de merge
 PR + `gh pr merge --auto --squash`: com CI verde, mergeia sozinho e apaga a branch.
