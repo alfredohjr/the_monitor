@@ -30,7 +30,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "themonitor",
   description: t("layout.metaDescription"),
-  icons: { icon: "/favicon.svg" },
+  icons: {
+    icon: "/favicon.svg",
+    // O iOS ignora o manifest para o ícone da tela inicial — ele lê o
+    // <link rel="apple-touch-icon">. Sem isto, o iPhone instala o app com um
+    // print da página no lugar do ícone (#319).
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

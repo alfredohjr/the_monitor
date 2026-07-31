@@ -19,6 +19,7 @@ import { metrics } from "./metrics";
 import { notifications } from "./notifications";
 import { onboarding } from "./onboarding";
 import { profile } from "./profile";
+import { pwa } from "./pwa";
 import { register } from "./register";
 import { simulation } from "./simulation";
 import { navbar } from "./navbar";
@@ -42,6 +43,7 @@ export const en = {
   notifications,
   onboarding,
   profile,
+  pwa,
   register,
   simulation,
   navbar,
