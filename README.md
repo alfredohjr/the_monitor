@@ -180,6 +180,62 @@ A linha seguida é definida **só** pela tag no compose. Enquanto ela apontar pa
 - Comparação definitiva: o **digest** da imagem (`docker compose images`) e as
   **labels OCI** (`org.opencontainers.image.version`/`.revision`).
 
+## Idiomas (i18n)
+
+O app fala **inglês (padrão)** e **português do Brasil**. O usuário troca no seletor
+do Navbar ou no perfil; a escolha vale para a interface, para as mensagens de erro
+da API, para os e-mails e para as notificações.
+
+### Como o idioma é decidido
+
+Depende de **onde** o texto nasce, e a distinção não é detalhe:
+
+| Origem | Fonte do idioma | Por quê |
+|---|---|---|
+| Interface (front) | `localStorage` + context | É a escolha do usuário naquele navegador |
+| Erro de rota (API) | header `Accept-Language` | O idioma em que a pessoa está interagindo agora |
+| E-mail transacional | header `Accept-Language` | Nasce de uma requisição; no cadastro o usuário ainda não escolheu nada |
+| E-mail de resumo diário | coluna `User.locale` | Rotina, sem requisição para consultar |
+| Notificação in-app | coluna `User.locale` | Fica **gravada** e é lida depois; quem lança pode não ser quem recebe |
+
+O parser de `Accept-Language` respeita o peso `q` da RFC 9110 nos dois lados
+(`backend/messages.py` e `frontend/src/lib/i18n`): `en;q=0.5,pt-BR;q=0.9` pede
+português, apesar do inglês vir primeiro.
+
+### Onde ficam os textos
+
+**Front** — `frontend/src/lib/i18n/{en,pt-BR}/<área>.ts`, um arquivo por área, com um
+barril por idioma. Nos componentes:
+
+```tsx
+const { t } = useT();
+<h1>{t("metrics.title")}</h1>
+<p>{t("goalsImport.imported", { criadas: 3, ignoradas: 1 })}</p>
+```
+
+**Backend** — `backend/messages.py`:
+
+```python
+raise HTTPException(status_code=404, detail=t("erro.metrica_nao_encontrada", lang))
+```
+
+### O que NÃO é traduzido
+
+- **Dado do usuário**: nome de métrica criada por ele, mensagem de notificação já
+  gravada, nome de organização.
+- **Token de protocolo**: o cabeçalho `data,valor` do CSV é comparado literalmente
+  pelo backend — dizer "date,value" faria o arquivo ser rejeitado linha por linha.
+- **Chave de agrupamento**: `bucketKey` (`lib/periodo.ts`) casa meta com lançamento e
+  bate com o `<input type="week">`. Se acompanhasse o idioma, o pareamento quebraria
+  em silêncio.
+- **Marca**: "themonitor".
+
+### Moeda ≠ idioma
+
+A moeda é atributo da **organização** (`Organization.moeda`, default `BRL`), definida
+pelo admin. Traduzir a interface **não converte dinheiro**: `formatValor` troca o
+símbolo e os separadores, nunca o valor. Não há taxa de câmbio no sistema.
+
 ## Testes
 
 ### Backend
