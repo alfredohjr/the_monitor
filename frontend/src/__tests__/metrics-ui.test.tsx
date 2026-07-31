@@ -147,3 +147,21 @@ describe('MetricForm — idioma (#287)', () => {
     expect(screen.getByRole('option', { name: 'Daily' })).toBeInTheDocument();
   });
 });
+
+describe('MetricList — rótulos de tipo e período (#367)', () => {
+  it('exibe rótulo traduzido, não o identificador da API', async () => {
+    mockFetch([{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'd', tipo: 'currency', periodo: 'monthly', is_default: false }], []);
+    render(<MetricList />);
+    expect(await screen.findByText('Currency')).toBeInTheDocument();
+    expect(screen.getByText('Monthly')).toBeInTheDocument();
+    expect(screen.queryByText('currency')).not.toBeInTheDocument();
+  });
+
+  it('em pt-BR usa os mesmos rótulos do formulário', async () => {
+    localStorage.setItem('locale', 'pt-BR');
+    mockFetch([{ id: 2, codigo: 'MNH', nome: 'Minha', descricao: 'd', tipo: 'number', periodo: 'daily', is_default: false }], []);
+    render(<MetricList />);
+    expect(await screen.findByText('Número Inteiro')).toBeInTheDocument();
+    expect(screen.getByText('Diário')).toBeInTheDocument();
+  });
+});
