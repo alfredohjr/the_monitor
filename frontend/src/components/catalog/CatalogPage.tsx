@@ -4,6 +4,7 @@ import { apiFetch, API_BASE } from "@/lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/useT";
+import { rotuloTipo, rotuloPeriodo } from "@/lib/metricLabels";
 
 interface Metric {
   id: number;
@@ -95,7 +96,7 @@ export default function CatalogPage() {
                     <h3 className="font-bold text-lg">{m.nome}</h3>
                     <p className="text-xs text-zinc-500 font-mono mt-1">{m.codigo}</p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{m.tipo} · {m.periodo}</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-white/5 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{rotuloTipo(m.tipo)} · {rotuloPeriodo(m.periodo)}</span>
                 </div>
                 {assinada ? (
                   <button

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatValor } from "@/lib/formatValor";
 import { useT } from "@/lib/i18n/useT";
+import { rotuloTipo, rotuloPeriodo } from "@/lib/metricLabels";
 
 export default function MetricList() {
   const [items, setItems] = useState<any[]>([]);
@@ -79,8 +80,8 @@ export default function MetricList() {
                     <td className="py-4 px-2 font-mono text-zinc-600 dark:text-zinc-400">{i.codigo}</td>
                     <td className="py-4 px-2 font-medium text-blue-300">{i.nome || '-'}</td>
                     <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.descricao}</td>
-                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.tipo}</td>
-                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{i.periodo}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{rotuloTipo(i.tipo)}</td>
+                    <td className="py-4 px-2 text-zinc-700 dark:text-zinc-300">{rotuloPeriodo(i.periodo)}</td>
                     <td className="py-4 px-2 text-zinc-600 dark:text-zinc-400" data-testid={`valor-padrao-${i.id}`}>
                       {i.valor_padrao != null ? formatValor(i.valor_padrao, i.tipo) : '—'}
                     </td>

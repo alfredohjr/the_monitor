@@ -120,3 +120,11 @@ test('a tela exibe o nome que o backend entregou, sem traduzir nada por conta pr
   // Mesmo com o locale em pt-BR, a tela mostra o que veio na resposta.
   expect(await screen.findByText('Daily Revenue')).toBeInTheDocument();
 });
+
+test('o selo do card mostra rótulo traduzido, igual à tabela de métricas (#367)', async () => {
+  mockFetch();
+  render(<CatalogPage />);
+  await screen.findByText('Métrica A');
+  // metricaB é currency/monthly — mesmo par de rótulos que o MetricList usa.
+  expect(screen.getByText('Currency · Monthly')).toBeInTheDocument();
+});
