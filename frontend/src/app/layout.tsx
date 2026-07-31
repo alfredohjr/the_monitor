@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import CookieConsent from "@/components/layout/CookieConsent";
@@ -37,6 +37,33 @@ export const metadata: Metadata = {
     // print da página no lugar do ícone (#319).
     apple: "/icons/apple-touch-icon.png",
   },
+  // O iOS não lê o manifest: é este bloco que faz o ícone da tela inicial abrir
+  // sem a barra do Safari. `title` é o rótulo embaixo do ícone — o mesmo
+  // `short_name` do manifest, para o app não ter dois nomes conforme o sistema.
+  appleWebApp: {
+    capable: true,
+    // `black-translucent` deixa o conteúdo passar por baixo da barra de status,
+    // que é o par de `viewportFit: "cover"` abaixo. Com `default` (branco) o
+    // topo da tela ficaria claro em cima de uma interface escura.
+    statusBarStyle: "black-translucent",
+    title: t("pwa.shortName"),
+  },
+};
+
+// Cor da barra de status enquanto o app abre.
+//
+// Precisa ser IGUAL ao `theme_color` do manifest (`app/manifest.ts`): o
+// navegador usa este valor na abertura e o do manifest depois de instalado, e
+// dois valores diferentes viram um flash de cor na transição. O teste em
+// `pwa-manifest.test.ts` compara os dois — se um mudar sozinho, ele acusa.
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  // `cover` estende o app até as bordas físicas em telas com notch. Sem isto o
+  // iOS reserva as áreas seguras e sobra uma tarja da cor de fundo em cima e
+  // embaixo — o jeito mais rápido de o app instalado parecer uma página web.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
