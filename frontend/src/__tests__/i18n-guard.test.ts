@@ -45,6 +45,7 @@ const PERMITIDOS = new Set([
   "loading",      // enum de status (useState)
   "success",
   "error",
+  "nenhum",       // modo do InstallPrompt (#324): android | ios | nenhum
   "BRL",          // código de moeda em useState, não texto de tela
   "all",          // valor do filtro "todas as métricas" no dashboard
 ]);

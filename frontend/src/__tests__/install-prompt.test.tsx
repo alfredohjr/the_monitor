@@ -103,6 +103,89 @@ describe("InstallPrompt", () => {
   });
 });
 
+describe("InstallPrompt no iOS (#324)", () => {
+  const UA_IPHONE =
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1";
+
+  function fingirIPhone(ua = UA_IPHONE) {
+    Object.defineProperty(navigator, "userAgent", { value: ua, configurable: true });
+    Object.defineProperty(navigator, "maxTouchPoints", { value: 5, configurable: true });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) jsdom/20",
+      configurable: true,
+    });
+    Object.defineProperty(navigator, "maxTouchPoints", { value: 0, configurable: true });
+  });
+
+  it("mostra a instrução manual, sem botão de instalar", async () => {
+    fingirIPhone();
+    render(<InstallPrompt />);
+
+    // A frase precisa citar o rótulo exato do menu do iOS: é o que o usuário
+    // vai procurar na tela dele.
+    expect(await screen.findByText(/Add to Home Screen/)).toBeInTheDocument();
+    // Não existe instalação programática no iOS — um botão "Install" aqui seria
+    // uma promessa que nada cumpre.
+    expect(screen.queryByRole("button", { name: "Install" })).not.toBeInTheDocument();
+  });
+
+  it("some depois de dispensada e não volta", async () => {
+    fingirIPhone();
+    render(<InstallPrompt />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Not now" }));
+    expect(screen.queryByText(/Add to Home Screen/)).not.toBeInTheDocument();
+
+    const segunda = render(<InstallPrompt />);
+    expect(segunda.container).toBeEmptyDOMElement();
+  });
+
+  it("não aparece com o app já na tela inicial", () => {
+    fingirIPhone();
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true }) as never;
+
+    const { container } = render(<InstallPrompt />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("não aparece no Chrome do iOS, que não tem esse item de menu", () => {
+    fingirIPhone(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1"
+    );
+
+    const { container } = render(<InstallPrompt />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renderiza em pt-BR com o rótulo que o iOS em português mostra", async () => {
+    fingirIPhone();
+    localStorage.setItem("locale", "pt-BR");
+    render(<InstallPrompt />);
+
+    expect(await screen.findByText(/Adicionar à Tela de Início/)).toBeInTheDocument();
+  });
+
+  it("o Android segue no ramo do evento, sem instrução de iPhone", async () => {
+    // Guarda contra regressão da #323: o UA do Chrome no Android também contém
+    // "Safari".
+    Object.defineProperty(navigator, "userAgent", {
+      value:
+        "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+      configurable: true,
+    });
+    Object.defineProperty(navigator, "maxTouchPoints", { value: 5, configurable: true });
+
+    render(<InstallPrompt />);
+    dispararEvento(eventoDeInstalacao());
+
+    expect(await screen.findByRole("button", { name: "Install" })).toBeInTheDocument();
+    expect(screen.queryByText(/Add to Home Screen/)).not.toBeInTheDocument();
+  });
+});
+
 describe("captura antes da hidratação", () => {
   it("o script guarda o evento em window.__pwaInstallEvent", () => {
     // Executa o script REAL que vai para o HTML. Sem este teste, o caminho

@@ -20,4 +20,13 @@ export const pwa = {
   installMessage: "Install themonitor to open it straight from your home screen, even offline.",
   installAction: "Install",
   installDismiss: "Not now",
+
+  // Instrução do iPhone (#324). Frase inteira, sem montar texto em volta do
+  // ícone: o gesto tem que ficar claro mesmo para quem não enxerga o glifo.
+  //
+  // "Add to Home Screen" é o rótulo LITERAL do menu do iOS — quem lê precisa
+  // achar exatamente esse item. O iOS traduz o próprio menu, então cada
+  // catálogo cita o rótulo no seu idioma.
+  iosInstallMessage:
+    "To install themonitor on your iPhone, tap the Share button in Safari and choose “Add to Home Screen”.",
 };

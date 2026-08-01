@@ -24,6 +24,49 @@ export function deveMostrarConvite(ctx: ContextoConvite): boolean {
   return ctx.eventoCapturado && !ctx.jaInstalado && !ctx.dispensado;
 }
 
+export type ContextoIOS = {
+  ehSafariIOS: boolean;
+  jaInstalado: boolean;
+  dispensado: boolean;
+};
+
+/**
+ * Mostra a instrução manual do iPhone? (#324)
+ *
+ * O iOS não implementa `beforeinstallprompt` — não existe instalação
+ * programática, e a única via é *Compartilhar → Adicionar à Tela de Início* no
+ * Safari. Sem instrução explícita, praticamente ninguém instala pelo iPhone.
+ *
+ * Também é pré-requisito do Web Push no iOS, que só funciona com o app na tela
+ * inicial e nunca numa aba do Safari.
+ */
+export function deveMostrarInstrucaoIOS(ctx: ContextoIOS): boolean {
+  return ctx.ehSafariIOS && !ctx.jaInstalado && !ctx.dispensado;
+}
+
+/**
+ * É Safari rodando em iOS/iPadOS?
+ *
+ * Três armadilhas, e cada uma tem um teste:
+ *
+ * 1. **iPad se anuncia como Macintosh** desde o iPadOS 13. O que o separa de um
+ *    Mac é `maxTouchPoints`.
+ * 2. **Chrome e Firefox no iOS terminam o UA em "Safari/604.1"**, mas não têm o
+ *    item "Adicionar à Tela de Início" — mostrar a instrução ali ensina um
+ *    gesto que não existe naquele app.
+ * 3. **Chrome no Android traz "Mobile Safari/537.36"**, e casar só por "Safari"
+ *    faria a instrução de iPhone aparecer no Android.
+ */
+export function ehSafariIOS(userAgent: string, maxTouchPoints: number): boolean {
+  const ehIOS = /iPad|iPhone|iPod/.test(userAgent) || (userAgent.includes("Macintosh") && maxTouchPoints > 1);
+  if (!ehIOS) return false;
+
+  // Navegadores de terceiros no iOS se identificam por um sufixo próprio.
+  if (/CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser/.test(userAgent)) return false;
+
+  return userAgent.includes("Safari");
+}
+
 /** O app está rodando instalado, e não numa aba do navegador? */
 export function estaInstalado(): boolean {
   if (typeof window === "undefined") return false;

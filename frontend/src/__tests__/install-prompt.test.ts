@@ -7,10 +7,32 @@
  */
 import {
   deveMostrarConvite,
+  deveMostrarInstrucaoIOS,
+  ehSafariIOS,
   estaInstalado,
   foiDispensado,
   marcarDispensado,
 } from "@/lib/install-prompt";
+
+// User agents reais. Escritos por extenso de propósito: a detecção de iOS é
+// cheia de casos que só um UA verdadeiro revela, e uma string inventada aqui
+// daria confiança falsa.
+const UA = {
+  iphoneSafari:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+  // Desde o iPadOS 13 o iPad se anuncia como Macintosh. O que o distingue de um
+  // Mac de verdade é a tela sensível ao toque.
+  ipadSafari:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+  macSafari:
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+  chromeIOS:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1",
+  firefoxIOS:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/121.0 Mobile/15E148 Safari/605.1.15",
+  chromeAndroid:
+    "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+};
 
 const ELEGIVEL = { eventoCapturado: true, jaInstalado: false, dispensado: false };
 
@@ -31,6 +53,60 @@ describe("deveMostrarConvite", () => {
 
   it("não mostra depois de dispensado", () => {
     expect(deveMostrarConvite({ ...ELEGIVEL, dispensado: true })).toBe(false);
+  });
+});
+
+describe("ehSafariIOS", () => {
+  it("reconhece o Safari no iPhone", () => {
+    expect(ehSafariIOS(UA.iphoneSafari, 5)).toBe(true);
+  });
+
+  it("reconhece o iPad, que se anuncia como Macintosh", () => {
+    // Desde o iPadOS 13 o UA do iPad é idêntico ao de um Mac. Sem olhar o toque,
+    // nenhum usuário de iPad veria a instrução.
+    expect(ehSafariIOS(UA.ipadSafari, 5)).toBe(true);
+  });
+
+  it("não confunde um Mac com um iPad", () => {
+    // Mesmo UA do caso acima, sem tela sensível ao toque. No desktop a
+    // instrução seria um absurdo: não existe tela inicial.
+    expect(ehSafariIOS(UA.macSafari, 0)).toBe(false);
+  });
+
+  it("não trata Chrome no iOS como Safari", () => {
+    // O UA do Chrome no iPhone TERMINA em "Safari/604.1" — procurar "Safari" na
+    // string acerta aqui e ensina um gesto que esse navegador não tem.
+    expect(ehSafariIOS(UA.chromeIOS, 5)).toBe(false);
+  });
+
+  it("não trata Firefox no iOS como Safari", () => {
+    expect(ehSafariIOS(UA.firefoxIOS, 5)).toBe(false);
+  });
+
+  it("não trata Chrome no Android como Safari", () => {
+    // "Mobile Safari/537.36" também aparece aqui. Este é o caso que faria a
+    // instrução de iPhone surgir num Android — e regrediria a #323.
+    expect(ehSafariIOS(UA.chromeAndroid, 5)).toBe(false);
+  });
+});
+
+describe("deveMostrarInstrucaoIOS", () => {
+  const NO_IPHONE = { ehSafariIOS: true, jaInstalado: false, dispensado: false };
+
+  it("mostra no Safari do iPhone, onde não existe evento de instalação", () => {
+    expect(deveMostrarInstrucaoIOS(NO_IPHONE)).toBe(true);
+  });
+
+  it("não mostra com o app já na tela inicial", () => {
+    expect(deveMostrarInstrucaoIOS({ ...NO_IPHONE, jaInstalado: true })).toBe(false);
+  });
+
+  it("não mostra depois de dispensada", () => {
+    expect(deveMostrarInstrucaoIOS({ ...NO_IPHONE, dispensado: true })).toBe(false);
+  });
+
+  it("não mostra fora do Safari iOS", () => {
+    expect(deveMostrarInstrucaoIOS({ ...NO_IPHONE, ehSafariIOS: false })).toBe(false);
   });
 });
 
