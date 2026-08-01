@@ -90,6 +90,9 @@ services:
       # troque para ./Caddyfile e descomente o volume ./certs abaixo.
       - ./Caddyfile.tunnel:/etc/caddy/Caddyfile:ro
       # - ./certs:/etc/caddy/certs:ro   # só na Variante A (Origin Certificate)
+      # assetlinks.json (#329): montado como volume para o fingerprint do
+      # certificado ser editável no servidor, sem rebuild de imagem.
+      - ./well-known:/etc/caddy/well-known:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

@@ -23,6 +23,8 @@ auto-update fica travado na minor (não cruza pra 0.5).
 | `Caddyfile` | Variante A (Origin Certificate + TLS) |
 | `.env.example` | Modelo do `.env` (copie e preencha) |
 | `backup.sh` | `pg_dump` agendável com retenção |
+| `well-known/assetlinks.json` | Prova de posse do domínio para o TWA da Play Store (#329) |
+| `verificar-assetlinks.sh` | Confere o assetlinks local e o que está no ar |
 
 ## Passo a passo
 
@@ -111,6 +113,68 @@ há passo manual de schema.
 
 ### 6. Backup
 Agende `backup.sh` no cron (ver cabeçalho do script).
+
+## Play Store / TWA — `assetlinks.json` (#329)
+
+O app da Play Store é um **TWA** (Trusted Web Activity): um invólucro que abre
+este site. Ele só abre **sem a barra de endereço do Chrome** se o Android
+confirmar que o app e o domínio têm o mesmo dono. Essa prova é o
+`assetlinks.json` servido em `/.well-known/`.
+
+**Se o arquivo faltar ou o fingerprint estiver errado, o app abre com a barra
+visível.** Ele funciona — por isso o erro passa despercebido até alguém reparar
+que "o app parece um navegador". É o engano clássico de quem publica TWA.
+
+### De onde sai o SHA-256
+
+Do certificado que **assina o app na Play Store**, e não do keystore local.
+Com o **Play App Signing** ligado (o padrão hoje), quem assina a versão que
+chega ao usuário é o Google, com um certificado que **não é o seu** — usar o
+fingerprint do keystore local aqui é o motivo nº 1 de o TWA falhar a
+verificação.
+
+O valor certo está em:
+
+> Play Console → seu app → **Test and release** → **Setup** → **App signing** →
+> *App signing key certificate* → `SHA-256 certificate fingerprint`
+
+Copie no formato `AA:BB:CC:...` (32 pares hexadecimais separados por `:`).
+
+Antes de publicar, para conferir localmente o keystore de upload:
+
+```bash
+keytool -list -v -keystore android.keystore -alias android | grep SHA256
+```
+
+Este é o de **upload**, não o de assinatura. Os dois só coincidem se o Play App
+Signing estiver desligado. Na dúvida, vale o que o Play Console mostra.
+
+### Como atualizar
+
+```bash
+# 1. edite o fingerprint e o package_name
+nano deploy/vps/well-known/assetlinks.json
+
+# 2. o Caddy serve o arquivo por volume — basta recarregar, sem rebuild
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+# 3. confira
+./deploy/vps/verificar-assetlinks.sh seu-dominio.com
+```
+
+O `package_name` precisa ser **idêntico** ao `applicationId` gerado pelo
+Bubblewrap (#330). Divergência aí falha a verificação sem nenhuma mensagem útil.
+
+### Validar
+
+O `verificar-assetlinks.sh` checa o que dá para checar daqui: JSON válido,
+fingerprint preenchido e no formato certo, `200` e `Content-Type` corretos no ar.
+
+A palavra final é do Google, que testa exatamente o que o Android testa:
+<https://developers.google.com/digital-asset-links/tools/generator>
+
+Depois de mudar o arquivo, o Android pode levar horas para reavaliar num
+aparelho que já tem o app instalado. Para testar na hora, reinstale.
 
 ## Pegadinhas
 
