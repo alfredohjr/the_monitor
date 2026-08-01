@@ -62,3 +62,39 @@ describe("rota no Caddy", () => {
     expect(compose).toContain("./well-known:/etc/caddy/well-known:ro");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Empacotamento TWA (#330)
+// ---------------------------------------------------------------------------
+
+describe("segurança do diretório do TWA", () => {
+  const gitignore = fs.readFileSync(path.resolve(__dirname, "../../../deploy/twa/.gitignore"), "utf8");
+
+  it.each(["*.keystore", "*.jks", "*.p12"])("ignora %s", (padrao) => {
+    // Quem tem o keystore publica atualização em nome deste app. E commit de
+    // credencial não se desfaz apagando o commit — fica no histórico, nos
+    // forks e nos clones de quem já puxou.
+    expect(gitignore).toContain(padrao);
+  });
+
+  it("ignora os artefatos de build", () => {
+    expect(gitignore).toContain("*.aab");
+    expect(gitignore).toContain("*.apk");
+  });
+
+  it("NÃO ignora o twa-manifest.json — ele é a configuração, não artefato", () => {
+    // Sem ele versionado, quem gerar o próximo build precisa adivinhar o
+    // packageId e a versão escolhidos no primeiro.
+    expect(gitignore).not.toMatch(/^twa-manifest\.json/m);
+  });
+
+  it("nenhum keystore foi commitado", () => {
+    // A guarda que importa de verdade: o .gitignore certo não ajuda se um
+    // arquivo entrou antes de ele existir.
+    const twa = path.resolve(__dirname, "../../../deploy/twa");
+    const suspeitos = fs
+      .readdirSync(twa)
+      .filter((f: string) => /\.(keystore|jks|p12)$/.test(f));
+    expect(suspeitos).toEqual([]);
+  });
+});

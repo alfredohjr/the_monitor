@@ -180,6 +180,31 @@ A linha seguida é definida **só** pela tag no compose. Enquanto ela apontar pa
 - Comparação definitiva: o **digest** da imagem (`docker compose images`) e as
   **labels OCI** (`org.opencontainers.image.version`/`.revision`).
 
+### Publicação mobile (Android / Play Store)
+
+O app da loja é uma **TWA**: uma casca Android que abre este mesmo site no motor
+do Chrome. Não é um app separado — é o código React que já está em produção.
+
+Isso muda o modelo de release: **corrigir o site corrige o app**, sem passar pela
+revisão da Play. Só se sobe versão nova na loja quando muda algo da casca (ícone,
+nome, domínio, permissões).
+
+```bash
+cd deploy/twa
+./gerar-app.sh app.seudominio.com            # primeira vez
+./gerar-app.sh app.seudominio.com --update   # depois de mudar a config
+```
+
+O procedimento completo, o que é versionado e os erros que custam caro estão em
+[`deploy/twa/README.md`](deploy/twa/README.md). Em resumo:
+
+- O `packageId` **não muda** depois de publicado — trocá-lo cria outro app na loja.
+- O `appVersionCode` precisa **aumentar** a cada upload (a rejeição mais comum).
+- O keystore **nunca** entra no repositório.
+- O SHA-256 do `assetlinks.json` vem do **Play App Signing**, não do keystore local
+  (ver `deploy/vps/README.md`).
+
+
 ## Idiomas (i18n)
 
 O app fala **inglês (padrão)** e **português do Brasil**. O usuário troca no seletor
