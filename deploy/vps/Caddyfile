@@ -6,6 +6,20 @@
 {$DOMAIN} {
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
 
+	# Digital Asset Links (#329). Prova para o Android de que o app da Play Store
+	# e este domínio têm o mesmo dono — sem isso o TWA abre COM a barra de
+	# endereço do Chrome: funciona, mas parece navegador, não app.
+	#
+	# Servido pelo Caddy, e não pelo `public/` do Next, porque o conteúdo depende
+	# do certificado de cada deploy: aqui basta editar o arquivo no servidor e
+	# recarregar, sem rebuild de imagem.
+	handle /.well-known/assetlinks.json {
+		root * /etc/caddy/well-known
+		rewrite * /assetlinks.json
+		file_server
+		header Content-Type application/json
+	}
+
 	handle /api/* {
 		reverse_proxy backend:8000
 	}
