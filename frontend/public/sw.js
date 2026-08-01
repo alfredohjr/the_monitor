@@ -26,6 +26,52 @@ const PRECACHE = ["/", "/offline", "/favicon.svg", "/icons/icon-192.png", "/icon
 
 const PREFIXOS_PROIBIDOS = ["/api/"];
 
+// Cache das leituras da API (#325). Nome SEM a versão do app, de propósito: ele
+// guarda dado do usuário, não build, e apagá-lo a cada deploy jogaria fora
+// justamente o que faz o app abrir com conteúdo na tela.
+const PREFIXO_CACHE_API = "themonitor-api";
+const CACHE_API = PREFIXO_CACHE_API;
+const PREFIXO_API = "/api/v1/";
+
+function podeCachearApi(req, origem) {
+  if (req.method !== "GET") return false;
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (e) {
+    return false;
+  }
+  if (url.origin !== origem) return false;
+  return url.pathname.indexOf(PREFIXO_API) === 0;
+}
+
+// Espelho de `digest` em src/lib/sw-cache.ts — ver a nota no topo do arquivo.
+function digestChave(texto) {
+  const passada = function (entrada) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < entrada.length; i++) {
+      h ^= entrada.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, "0");
+  };
+  return passada(texto) + passada(texto.split("").reverse().join(""));
+}
+
+// A identidade entra na CHAVE porque a Cache API indexa só por URL e ignora os
+// headers. Sem isso, duas organizações compartilhariam a mesma entrada.
+function chaveDeCacheApi(req) {
+  const url = new URL(req.url);
+  const auth = req.headers.get("Authorization");
+  const org = req.headers.get("X-Org-Id") || "sem-org";
+  const usuario = auth ? "u" + digestChave(auth) : "anon";
+  return url.origin + "/__api-cache/" + usuario + "-o" + org + url.pathname + url.search;
+}
+
+function respostaCacheavel(resposta) {
+  return !!resposta && resposta.ok && resposta.status > 0;
+}
+
 function podeCachear(req, origem) {
   if (req.method !== "GET") return false;
   if (req.headers.get("Authorization")) return false;
@@ -104,6 +150,39 @@ self.addEventListener("fetch", function (evento) {
         // genérico fica para quem pede uma rota que nunca carregou (#322).
         return caches.match(req).then(function (hit) {
           return hit || caches.match("/offline");
+        });
+      })
+    );
+    return;
+  }
+
+  // Leitura da API: stale-while-revalidate (#325). Devolve na hora o que já se
+  // sabe e busca o atual em segundo plano, para o app abrir com dado na tela em
+  // vez de spinner.
+  if (podeCachearApi(req, self.location.origin)) {
+    evento.respondWith(
+      caches.open(CACHE_API).then(function (cache) {
+        const chave = chaveDeCacheApi(req);
+        return cache.match(chave).then(function (hit) {
+          const daRede = fetch(req)
+            .then(function (resposta) {
+              // Erro NUNCA entra: um 401 guardado seria servido depois do login
+              // e diria "sessão expirada" para quem acabou de entrar.
+              if (respostaCacheavel(resposta)) cache.put(chave, resposta.clone());
+              return resposta;
+            })
+            .catch(function (erro) {
+              // Offline: o que estava em cache já foi devolvido abaixo. Sem
+              // nada em cache, o erro precisa chegar ao app.
+              if (hit) return hit;
+              throw erro;
+            });
+
+          // waitUntil mantém o SW vivo até a revalidação terminar; sem isso o
+          // navegador pode encerrá-lo assim que a resposta em cache é entregue,
+          // e o cache nunca se atualizaria.
+          if (hit) evento.waitUntil(daRede.catch(function () {}));
+          return hit || daRede;
         });
       })
     );

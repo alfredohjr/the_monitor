@@ -6,6 +6,7 @@
 // roteia /api/* pro backend — então NEXT_PUBLIC_API_BASE="" faz as chamadas
 // ficarem same-origin (/api/v1/...). Sem env (dev/testes) cai em localhost:8000.
 import { getInitialLocale, t } from "./i18n";
+import { PREFIXO_CACHE_API } from "./sw-cache";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
@@ -41,12 +42,45 @@ export function getActiveOrg(): number | null {
   return raw ? Number(raw) : null;
 }
 
-export function setActiveOrg(id: number): void {
-  if (typeof window !== "undefined") localStorage.setItem(ACTIVE_ORG_KEY, String(id));
+/**
+ * Apaga o cache de leituras da API (#325).
+ *
+ * O cache do shell (HTML/CSS/JS) NÃO é tocado: ele não tem dado de usuário, e
+ * derrubá-lo aqui tiraria a abertura offline por causa de uma troca de
+ * organização — dois assuntos sem relação.
+ *
+ * A chave já separa por usuário e org, então isto é rede de segurança. Vale
+ * como tal: dado de outra organização não pode sobreviver nem por engano.
+ */
+export async function clearApiCache(): Promise<void> {
+  // `caches` não existe no jsdom nem em navegador antigo, e sem esta guarda o
+  // logout quebraria.
+  if (typeof caches === "undefined") return;
+  const nomes = await caches.keys();
+  await Promise.all(nomes.filter((n) => n.startsWith(PREFIXO_CACHE_API)).map((n) => caches.delete(n)));
 }
 
-export function clearActiveOrg(): void {
-  if (typeof window !== "undefined") localStorage.removeItem(ACTIVE_ORG_KEY);
+/**
+ * Define a organização ativa.
+ *
+ * Devolve uma Promise para quem precisa esperar a limpeza do cache antes de
+ * recarregar a tela. Quem ignora o retorno continua funcionando como antes.
+ */
+export function setActiveOrg(id: number): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  const anterior = getActiveOrg();
+  localStorage.setItem(ACTIVE_ORG_KEY, String(id));
+  // Só limpa quando a org MUDA de fato. O Navbar reafirma a org ativa ao
+  // montar; limpar ali apagaria o cache em toda navegação, e a feature inteira
+  // deixaria de existir.
+  if (anterior === id) return Promise.resolve();
+  return clearApiCache();
+}
+
+export function clearActiveOrg(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  localStorage.removeItem(ACTIVE_ORG_KEY);
+  return clearApiCache();
 }
 
 /**
