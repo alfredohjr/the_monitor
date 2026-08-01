@@ -12,4 +12,10 @@ export const pwa = {
   installMessage: "Instale o themonitor para abrir direto da tela inicial, mesmo sem conexão.",
   installAction: "Instalar",
   installDismiss: "Agora não",
+
+  // "Adicionar à Tela de Início" é como o iOS em português nomeia o item do
+  // menu. Traduzir por conta própria mandaria o usuário procurar um texto que
+  // não existe na tela dele.
+  iosInstallMessage:
+    "Para instalar o themonitor no seu iPhone, toque no botão Compartilhar do Safari e escolha “Adicionar à Tela de Início”.",
 };

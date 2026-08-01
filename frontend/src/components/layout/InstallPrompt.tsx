@@ -1,8 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
 
-import { deveMostrarConvite, estaInstalado, foiDispensado, marcarDispensado } from "@/lib/install-prompt";
+import {
+  deveMostrarConvite,
+  deveMostrarInstrucaoIOS,
+  ehSafariIOS,
+  estaInstalado,
+  foiDispensado,
+  marcarDispensado,
+} from "@/lib/install-prompt";
 import { useT } from "@/lib/i18n/useT";
+
+/**
+ * Qual convite está na tela.
+ *
+ * "android" e "ios" são caminhos diferentes, não variações de estilo: um chama
+ * uma API do navegador, o outro só ensina um gesto manual.
+ */
+type Modo = "nenhum" | "android" | "ios";
 
 /** O `beforeinstallprompt`, que ainda não está nos tipos padrão do DOM. */
 type EventoDeInstalacao = Event & {
@@ -26,17 +41,32 @@ type JanelaComEvento = Window & { __pwaInstallEvent?: EventoDeInstalacao | null 
 export default function InstallPrompt() {
   const { t } = useT();
   const [evento, setEvento] = useState<EventoDeInstalacao | null>(null);
-  const [visivel, setVisivel] = useState(false);
+  const [modo, setModo] = useState<Modo>("nenhum");
 
   useEffect(() => {
     const janela = window as JanelaComEvento;
 
     const considerar = (e: EventoDeInstalacao) => {
       setEvento(e);
-      setVisivel(deveMostrarConvite({ eventoCapturado: true, jaInstalado: estaInstalado(), dispensado: foiDispensado() }));
+      if (deveMostrarConvite({ eventoCapturado: true, jaInstalado: estaInstalado(), dispensado: foiDispensado() })) {
+        setModo("android");
+      }
     };
 
     if (janela.__pwaInstallEvent) considerar(janela.__pwaInstallEvent);
+
+    // O iOS não dispara evento nenhum, então a decisão é tomada na montagem.
+    // Os dois ramos não colidem: `ehSafariIOS` é falso em tudo que dispara
+    // `beforeinstallprompt` (#324).
+    if (
+      deveMostrarInstrucaoIOS({
+        ehSafariIOS: ehSafariIOS(navigator.userAgent, navigator.maxTouchPoints),
+        jaInstalado: estaInstalado(),
+        dispensado: foiDispensado(),
+      })
+    ) {
+      setModo("ios");
+    }
 
     const aoOferecer = (e: Event) => {
       // Sem o preventDefault, o Chrome mostra o próprio banner por cima.
@@ -45,7 +75,7 @@ export default function InstallPrompt() {
     };
     const aoInstalar = () => {
       // Instalou por outro caminho (menu do navegador): o convite perde sentido.
-      setVisivel(false);
+      setModo("nenhum");
       marcarDispensado();
     };
 
@@ -57,21 +87,54 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  if (!visivel || !evento) return null;
+  const dispensar = () => {
+    marcarDispensado();
+    setModo("nenhum");
+  };
+
+  if (modo === "ios") {
+    return (
+      <div className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6">
+        <div className="mx-auto max-w-3xl glass border border-zinc-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 flex items-center gap-4 shadow-2xl">
+          {/* Glifo de compartilhar do iOS, ao lado da frase e não dentro dela:
+              o texto do catálogo é uma sentença inteira e precisa fazer sentido
+              sozinho para quem usa leitor de tela. */}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-6 h-6 shrink-0 text-blue-500"
+            aria-hidden
+          >
+            <path d="M12 3v12" />
+            <path d="M8 7l4-4 4 4" />
+            <path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+          </svg>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">{t("pwa.iosInstallMessage")}</p>
+          <button
+            onClick={dispensar}
+            className="px-4 py-3 rounded-full font-medium text-sm text-zinc-500 hover:text-zinc-300 transition shrink-0"
+          >
+            {t("pwa.installDismiss")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (modo !== "android" || !evento) return null;
 
   const instalar = () => {
     // O evento só pode ser usado UMA vez: depois do prompt ele está gasto, e
     // guardá-lo levaria a um segundo clique que não faz nada.
-    setVisivel(false);
+    setModo("nenhum");
     const usado = evento;
     setEvento(null);
     (window as JanelaComEvento).__pwaInstallEvent = null;
     usado.prompt().catch(() => {});
-  };
-
-  const dispensar = () => {
-    marcarDispensado();
-    setVisivel(false);
   };
 
   return (
