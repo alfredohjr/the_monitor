@@ -1,4 +1,4 @@
-import { apiFetch, getActiveOrg, setActiveOrg, clearActiveOrg } from '@/lib/api';
+import { apiFetch, clearApiCache, getActiveOrg, setActiveOrg, clearActiveOrg } from '@/lib/api';
 
 describe('apiFetch', () => {
   afterEach(() => {
@@ -92,5 +92,80 @@ describe('apiFetch — Accept-Language (#303)', () => {
     const fn = mockFetch();
     await apiFetch('/api/v1/metrics/', { headers: { 'Accept-Language': 'de-DE' } });
     expect((fn.mock.calls[0][1].headers as Record<string, string>)['Accept-Language']).toBe('de-DE');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Limpeza do cache da API (#325)
+// ---------------------------------------------------------------------------
+
+describe('clearApiCache', () => {
+  let apagados: string[];
+
+  beforeEach(() => {
+    apagados = [];
+    (global as { caches?: unknown }).caches = {
+      keys: async () => ['themonitor-api', 'themonitor-shell-1.0.0', 'outro-app'],
+      delete: async (nome: string) => {
+        apagados.push(nome);
+        return true;
+      },
+    };
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    delete (global as { caches?: unknown }).caches;
+  });
+
+  it('apaga só o cache da API, não o do shell', async () => {
+    // Apagar o shell aqui tiraria a capacidade de abrir offline por causa de
+    // uma troca de organização — dois assuntos sem relação.
+    await clearApiCache();
+    expect(apagados).toEqual(['themonitor-api']);
+  });
+
+  it('não quebra onde a Cache API não existe', async () => {
+    // Navegador antigo, ou o próprio jsdom: `caches` é indefinido e chamar
+    // `.keys()` nele derrubaria o logout.
+    delete (global as { caches?: unknown }).caches;
+    await expect(clearApiCache()).resolves.toBeUndefined();
+  });
+
+  it('trocar de organização limpa o cache', async () => {
+    // Rede de segurança: a chave já separa por org, mas dado de outra
+    // organização não pode sobreviver à troca nem por engano.
+    // Aguardado: sem isto a limpeza deste preparo resolve depois do reset e
+    // conta como se fosse a da ação sob teste.
+    await setActiveOrg(1);
+    apagados = [];
+
+    await setActiveOrg(2);
+
+    expect(apagados).toEqual(['themonitor-api']);
+  });
+
+  it('reafirmar a MESMA organização não limpa nada', async () => {
+    // O Navbar chama setActiveOrg ao montar. Se isso limpasse o cache, ele
+    // seria apagado em toda navegação e a feature inteira não existiria.
+    // Aguardado: sem isto a limpeza deste preparo resolve depois do reset e
+    // conta como se fosse a da ação sob teste.
+    await setActiveOrg(1);
+    apagados = [];
+
+    await setActiveOrg(1);
+
+    expect(apagados).toEqual([]);
+  });
+
+  it('logout limpa o cache', async () => {
+    // Aguardado: sem isto a limpeza deste preparo resolve depois do reset e
+    // conta como se fosse a da ação sob teste.
+    await setActiveOrg(1);
+    apagados = [];
+
+    await clearActiveOrg();
+
+    expect(apagados).toEqual(['themonitor-api']);
   });
 });

@@ -58,9 +58,12 @@ export default function Navbar() {
       .catch(() => { setRole(null); setOrgs([]); });
   }, [pathname]);
 
-  const handleOrgChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleOrgChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = Number(e.target.value);
-    setActiveOrg(id);
+    // Aguardado de propósito (#325): setActiveOrg limpa o cache de leituras da
+    // API, e recarregar antes disso deixaria a tela nova buscar de um cache que
+    // ainda tem dado da org anterior.
+    await setActiveOrg(id);
     setActiveOrgState(id);
     const nova = orgs.find(o => o.id === id);
     if (nova?.moeda) setMoedaAtiva(nova.moeda);

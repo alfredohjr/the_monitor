@@ -60,7 +60,10 @@ describe('Navbar — switch de organização', () => {
     const select = await screen.findByLabelText('Organization');
     fireEvent.change(select, { target: { value: '9' } });
     expect(getActiveOrg()).toBe(9);
-    expect(reload).toHaveBeenCalled();
+    // O reload passou a esperar a limpeza do cache da API (#325), então não é
+    // mais síncrono ao evento. A ORDEM é o ponto: recarregar antes de limpar
+    // deixaria a tela nova ler dado da org anterior.
+    await waitFor(() => expect(reload).toHaveBeenCalled());
   });
 
   it('não mostra o seletor sem organizações', async () => {
