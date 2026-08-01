@@ -1,0 +1,36 @@
+# O que o Bubblewrap gera aqui (#330).
+#
+# A regra: versiona-se a CONFIGURAÇÃO (twa-manifest.json), nunca o projeto
+# gerado nem as credenciais.
+
+# ---------------------------------------------------------------------------
+# CREDENCIAIS — nunca, em hipótese alguma
+# ---------------------------------------------------------------------------
+# Quem tem o keystore publica atualização em nome deste app. Vazou, vazou: o
+# Google até permite trocar a chave de upload por pedido, mas é processo manual
+# e demorado. E num repositório público, "apagar o commit" não desfaz nada.
+*.keystore
+*.jks
+*.p12
+android.keystore
+signing-key-info.txt
+
+# ---------------------------------------------------------------------------
+# Projeto Android gerado — derivado, reconstruível com `bubblewrap update`
+# ---------------------------------------------------------------------------
+app/
+gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+local.properties
+.gradle/
+store_icon.png
+splash.png
+
+# Artefatos de build
+*.aab
+*.apk
+*.idsig
