@@ -11,3 +11,6 @@ requests==2.32.3  # transporte do google.auth (verify_google_token) — google-a
 alembic==1.13.2
 apscheduler==3.11.3
 email-validator==2.3.0
+# Web Push VAPID (#327). PINADO: o #204 mostrou o custo de dep solta —
+# `requests` faltou em produção e o login quebrou com os testes verdes.
+pywebpush==2.0.3
