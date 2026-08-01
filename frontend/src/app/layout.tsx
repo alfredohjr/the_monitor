@@ -5,6 +5,8 @@ import CookieConsent from "@/components/layout/CookieConsent";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import VersionBadge from "@/components/layout/VersionBadge";
 import ServiceWorkerRegistration from "@/components/layout/ServiceWorkerRegistration";
+import InstallPrompt from "@/components/layout/InstallPrompt";
+import { SCRIPT_CAPTURA_INSTALL } from "@/lib/install-prompt";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { t } from "@/lib/i18n";
 import "./globals.css";
@@ -95,7 +97,12 @@ export default function RootLayout({
               "var l=localStorage.getItem('locale');document.documentElement.setAttribute('lang',l==='pt-BR'?'pt-BR':'en');}catch(e){}})();",
           }}
         />
+        {/* Captura do beforeinstallprompt antes da hidratação (#323): o Chrome
+            dispara o evento no carregamento, e um listener montado só no
+            useEffect chegaria tarde. O InstallPrompt recolhe daqui. */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_CAPTURA_INSTALL }} />
         <ServiceWorkerRegistration />
+        <InstallPrompt />
         <I18nProvider>
           <Navbar />
           {children}

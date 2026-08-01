@@ -8,4 +8,8 @@ export const pwa = {
   offlineMessage:
     "O themonitor precisa de conexão para carregar seus dados. Reconecte e tente de novo — nada do que você lançou foi perdido.",
   offlineRetry: "Tentar de novo",
+
+  installMessage: "Instale o themonitor para abrir direto da tela inicial, mesmo sem conexão.",
+  installAction: "Instalar",
+  installDismiss: "Agora não",
 };

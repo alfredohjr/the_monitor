@@ -14,4 +14,10 @@ export const pwa = {
   offlineMessage:
     "themonitor needs a connection to load your data. Reconnect and try again — nothing you entered was lost.",
   offlineRetry: "Try again",
+
+  // Convite de instalação (#323). Diz o benefício, não o mecanismo — "adicionar
+  // à tela inicial" descreve o clique; "abrir direto" descreve o ganho.
+  installMessage: "Install themonitor to open it straight from your home screen, even offline.",
+  installAction: "Install",
+  installDismiss: "Not now",
 };
