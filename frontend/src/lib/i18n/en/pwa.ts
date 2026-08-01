@@ -29,4 +29,16 @@ export const pwa = {
   // catálogo cita o rótulo no seu idioma.
   iosInstallMessage:
     "To install themonitor on your iPhone, tap the Share button in Safari and choose “Add to Home Screen”.",
+
+  // Ativação de push (#328). O botão diz o que acontece ao clicar, não o
+  // estado atual — "Notifications on" ao lado de um botão é ambíguo: ligar ou
+  // já está ligado?
+  pushEnable: "Turn on push notifications",
+  pushDisable: "Turn off push notifications",
+  pushEnabled: "Push notifications are on for this device.",
+  // "Bloqueado" não se desfaz por código: a pessoa precisa mexer nas
+  // configurações do navegador, então o texto tem que dizer isso.
+  pushDenied: "Notifications are blocked for this site. Allow them in your browser settings to turn this on.",
+  pushUnsupported: "This browser does not support push notifications.",
+  pushError: "Could not turn on notifications. Please try again.",
 };

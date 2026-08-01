@@ -210,3 +210,46 @@ self.addEventListener("fetch", function (evento) {
     })
   );
 });
+
+// ---------------------------------------------------------------------------
+// Web Push (#328)
+// ---------------------------------------------------------------------------
+
+self.addEventListener("push", function (evento) {
+  // Payload malformado não pode impedir a notificação: sem `showNotification`
+  // o Chrome mostra "Este site foi atualizado em segundo plano", que é pior do
+  // que um título genérico.
+  let dados = {};
+  try {
+    dados = evento.data ? evento.data.json() : {};
+  } catch (e) {
+    dados = {};
+  }
+
+  evento.waitUntil(
+    self.registration.showNotification(dados.title || "themonitor", {
+      body: dados.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      // A rota viaja no `data` porque o clique é tratado noutro handler, quando
+      // o payload original já não existe mais.
+      data: { url: dados.url || "/notifications" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", function (evento) {
+  evento.notification.close();
+  const url = (evento.notification.data && evento.notification.data.url) || "/notifications";
+
+  evento.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (janelas) {
+      // Foca uma janela já aberta em vez de abrir outra: sem isto, cada
+      // notificação clicada deixa mais uma aba do app para trás.
+      for (let i = 0; i < janelas.length; i++) {
+        if (janelas[i].url.indexOf(url) !== -1 && "focus" in janelas[i]) return janelas[i].focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});

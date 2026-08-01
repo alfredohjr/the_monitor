@@ -415,3 +415,96 @@ describe("sw.js — stale-while-revalidate da API", () => {
     expect(sw.apagados).toEqual(["themonitor-shell-1.0.0"]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Web Push (#328)
+// ---------------------------------------------------------------------------
+
+describe("sw.js — push recebido", () => {
+  function carregarComClients(janelas: { url: string; focus?: jest.Mock }[] = []) {
+    const sw = carregarSW();
+    const mostradas: { titulo: string; opcoes: Record<string, unknown> }[] = [];
+    const abertas: string[] = [];
+    const self = sw.ctx.self as Record<string, unknown>;
+    self.registration = {
+      showNotification: (titulo: string, opcoes: Record<string, unknown>) => {
+        mostradas.push({ titulo, opcoes });
+        return Promise.resolve();
+      },
+    };
+    self.clients = {
+      matchAll: () => Promise.resolve(janelas),
+      openWindow: (url: string) => {
+        abertas.push(url);
+        return Promise.resolve();
+      },
+    };
+    return { sw, mostradas, abertas };
+  }
+
+  it("mostra a notificação com título, corpo e ícone", async () => {
+    const { sw, mostradas } = carregarComClients();
+    const esperas: Promise<unknown>[] = [];
+
+    sw.handlers.push({
+      data: { json: () => ({ title: "Meta atingida", body: "Você chegou lá", url: "/notifications" }) },
+      waitUntil: (p: Promise<unknown>) => esperas.push(p),
+    } as never);
+    await Promise.all(esperas);
+
+    expect(mostradas[0].titulo).toBe("Meta atingida");
+    expect(mostradas[0].opcoes.body).toBe("Você chegou lá");
+    expect(mostradas[0].opcoes.icon).toBe("/icons/icon-192.png");
+  });
+
+  it("payload quebrado ainda mostra algo", async () => {
+    // Sem showNotification o Chrome exibe "Este site foi atualizado em segundo
+    // plano" — pior que um título genérico.
+    const { sw, mostradas } = carregarComClients();
+    const esperas: Promise<unknown>[] = [];
+
+    sw.handlers.push({
+      data: {
+        json: () => {
+          throw new Error("not json");
+        },
+      },
+      waitUntil: (p: Promise<unknown>) => esperas.push(p),
+    } as never);
+    await Promise.all(esperas);
+
+    expect(mostradas).toHaveLength(1);
+    expect(mostradas[0].titulo).toBe("themonitor");
+  });
+
+  it("clicar foca a janela já aberta em vez de abrir outra", async () => {
+    // Sem isto, cada notificação clicada deixa mais uma aba do app para trás.
+    const focus = jest.fn();
+    const { sw, abertas } = carregarComClients([{ url: "https://app.themonitor.com/notifications", focus }]);
+    const esperas: Promise<unknown>[] = [];
+    const fechar = jest.fn();
+
+    sw.handlers.notificationclick({
+      notification: { close: fechar, data: { url: "/notifications" } },
+      waitUntil: (p: Promise<unknown>) => esperas.push(p),
+    } as never);
+    await Promise.all(esperas);
+
+    expect(focus).toHaveBeenCalled();
+    expect(abertas).toEqual([]);
+    expect(fechar).toHaveBeenCalled();
+  });
+
+  it("sem janela aberta, abre a rota da notificação", async () => {
+    const { sw, abertas } = carregarComClients([]);
+    const esperas: Promise<unknown>[] = [];
+
+    sw.handlers.notificationclick({
+      notification: { close: jest.fn(), data: { url: "/goals" } },
+      waitUntil: (p: Promise<unknown>) => esperas.push(p),
+    } as never);
+    await Promise.all(esperas);
+
+    expect(abertas).toEqual(["/goals"]);
+  });
+});

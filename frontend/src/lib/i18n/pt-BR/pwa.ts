@@ -18,4 +18,11 @@ export const pwa = {
   // não existe na tela dele.
   iosInstallMessage:
     "Para instalar o themonitor no seu iPhone, toque no botão Compartilhar do Safari e escolha “Adicionar à Tela de Início”.",
+
+  pushEnable: "Ativar notificações push",
+  pushDisable: "Desativar notificações push",
+  pushEnabled: "As notificações push estão ativas neste aparelho.",
+  pushDenied: "As notificações estão bloqueadas para este site. Libere nas configurações do navegador para ativar.",
+  pushUnsupported: "Este navegador não suporta notificações push.",
+  pushError: "Não foi possível ativar as notificações. Tente de novo.",
 };

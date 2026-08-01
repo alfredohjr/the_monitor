@@ -24,6 +24,12 @@ ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
 # = botão some e mostra "Login com Google indisponível".
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=""
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+
+# Chave VAPID PÚBLICA do Web Push (#328). Pública mesmo — ela vai no bundle e é
+# enviada ao servidor de push; a privada nunca sai do backend.
+# Vazia = o botão de ativar push diz "indisponível", sem quebrar nada.
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY=""
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
 RUN npm run build
 
 FROM node:20-alpine AS runner
