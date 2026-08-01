@@ -15,6 +15,7 @@ from .monitor import Item, Historico, News
 from .accounts import User, Organization, Membership, EmailVerificationToken, PasswordResetToken
 from .pointer import Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, UserMetricSubscription, UserMetricAssignment, GoalTemplate, ExternalIndex, ExternalIndexPoint
 from .notifications import Notification
+from .push import PushSubscription
 
 __all__ = [
     "DATABASE_URL",
@@ -40,4 +41,5 @@ __all__ = [
     "ExternalIndex",
     "ExternalIndexPoint",
     "Notification",
+    "PushSubscription",
 ]

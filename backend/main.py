@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
-from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
+from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, PushSubscription, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
 from messages import LOCALE_PADRAO, LOCALES, LocaleDep, t
@@ -1701,6 +1701,93 @@ def mark_notification_read(notification_id: int, session: SessionDep, user: Curr
     session.commit()
     session.refresh(notification)
     return notification
+
+
+# ---------- Push subscriptions ----------
+#
+# Registro dos aparelhos inscritos. O envio em si é a #327; aqui só se guarda
+# quem receberia. O polling REST de /api/v1/notifications/ continua existindo e
+# segue sendo a fonte da tela — isto ACRESCENTA push, não substitui nada.
+
+class PushSubscribe(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+    # "web" por padrão para o cliente atual não precisar mandar nada; o app
+    # nativo da 0.7 manda "android"/"ios" na mesma tabela.
+    platform: str = "web"
+
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str
+
+
+@app.post('/api/v1/push/subscribe/', status_code=201)
+def push_subscribe(
+    body: PushSubscribe, session: SessionDep, org: ActiveOrg, user: CurrentUser, lang: LocaleDep
+) -> PushSubscription:
+    """Registra (ou atualiza) a inscrição deste aparelho.
+
+    Idempotente por `endpoint`: o navegador reentrega a MESMA inscrição a cada
+    carregamento da página. Criar linha nova a cada vez faria a tabela crescer
+    sem limite e o aparelho receber a notificação uma vez por linha.
+
+    Quando o endpoint já existe, as chaves são atualizadas em vez de ignoradas
+    — o navegador pode renovar `p256dh`/`auth` mantendo o endpoint, e guardar a
+    chave velha faria o envio falhar com um erro de criptografia difícil de
+    rastrear.
+    """
+    org_id = require_active_org(org, lang)
+
+    existente = session.exec(
+        select(PushSubscription).where(PushSubscription.endpoint == body.endpoint)
+    ).first()
+
+    if existente is not None:
+        existente.user_id = user.id
+        existente.organization_id = org_id
+        existente.platform = body.platform
+        existente.p256dh = body.p256dh
+        existente.auth = body.auth
+        session.add(existente)
+        session.commit()
+        session.refresh(existente)
+        return existente
+
+    inscricao = PushSubscription(
+        user_id=user.id,
+        organization_id=org_id,
+        platform=body.platform,
+        endpoint=body.endpoint,
+        p256dh=body.p256dh,
+        auth=body.auth,
+    )
+    session.add(inscricao)
+    session.commit()
+    session.refresh(inscricao)
+    return inscricao
+
+
+@app.delete('/api/v1/push/subscribe/', status_code=204)
+def push_unsubscribe(body: PushUnsubscribe, session: SessionDep, user: CurrentUser):
+    """Remove a inscrição deste aparelho.
+
+    O filtro por `user_id` é de segurança, não de correção: o endpoint vem do
+    corpo da requisição, e sem ele qualquer pessoa autenticada poderia mandar o
+    endpoint de outra e silenciar as notificações dela.
+
+    Sempre 204, mesmo sem achar nada — responder 404 diria a quem tentou que
+    aquele endpoint existe e pertence a outra pessoa.
+    """
+    inscricao = session.exec(
+        select(PushSubscription).where(
+            PushSubscription.endpoint == body.endpoint,
+            PushSubscription.user_id == user.id,
+        )
+    ).first()
+    if inscricao is not None:
+        session.delete(inscricao)
+        session.commit()
 
 
 # ---------- Subscriptions ----------
