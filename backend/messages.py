@@ -47,6 +47,11 @@ MSG: dict[str, dict[str, str]] = {
         "email.resumo_cabecalho": "Summary for {data}",
         "email.resumo_assunto": "Goals summary — {data}",
         "email.resumo_titulo": "Daily goals summary",
+        # Push (#327). Título curto: o Android trunca a notificação, e o que
+        # importa é a pessoa reconhecer o assunto na barra de status.
+        "push.meta_titulo": "Goal reached",
+        "push.resumo_titulo": "Your goals summary",
+        "push.resumo_corpo": "See how your goals are doing today.",
         "erro.locale_invalido": "Unsupported language",
         "erro.usuario_nao_pertence_org": "User does not belong to this organization",
         "erro.nao_pode_remover_a_si": "You cannot remove yourself",
@@ -113,6 +118,9 @@ MSG: dict[str, dict[str, str]] = {
         "email.resumo_cabecalho": "Resumo do dia — {data}",
         "email.resumo_assunto": "Resumo de metas — {data}",
         "email.resumo_titulo": "Resumo diário de metas",
+        "push.meta_titulo": "Meta atingida",
+        "push.resumo_titulo": "Resumo das suas metas",
+        "push.resumo_corpo": "Veja como suas metas estão hoje.",
         "erro.locale_invalido": "Idioma não suportado",
         "erro.usuario_nao_pertence_org": "Usuário não pertence a esta organização",
         "erro.nao_pode_remover_a_si": "Você não pode remover a si mesmo",

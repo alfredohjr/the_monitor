@@ -41,6 +41,33 @@ Gere o `SECRET_KEY` (sem ele o backend sobe com o segredo público do repo, #191
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
+Gere o par **VAPID**, necessário para o Web Push (#327). É gerado **uma vez** e
+não muda: trocar as chaves invalida todas as inscrições já existentes, e cada
+aparelho só volta a receber depois de reabrir o app e se inscrever de novo.
+
+```bash
+# de dentro do container do backend (o py-vapid vem com o pywebpush)
+docker compose exec backend vapid --gen --applicationServerKey
+```
+
+Isso imprime as duas chaves em base64url. No `.env`:
+
+```
+VAPID_PUBLIC_KEY=<a chave pública>
+VAPID_PRIVATE_KEY=<a chave privada>
+VAPID_SUBJECT=mailto:voce@seudominio.com
+```
+
+- A **pública** também precisa ir para o frontend como `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+  (#328). Lembre que `NEXT_PUBLIC_*` é inlinado em **build time** (#202/#203): mudar
+  no `.env` do servidor não tem efeito sem rebuild da imagem.
+- A **privada** nunca sai do backend. Não vai para o repositório nem para o frontend.
+- `VAPID_SUBJECT` é exigido pelo padrão: é o contato que o servidor de push (Google,
+  Mozilla, Apple) usa para avisar sobre abuso. Um e-mail seu, com o prefixo `mailto:`.
+
+Sem essas três variáveis o backend sobe normalmente e o app funciona — só não
+manda push. É proposital: instalação não configurada não pode quebrar.
+
 ### 3. Cloudflare — escolha a variante
 
 **Variante B — Cloudflare Tunnel** (padrão do compose, mais segura, nenhuma porta aberta):

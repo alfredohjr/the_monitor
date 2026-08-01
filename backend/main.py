@@ -10,6 +10,7 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 from models import Item, Historico, News, Metric, Goal, GoalAnchor, LogEntry, LogEntryAudit, User, Organization, Membership, Notification, PushSubscription, UserMetricSubscription, UserMetricAssignment, EmailVerificationToken, PasswordResetToken, GoalTemplate, ExternalIndex, ExternalIndexPoint, get_session
 import secrets
 
+from push_service import enviar_push_para_usuario, enviar_resumo_push_para_todos
 from messages import LOCALE_PADRAO, LOCALES, LocaleDep, t
 from db_migrations import run_migrations
 from email_service import build_resumo, render_html, enviar_resumo_para_todos, send_verification_email, send_password_reset_email
@@ -100,6 +101,10 @@ def _job_enviar_resumos():
     from models.database import engine
     with Session(engine) as session:
         enviar_resumo_para_todos(session)
+        # Push do resumo, no mesmo job (#327). A regra de conta free vive nos
+        # dois lados com a MESMA consulta: divergir faria a conta gratuita
+        # receber no celular justamente o que a regra tirou do e-mail (#253).
+        enviar_resumo_push_para_todos(session)
 
 
 # ---------- Original The Monitor endpoints ----------
@@ -1189,6 +1194,10 @@ def _notify_if_goal_reached(new_log: LogEntry, session: Session, user: User) -> 
         mensagem = t("notif.meta_atingida", lang, nome=nome, total=f"{total:g}", alvo=f"{alvo:g}")
         session.add(Notification(user_id=user.id, mensagem=mensagem))
         session.commit()
+        # Push no MESMO ponto, com a MESMA mensagem já traduzida (#327). Duplicar
+        # a regra de quando notificar é o jeito de as duas divergirem depois.
+        # Falha de envio não derruba o lançamento: o push_service engole tudo.
+        enviar_push_para_usuario(session, user, t("push.meta_titulo", lang), mensagem)
 
 
 @app.post('/api/v1/logs/', status_code=201)
