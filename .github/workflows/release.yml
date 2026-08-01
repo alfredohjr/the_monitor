@@ -40,9 +40,14 @@ jobs:
             # NEXT_PUBLIC_GOOGLE_CLIENT_ID (Settings → Secrets and variables →
             # Actions → Variables) — Client ID é público, então variable, não
             # secret. Vazia = imagem sem login Google (botão some, sem quebrar).
+            # A chave VAPID pública (#328) segue a mesma lógica: NEXT_PUBLIC_* é
+            # inlinado no build, então precisa vir daqui. É pública (vai no
+            # bundle), logo *variable*, não secret — a PRIVADA fica só no .env do
+            # backend e nunca passa por aqui. Vazia = botão de push some.
             extra_build_args: |
               NEXT_PUBLIC_API_BASE=
               NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+              NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
 

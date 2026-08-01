@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/useT";
 import { formatData } from "@/lib/formatValor";
+import PushToggle from "@/components/notifications/PushToggle";
 import {
   Notification,
   fetchNotifications,
@@ -42,7 +43,14 @@ export default function NotificationsPage() {
     <div className="flex flex-col min-h-screen items-center p-6 pt-28 bg-zinc-50 text-zinc-900 dark:bg-[#0a0a0a] dark:text-white">
       <div className="relative z-10 w-full max-w-2xl bg-white border border-zinc-200 dark:bg-white/[0.03] dark:backdrop-blur-xl dark:border-white/5 p-6 sm:p-8 rounded-3xl">
         <h1 className="text-2xl font-extrabold tracking-tight mb-1">{t("notifications.title")}</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-6">{t("notifications.subtitle")}</p>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">{t("notifications.subtitle")}</p>
+
+        {/* Ativação de push (#328): fica AQUI, atrás de um clique, e não no
+            carregamento do app — permissão pedida fora de um gesto do usuário
+            costuma ser negada, e "bloqueado" não se desfaz por código. */}
+        <div className="mb-6 pb-6 border-b border-zinc-200 dark:border-white/5">
+          <PushToggle />
+        </div>
 
         {loading ? (
           <p className="text-zinc-500 py-8 text-center">{t("notifications.loading")}</p>
