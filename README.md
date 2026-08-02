@@ -114,8 +114,9 @@ npm run dev
 ## Deploy e versionamento
 
 ### Linhas de versão
-- **`master`** = linha de desenvolvimento atual (hoje `0.5.0-dev`).
-- **`release/0.4`** = linha estável **em produção**; recebe só patches `0.4.x`.
+- **`master`** = linha de desenvolvimento atual (hoje `0.7.0-dev`).
+- **`release/0.6`** = linha estável **em produção** (i18n + PWA); recebe só patches `0.6.x`.
+- **`release/0.4`** = linha antiga; recebe só patches `0.4.x`.
 - **`release/0.3`** = linha antiga; recebe só patches `0.3.x`.
 
 Correção de bug: **corrija primeiro na linha mais antiga afetada**, libere o
