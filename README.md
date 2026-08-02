@@ -114,8 +114,9 @@ npm run dev
 ## Deploy e versionamento
 
 ### Linhas de versão
-- **`master`** = linha de desenvolvimento atual (hoje `0.5.0-dev`).
-- **`release/0.4`** = linha estável **em produção**; recebe só patches `0.4.x`.
+- **`master`** = linha de desenvolvimento atual (hoje `0.7.0-dev`).
+- **`release/0.6`** = linha estável **em produção** (i18n + PWA); recebe só patches `0.6.x`.
+- **`release/0.4`** = linha antiga; recebe só patches `0.4.x`.
 - **`release/0.3`** = linha antiga; recebe só patches `0.3.x`.
 
 Correção de bug: **corrija primeiro na linha mais antiga afetada**, libere o
@@ -132,7 +133,7 @@ gatilho).
 
 > **A 0.3 não é deployável atrás de proxy.** Lá o `API_BASE` do front é
 > hardcoded em `localhost:8000`; o same-origin só existe da 0.4 em diante
-> (#174/#176, e #189 na imagem publicada). A linha de produção é a **0.4**.
+> (#174/#176, e #189 na imagem publicada). A linha de produção é a **0.6**.
 
 ### Publicação de imagens (GHCR)
 Ao empurrar uma tag `vX.Y.Z`, o CI (`.github/workflows/release.yml`) publica as

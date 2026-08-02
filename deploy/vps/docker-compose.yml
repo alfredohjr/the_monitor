@@ -37,7 +37,7 @@ services:
       retries: 5
 
   backend:
-    image: ghcr.io/alfredohjr/the_monitor-backend:0.4
+    image: ghcr.io/alfredohjr/the_monitor-backend:0.6
     restart: unless-stopped
     # env_file (e não só `environment:`): o backend lê SECRET_KEY, FRONTEND_URL,
     # GOOGLE_CLIENT_ID e EMAIL_HORA além do DATABASE_URL. Listar só o DATABASE_URL
@@ -62,7 +62,7 @@ services:
   frontend:
     # A base da API é inlinada no bundle em build time — a imagem publicada já vem
     # same-origin (/api/v1/...) desde o #189. Não há o que configurar aqui.
-    image: ghcr.io/alfredohjr/the_monitor-frontend:0.4
+    image: ghcr.io/alfredohjr/the_monitor-frontend:0.6
     restart: unless-stopped
     depends_on:
       - backend

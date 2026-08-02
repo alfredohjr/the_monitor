@@ -11,7 +11,7 @@ Visitante ──HTTPS──> Cloudflare ──HTTPS──> Caddy (VPS)
 ```
 
 **Não builda nada.** Sendo amd64, as imagens do GHCR (#146) rodam nativo. O compose
-usa a tag móvel `:0.4` e o **Watchtower** puxa os patches dela sozinho — o
+usa a tag móvel `:0.6` e o **Watchtower** puxa os patches dela sozinho — o
 auto-update fica travado na minor (não cruza pra 0.5).
 
 ## Arquivos deste diretório
