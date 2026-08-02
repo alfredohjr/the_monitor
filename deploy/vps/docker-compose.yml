@@ -5,9 +5,9 @@
 # publica porta — numa VPS com IP público, um `ports:` no postgres é banco aberto
 # pra internet.
 #
-# Roda as imagens do GHCR (amd64, nativo aqui) — não builda. A tag móvel ':0.4'
+# Roda as imagens do GHCR (amd64, nativo aqui) — não builda. A tag móvel ':0.6'
 # abaixo é o ÚNICO ponto que decide a linha acompanhada; o Watchtower puxa os
-# patches dela. Migrar de linha (:0.5) é ato deliberado. Nunca use 'latest'.
+# patches dela. Migrar de linha (:0.7) é ato deliberado. Nunca use 'latest'.
 #
 # Uso:  cd deploy/vps && docker compose up -d
 # Requer:  deploy/vps/.env (a partir do .env.example). No padrão (Variante B),
@@ -37,7 +37,7 @@ services:
       retries: 5
 
   backend:
-    image: ghcr.io/alfredohjr/the_monitor-backend:0.4
+    image: ghcr.io/alfredohjr/the_monitor-backend:0.6
     restart: unless-stopped
     # env_file (e não só `environment:`): o backend lê SECRET_KEY, FRONTEND_URL,
     # GOOGLE_CLIENT_ID e EMAIL_HORA além do DATABASE_URL. Listar só o DATABASE_URL
@@ -62,7 +62,7 @@ services:
   frontend:
     # A base da API é inlinada no bundle em build time — a imagem publicada já vem
     # same-origin (/api/v1/...) desde o #189. Não há o que configurar aqui.
-    image: ghcr.io/alfredohjr/the_monitor-frontend:0.4
+    image: ghcr.io/alfredohjr/the_monitor-frontend:0.6
     restart: unless-stopped
     depends_on:
       - backend
@@ -100,8 +100,8 @@ services:
       - backend
     networks: [internal]
 
-  # Puxa e reinicia os containers quando a tag móvel (:0.4) recebe um novo patch.
-  # Não cruza para 0.5 sozinho — a tag 0.4 para de andar quando sai a 0.5.0.
+  # Puxa e reinicia os containers quando a tag móvel (:0.6) recebe um novo patch.
+  # Não cruza para 0.7 sozinho — a tag 0.6 para de andar quando sai a 0.7.0.
   # Fork mantido: containrrr/watchtower foi arquivado (dez/2025); nickfedor/watchtower
   # é o sucessor ativo, drop-in compatível.
   watchtower:
